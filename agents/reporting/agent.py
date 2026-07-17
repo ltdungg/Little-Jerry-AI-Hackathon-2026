@@ -7,7 +7,7 @@ from agents.common.observability.metrics import create_metric_collector
 
 class ReportingAgent:
     def __init__(self, model_provider: ModelProvider | None = None, artifact_store: Any = None):
-        self.model_provider = model_provider or get_provider("mock")
+        self.model_provider = model_provider or get_provider()
         self.artifact_store = artifact_store
         self.metrics = create_metric_collector()
 
@@ -26,7 +26,7 @@ class ReportingAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="reporting-agent",
-                status=TaskStatus.COMPLETED,
+                status=TaskStatus.completed,
                 summary="Report generated successfully",
                 facts=[],
                 citations=[],
@@ -43,7 +43,7 @@ class ReportingAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="reporting-agent",
-                status=TaskStatus.FAILED,
+                status=TaskStatus.failed,
                 summary=f"Report generation failed: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,

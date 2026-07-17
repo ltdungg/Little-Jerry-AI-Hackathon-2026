@@ -11,17 +11,45 @@ variable "enable_amplify" {
   type    = bool
   default = false
 }
+variable "github_access_token" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "GitHub personal access token (repo scope) used by Amplify to connect the repository."
+}
+variable "aws_region" {
+  type    = string
+  default = "ap-southeast-2"
+}
+variable "user_pool_id" {
+  type    = string
+  default = ""
+}
+variable "user_pool_client_id" {
+  type    = string
+  default = ""
+}
+
+locals {
+  frontend_env = {
+    NEXT_PUBLIC_API_URL             = var.api_url
+    NEXT_PUBLIC_ENV                 = var.environment
+    NEXT_PUBLIC_AWS_REGION          = var.aws_region
+    NEXT_PUBLIC_USER_POOL_ID        = var.user_pool_id
+    NEXT_PUBLIC_USER_POOL_CLIENT_ID = var.user_pool_client_id
+  }
+}
 
 resource "aws_amplify_app" "frontend" {
-  count       = var.enable_amplify ? 1 : 0
-  name        = "${var.project_name}-${var.environment}-frontend"
-  repository  = "https://github.com/${var.github_owner}/${var.github_repo}"
-  description = "NPO AI Platform Frontend"
+  count        = var.enable_amplify ? 1 : 0
+  name         = "${var.project_name}-${var.environment}-frontend"
+  repository   = "https://github.com/${var.github_owner}/${var.github_repo}"
+  access_token = var.github_access_token
+  description  = "NPO AI Platform Frontend"
+  # App uses Next.js static export (output: 'export'), so classic static hosting.
+  platform = "WEB"
 
-  environment_variables = {
-    NEXT_PUBLIC_API_URL = var.api_url
-    NEXT_PUBLIC_ENV     = var.environment
-  }
+  environment_variables = local.frontend_env
 
   build_spec = <<-EOT
 version: 1
@@ -30,12 +58,12 @@ frontend:
     preBuild:
       commands:
         - cd frontend
-        - npm ci
+        - npm install
     build:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: frontend/.next
+    baseDirectory: frontend/out
     files:
       - '**/*'
   cache:
@@ -62,21 +90,12 @@ resource "aws_amplify_branch" "main" {
 
   stage = var.environment == "prod" ? "PRODUCTION" : "DEVELOPMENT"
 
-  environment_variables = {
-    NEXT_PUBLIC_API_URL = var.api_url
-  }
+  environment_variables = local.frontend_env
 }
 
-resource "aws_amplify_domain_association" "frontend" {
-  count       = var.enable_amplify ? 1 : 0
-  app_id      = aws_amplify_app.frontend[0].id
-  domain_name = "${var.project_name}-${var.environment}.amplifyapp.com"
-
-  sub_domain {
-    branch_name = aws_amplify_branch.main[0].branch_name
-    prefix      = ""
-  }
-}
+# Note: Amplify automatically provides a default domain
+# (https://<branch>.<app_id>.amplifyapp.com). A custom domain association is only
+# needed for your own DNS domain, so it is intentionally omitted here.
 
 output "amplify_app_id" {
   value = var.enable_amplify ? aws_amplify_app.frontend[0].id : ""

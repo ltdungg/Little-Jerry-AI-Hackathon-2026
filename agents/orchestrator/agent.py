@@ -10,6 +10,8 @@ from agents.common.contracts.agent import (
     TaskStatus,
     TaskIntent,
 )
+import os
+
 from agents.common.model.provider import get_provider, ModelProvider
 from agents.common.observability.metrics import MetricCollector
 import structlog
@@ -24,7 +26,8 @@ MAX_CONCURRENT = 3
 class OrchestratorAgent:
     def __init__(self, mode: str = "supervisor", model_provider: ModelProvider | None = None):
         self.mode = mode
-        self.model = model_provider or get_provider("mock")
+        self.model = model_provider or get_provider()
+        self.model_id = os.getenv("BEDROCK_MODEL_ID", "apac.amazon.nova-lite-v1:0")
         self.metrics = MetricCollector()
         self._seen_plans: set[str] = set()
 
@@ -170,9 +173,9 @@ class OrchestratorAgent:
             if len(plan) == 1:
                 task = plan[0]
                 agent_name = task["agent"]
-                response = self.model.generate(
+                response = await self.model.generate(
                     prompt=f"[{agent_name}] {task['instructions']}",
-                    model_id="mock",
+                    model_id=self.model_id,
                     temperature=0.3,
                     max_tokens=2048,
                 )
@@ -206,9 +209,9 @@ class OrchestratorAgent:
 
             for task in plan:
                 agent_name = task["agent"]
-                response = self.model.generate(
+                response = await self.model.generate(
                     prompt=f"[{agent_name}] {task['instructions']}",
-                    model_id="mock",
+                    model_id=self.model_id,
                     temperature=0.3,
                     max_tokens=2048,
                 )

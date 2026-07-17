@@ -7,7 +7,7 @@ from agents.common.observability.metrics import create_metric_collector
 
 class CommunicationAgent:
     def __init__(self, model_provider: ModelProvider | None = None, slack_client: Any = None):
-        self.model_provider = model_provider or get_provider("mock")
+        self.model_provider = model_provider or get_provider()
         self.slack_client = slack_client
         self.metrics = create_metric_collector()
 
@@ -31,7 +31,7 @@ class CommunicationAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="communication-agent",
-                status=TaskStatus.PENDING_CONFIRMATION,
+                status=TaskStatus.waiting_for_user,
                 summary="Communication draft generated.",
                 facts=[],
                 citations=[],
@@ -48,7 +48,7 @@ class CommunicationAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="communication-agent",
-                status=TaskStatus.FAILED,
+                status=TaskStatus.failed,
                 summary=f"Communication failed: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,

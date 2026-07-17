@@ -14,6 +14,13 @@ log_retention_days = 30
 
 allowed_origins = ["http://localhost:3000"]
 
+# ---- Frontend (Amplify) ----
+enable_amplify = true
+github_owner   = "ltdungg"
+github_repo    = "Little-Jerry-AI-Hackathon-2026"
+github_branch  = "main"
+# github_access_token is a secret — provide via env: $env:TF_VAR_github_access_token = "<PAT>"
+
 # Amazon Nova via APAC cross-region inference profile (cheap, no Anthropic form,
 # on-demand not supported for direct model IDs in ap-southeast-2).
 agent_configs = {

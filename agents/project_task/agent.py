@@ -7,7 +7,7 @@ from agents.common.observability.metrics import create_metric_collector
 
 class ProjectTaskAgent:
     def __init__(self, model_provider: ModelProvider | None = None, gateway_client: Any = None):
-        self.model_provider = model_provider or get_provider("mock")
+        self.model_provider = model_provider or get_provider()
         self.gateway_client = gateway_client
         self.metrics = create_metric_collector()
 
@@ -19,7 +19,7 @@ class ProjectTaskAgent:
                 tasks = await self.gateway_client.list_project_tasks()
                 summary = f"Retrieved {len(tasks)} tasks."
                 facts = [Fact(key="tasks", value=str(tasks))]
-                status = TaskStatus.COMPLETED
+                status = TaskStatus.completed
                 proposed_actions = []
             elif request.intent == "task_write":
                 # Logic for writing tasks (dry_run)
@@ -27,7 +27,7 @@ class ProjectTaskAgent:
                 summary = "Task update proposed."
                 facts = [Fact(key="proposal", value=result.id)]
                 proposed_actions = [{"type": "confirm_task_update", "token": result.confirmation_token}]
-                status = TaskStatus.PENDING_CONFIRMATION
+                status = TaskStatus.waiting_for_user
             else:
                 raise ValueError("Unsupported intent")
 
@@ -53,7 +53,7 @@ class ProjectTaskAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="project-task-agent",
-                status=TaskStatus.FAILED,
+                status=TaskStatus.failed,
                 summary=f"Task operation failed: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,

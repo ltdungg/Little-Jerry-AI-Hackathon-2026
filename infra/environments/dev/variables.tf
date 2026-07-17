@@ -87,3 +87,9 @@ variable "github_branch" {
   type    = string
   default = "main"
 }
+variable "github_access_token" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "GitHub PAT (repo scope) for Amplify to connect the repository. Pass via TF_VAR_github_access_token or -var."
+}

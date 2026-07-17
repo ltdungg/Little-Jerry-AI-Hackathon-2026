@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 from datetime import datetime, timezone
@@ -9,7 +10,8 @@ from agents.common.observability.metrics import create_metric_collector
 
 class KnowledgeAgent:
     def __init__(self, model_provider: ModelProvider | None = None):
-        self.model_provider = model_provider or get_provider("mock")
+        self.model_provider = model_provider or get_provider()
+        self.model_id = os.getenv("BEDROCK_MODEL_ID", "apac.amazon.nova-lite-v1:0")
         self.metrics = create_metric_collector()
 
     async def handle(self, request: AgentTaskRequest) -> AgentTaskResult:
@@ -23,7 +25,7 @@ class KnowledgeAgent:
 
             response = await self.model_provider.generate(
                 prompt=prompt,
-                model_id="default",
+                model_id=self.model_id,
                 temperature=0.3,
                 max_tokens=2048,
             )
@@ -48,7 +50,7 @@ class KnowledgeAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="knowledge-agent",
-                status=TaskStatus.COMPLETED,
+                status=TaskStatus.completed,
                 summary=response.text[:200] if response.text else "No results found",
                 facts=facts,
                 citations=citations,
@@ -65,7 +67,7 @@ class KnowledgeAgent:
                 workflow_id=request.workflow_id,
                 task_id=request.task_id,
                 agent_name="knowledge-agent",
-                status=TaskStatus.FAILED,
+                status=TaskStatus.failed,
                 summary=f"Knowledge retrieval failed: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,
