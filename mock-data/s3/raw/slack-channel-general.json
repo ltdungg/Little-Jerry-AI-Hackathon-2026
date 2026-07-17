@@ -1,0 +1,61 @@
+{
+  "_meta": {
+    "object_key": "ten_01JABCDEF001/slack/con_01JSLACK001/C01ABCDEF01/2026/07/11/a1b2c3d4/1752208800.json",
+    "bucket": "npo-ai-raw-dev",
+    "content_type": "application/json",
+    "classification": "internal",
+    "tenant_id": "ten_01JABCDEF001",
+    "connector_id": "con_01JSLACK001",
+    "source_system": "slack",
+    "sync_id": "syn_01JSYNC001"
+  },
+  "payload": {
+    "channel_id": "C01ABCDEF01",
+    "channel_name": "general",
+    "workspace_id": "T01GREEN001",
+    "fetched_at": "2026-07-11T06:00:00Z",
+    "thread": {
+      "thread_ts": "1752208800.000100",
+      "reply_count": 4,
+      "reply_users": ["U01MINH001", "U02SARAH02", "U03JOHN03"],
+      "messages": [
+        {
+          "user_id": "U01MINH001",
+          "user_display_name": "Minh Nguyen",
+          "text": "Team, quick reminder: the Q3 grant report is due next Friday. Please update your task status in the tracker by Wednesday.",
+          "ts": "1752208800.000100",
+          "posted_at_utc": "2026-07-11T10:00:00Z"
+        },
+        {
+          "user_id": "U02SARAH02",
+          "user_display_name": "Sarah Pham",
+          "text": "Got it, Minh. I'll have the volunteer metrics ready by Tuesday.",
+          "ts": "1752209100.000200",
+          "posted_at_utc": "2026-07-11T10:05:00Z"
+        },
+        {
+          "user_id": "U03JOHN03",
+          "user_display_name": "John Doe",
+          "text": "Budget summary is almost done. Just waiting on the equipment receipts from the Can Gio cleanup.",
+          "ts": "1752209400.000300",
+          "posted_at_utc": "2026-07-11T10:10:00Z"
+        },
+        {
+          "user_id": "U01MINH001",
+          "user_display_name": "Minh Nguyen",
+          "text": "Thanks both. @john — do we have a timeline on those receipts?",
+          "ts": "1752209700.000400",
+          "posted_at_utc": "2026-07-11T10:15:00Z"
+        },
+        {
+          "user_id": "U03JOHN03",
+          "user_display_name": "John Doe",
+          "text": "Supplier said they'll send the invoice by Monday. I'll follow up if it doesn't arrive.",
+          "ts": "1752210000.000500",
+          "posted_at_utc": "2026-07-11T10:20:00Z"
+        }
+      ]
+    },
+    "content_hash": "sha256:a1b2c3d4e5f67890abcdef1234567890abcdef1234567890abcdef1234567890"
+  }
+}

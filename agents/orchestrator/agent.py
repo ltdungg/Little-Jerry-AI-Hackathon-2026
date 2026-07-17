@@ -57,12 +57,12 @@ class OrchestratorAgent:
             ]
 
         # Complex requests: supervisor mode
-        tasks = []
+        tasks: list[dict[str, Any]] = []
         if intent in (TaskIntent.report_generation, TaskIntent.communication):
             tasks.append(
                 {
                     "agent": "knowledge",
-                    "instructions": f"Retrieve context for: {request.instructions}",
+                    "instructions": f"Truy xuất ngữ cảnh cho: {request.instructions}",
                     "inputs": request.inputs,
                     "depth": 1,
                 }
@@ -70,7 +70,7 @@ class OrchestratorAgent:
             tasks.append(
                 {
                     "agent": "project_task",
-                    "instructions": f"Get project status for: {request.instructions}",
+                    "instructions": f"Lấy trạng thái dự án cho: {request.instructions}",
                     "inputs": request.inputs,
                     "depth": 1,
                 }
@@ -132,12 +132,12 @@ class OrchestratorAgent:
                     task_id=request.task_id,
                     agent_name="orchestrator",
                     status=TaskStatus.failed,
-                    summary="Repeated plan detected. Possible agent loop.",
+                    summary="Phát hiện kế hoạch lặp lại. Có thể có vòng lặp agent.",
                     facts=[],
                     citations=[],
                     proposed_actions=[],
                     artifacts=[],
-                    warnings=["Repeated plan detected"],
+                    warnings=["Phát hiện kế hoạch lặp lại"],
                     confidence=0.0,
                     retryable=False,
                     metrics=AgentMetrics(
@@ -154,7 +154,7 @@ class OrchestratorAgent:
                     task_id=request.task_id,
                     agent_name="orchestrator",
                     status=TaskStatus.completed,
-                    summary="No specialist tasks needed for this request.",
+                    summary="Yêu cầu này không cần tác vụ chuyên biệt nào.",
                     facts=[],
                     citations=[],
                     proposed_actions=[],
@@ -185,7 +185,7 @@ class OrchestratorAgent:
                     task_id=request.task_id,
                     agent_name="orchestrator",
                     status=TaskStatus.completed,
-                    summary=response.text[:200] if response.text else "Completed",
+                    summary=response.text[:200] if response.text else "Hoàn thành",
                     facts=[],
                     citations=[],
                     proposed_actions=[],
@@ -227,7 +227,7 @@ class OrchestratorAgent:
                 task_id=request.task_id,
                 agent_name="orchestrator",
                 status=TaskStatus.completed,
-                summary=f"Supervisor plan completed with {len(plan)} specialist tasks.",
+                summary=f"Đã hoàn thành kế hoạch điều phối với {len(plan)} tác vụ chuyên biệt.",
                 facts=all_facts,
                 citations=all_citations,
                 proposed_actions=[],
@@ -250,7 +250,7 @@ class OrchestratorAgent:
                 task_id=request.task_id,
                 agent_name="orchestrator",
                 status=TaskStatus.failed,
-                summary=f"Orchestrator error: {str(e)}",
+                summary=f"Lỗi điều phối: {str(e)}",
                 facts=[],
                 citations=[],
                 proposed_actions=[],

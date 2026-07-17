@@ -1,0 +1,16 @@
+{
+  "tenant_id": "ten_01JABCDEF001",
+  "project_id": "prj_01JGREEN01",
+  "source_system": "slack",
+  "connector_id": "con_01JSLACK001",
+  "document_id": "doc_01JSLAC001",
+  "canonical_source_id": "slack:T01GREEN001:C01ABCDEF01:1752208800.000100",
+  "source_uri": "https://greenhope.slack.com/archives/C01ABCDEF01/p1752208800000100",
+  "title": "Slack thread — Q3 Grant Report Deadline",
+  "allowed_roles": ["npo_staff", "project_manager"],
+  "allowed_user_ids": [],
+  "classification": "internal",
+  "last_modified_at": "2026-07-11T10:20:00Z",
+  "content_hash": "sha256:slac001hash1234567890abcdef1234567890abcdef1234567890abcdef12",
+  "schema_version": 1
+}

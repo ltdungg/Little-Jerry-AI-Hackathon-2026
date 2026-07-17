@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "object_key": "ten_01JABCDEF001/sharepoint/con_01JSP000001/item-001-procurement-policy/2026/06/15/a1b2c3d4/20260615.json",
+    "bucket": "npo-ai-raw-dev",
+    "content_type": "application/json",
+    "classification": "internal",
+    "tenant_id": "ten_01JABCDEF001",
+    "connector_id": "con_01JSP000001",
+    "source_system": "sharepoint",
+    "sync_id": "syn_01JSYNC002"
+  },
+  "payload": {
+    "site_id": "greenhope.sharepoint.com,abc123-def456",
+    "site_name": "Green Hope Foundation",
+    "item_id": "item-001-procurement-policy",
+    "item_name": "Procurement Policy 2026.pdf",
+    "item_path": "/sites/greenhope/Shared Documents/Policy/Procurement Policy 2026.pdf",
+    "web_url": "https://greenhope.sharepoint.com/sites/greenhope/Shared%20Documents/Policy/Procurement%20Policy%202026.pdf",
+    "file_type": "pdf",
+    "file_size_bytes": 245000,
+    "content_hash": "sha256:a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+    "metadata": {
+      "title": "Procurement Policy 2026",
+      "author": "Minh Nguyen",
+      "last_modified": "2026-06-15T08:30:00Z",
+      "created": "2026-01-10T09:00:00Z",
+      "version": "3.2"
+    },
+    "extracted_text_preview": "Green Hope Foundation — Procurement Policy 2026\nSection 1: General Principles\n1.1 All procurement activities must comply with donor requirements...\nSection 4: Approval Process\n4.1 Purchases under $500: Project Manager approval\n4.2 Purchases $500–$5,000: Dual signature required (Project Manager + Finance)\n4.3 Purchases over $5,000: Board approval required...",
+    "fetched_at": "2026-07-11T06:05:00Z"
+  }
+}

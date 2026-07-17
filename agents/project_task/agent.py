@@ -17,19 +17,19 @@ class ProjectTaskAgent:
             if request.intent == "task_query":
                 # Logic for reading tasks
                 tasks = await self.gateway_client.list_project_tasks()
-                summary = f"Retrieved {len(tasks)} tasks."
+                summary = f"Đã lấy {len(tasks)} tác vụ."
                 facts = [Fact(key="tasks", value=str(tasks))]
                 status = TaskStatus.completed
                 proposed_actions = []
             elif request.intent == "task_write":
                 # Logic for writing tasks (dry_run)
                 result = await self.gateway_client.update_task(request.instructions, dry_run=True)
-                summary = "Task update proposed."
+                summary = "Đã đề xuất cập nhật tác vụ."
                 facts = [Fact(key="proposal", value=result.id)]
                 proposed_actions = [{"type": "confirm_task_update", "token": result.confirmation_token}]
                 status = TaskStatus.waiting_for_user
             else:
-                raise ValueError("Unsupported intent")
+                raise ValueError("Ý định không được hỗ trợ")
 
             latency = int((time.time() - start) * 1000)
             return AgentTaskResult(
@@ -54,7 +54,7 @@ class ProjectTaskAgent:
                 task_id=request.task_id,
                 agent_name="project-task-agent",
                 status=TaskStatus.failed,
-                summary=f"Task operation failed: {str(e)}",
+                summary=f"Thao tác tác vụ thất bại: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,
                 metrics=AgentMetrics(latency_ms=latency, input_tokens=0, output_tokens=0),

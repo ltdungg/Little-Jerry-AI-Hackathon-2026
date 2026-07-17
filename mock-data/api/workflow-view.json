@@ -1,0 +1,64 @@
+{
+  "_description": "WorkflowView — safe API response for workflow detail",
+  "workflow_id": "wf_01JGRNT001",
+  "status": "waiting_for_user",
+  "request_summary": "Generate Q3 grant report for Green Hope Environmental Initiative",
+  "project": {
+    "project_id": "prj_01JGREEN01",
+    "name": "Green Hope Environmental Initiative"
+  },
+  "current_phase": "awaiting_budget_data",
+  "requires_user_action": true,
+  "progress": {
+    "completed": 2,
+    "total": 4
+  },
+  "events": [
+    {
+      "event_type": "workflow_created",
+      "public_message": "Grant report workflow initiated",
+      "actor_type": "user",
+      "created_at": "2026-07-15T09:00:00Z"
+    },
+    {
+      "event_type": "agent_task_completed",
+      "public_message": "Knowledge sources searched — procurement policy and budget data retrieved",
+      "actor_type": "agent",
+      "created_at": "2026-07-15T09:00:20Z"
+    },
+    {
+      "event_type": "approval_requested",
+      "public_message": "User confirmation needed: mark grant report data collection as complete",
+      "actor_type": "agent",
+      "created_at": "2026-07-15T09:01:00Z"
+    }
+  ],
+  "citations": [
+    {
+      "citation_id": "cit_01JPROCO001",
+      "document_title": "Procurement Policy 2026",
+      "excerpt": "Purchases $500–$5,000: Dual signature required"
+    },
+    {
+      "citation_id": "cit_01JBUDG001",
+      "document_title": "Q2 2026 Budget Report",
+      "excerpt": "Total Allocation: $150,000. Spent to Date: $102,000 (68%)."
+    }
+  ],
+  "artifacts": [],
+  "approval": {
+    "approval_id": "apr_01J001001",
+    "action_type": "update_task",
+    "action_preview": {
+      "entity_id": "tsk_01JSEED002",
+      "before": {"status": "in_progress"},
+      "after": {"status": "done"}
+    },
+    "status": "pending",
+    "expires_at": "2026-07-16T09:11:00Z"
+  },
+  "warnings": ["Budget section pending — waiting on equipment receipts"],
+  "retryable": false,
+  "created_at": "2026-07-15T09:00:00Z",
+  "updated_at": "2026-07-15T09:01:00Z"
+}

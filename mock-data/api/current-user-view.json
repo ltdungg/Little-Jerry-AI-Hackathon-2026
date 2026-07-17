@@ -1,0 +1,36 @@
+{
+  "_description": "CurrentUserView — safe API response for authenticated user",
+  "user_id": "user-minh",
+  "display_name": "Minh Nguyen",
+  "locale": "vi-VN",
+  "timezone": "Asia/Bangkok",
+  "roles": ["project_manager"],
+  "capabilities": [
+    "knowledge:read",
+    "project:read",
+    "project:write",
+    "task:read",
+    "task:write",
+    "risk:read",
+    "report:create",
+    "slack:draft",
+    "slack:send"
+  ],
+  "projects": [
+    {
+      "project_id": "prj_01JGREEN01",
+      "name": "Green Hope Environmental Initiative",
+      "role": "project_manager"
+    },
+    {
+      "project_id": "prj_01JOCEAN01",
+      "name": "Ocean Rescue Marine Conservation",
+      "role": "npo_staff"
+    },
+    {
+      "project_id": "prj_01JHEALTH1",
+      "name": "Community Health Outreach",
+      "role": "npo_staff"
+    }
+  ]
+}

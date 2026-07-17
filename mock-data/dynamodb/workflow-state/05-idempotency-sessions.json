@@ -1,0 +1,78 @@
+{
+  "_description": "WorkflowState — Idempotency records and session items",
+  "items": [
+    {
+      "_comment": "Idempotency record — completed workflow creation",
+      "PK": "IDEMPOTENCY#ten_01JABCDEF001#user-minh#hash-key-001",
+      "SK": "REQUEST",
+      "entity_type": "IDEMPOTENCY_RECORD",
+      "tenant_id": "ten_01JABCDEF001",
+      "user_id": "user-minh",
+      "idempotency_key": "idem-01JWKLY001-key",
+      "operation": "create_workflow",
+      "request_hash": "sha256:wf001reqhash1234567890abcdef1234567890abcdef",
+      "status": "completed",
+      "workflow_id": "wf_01JWKLY001",
+      "resource_id": "rpt_01JWKLY001",
+      "response_ref": "inline",
+      "created_at": "2026-07-01T08:00:00Z",
+      "expires_at": 1785734550
+    },
+    {
+      "_comment": "Idempotency record — duplicate request (same hash)",
+      "PK": "IDEMPOTENCY#ten_01JABCDEF001#user-minh#hash-key-002",
+      "SK": "REQUEST",
+      "entity_type": "IDEMPOTENCY_RECORD",
+      "tenant_id": "ten_01JABCDEF001",
+      "user_id": "user-minh",
+      "idempotency_key": "idem-01JWKLY002-key",
+      "operation": "create_workflow",
+      "request_hash": "sha256:wf002reqhash1234567890abcdef1234567890abcdef",
+      "status": "completed",
+      "workflow_id": "wf_01JWKLY002",
+      "resource_id": "rpt_01JWKLY002",
+      "response_ref": "inline",
+      "created_at": "2026-07-08T08:00:00Z",
+      "expires_at": 1786339350
+    },
+    {
+      "_comment": "Session metadata",
+      "PK": "SESSION#ses_01JSESS001",
+      "SK": "META",
+      "entity_type": "SESSION",
+      "session_id": "ses_01JSESS001",
+      "tenant_id": "ten_01JABCDEF001",
+      "user_id": "user-minh",
+      "project_id": "prj_01JGREEN01",
+      "title": "Green Hope weekly status report",
+      "status": "active",
+      "last_message_at": "2026-07-01T08:00:00Z",
+      "message_count": 3,
+      "agentcore_session_id": "runtime-sess-001",
+      "created_at": "2026-07-01T08:00:00Z",
+      "expires_at": 1788230550
+    },
+    {
+      "_comment": "User workflow projection",
+      "PK": "TENANT#ten_01JABCDEF001#USER#user-minh",
+      "SK": "WORKFLOW#2026-07-01T08:00:00Z#wf_01JWKLY001",
+      "entity_type": "USER_WORKFLOW_PROJECTION",
+      "workflow_id": "wf_01JWKLY001",
+      "request_type": "weekly_report",
+      "status": "completed",
+      "project_name": "Green Hope Environmental Initiative",
+      "created_at": "2026-07-01T08:00:00Z"
+    },
+    {
+      "_comment": "Project workflow projection",
+      "PK": "TENANT#ten_01JABCDEF001#PROJECT#prj_01JGREEN01",
+      "SK": "WORKFLOW#2026-07-01T08:00:00Z#wf_01JWKLY001",
+      "entity_type": "PROJECT_WORKFLOW_PROJECTION",
+      "workflow_id": "wf_01JWKLY001",
+      "request_type": "weekly_report",
+      "status": "completed",
+      "user_name": "Minh Nguyen",
+      "created_at": "2026-07-01T08:00:00Z"
+    }
+  ]
+}

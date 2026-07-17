@@ -1,0 +1,16 @@
+{
+  "tenant_id": "ten_01JABCDEF001",
+  "project_id": "prj_01JGREEN01",
+  "source_system": "sharepoint",
+  "connector_id": "con_01JSP000001",
+  "document_id": "doc_01JPROCO01",
+  "canonical_source_id": "sharepoint:greenhope.sharepoint.com:item-001-procurement-policy",
+  "source_uri": "https://greenhope.sharepoint.com/sites/greenhope/Shared%20Documents/Policy/Procurement%20Policy%202026.pdf",
+  "title": "Procurement Policy 2026",
+  "allowed_roles": ["npo_staff", "project_manager", "program_director"],
+  "allowed_user_ids": [],
+  "classification": "internal",
+  "last_modified_at": "2026-06-15T08:30:00Z",
+  "content_hash": "sha256:a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+  "schema_version": 1
+}

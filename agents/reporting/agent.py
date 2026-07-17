@@ -15,7 +15,7 @@ class ReportingAgent:
         start = time.time()
         try:
             # Generate report from inputs
-            prompt = f"Create a report for: {request.instructions}\nContext: {request.inputs}"
+            prompt = f"Soạn một báo cáo cho yêu cầu: {request.instructions}\nNgữ cảnh: {request.inputs}"
             response = await self.model_provider.generate(prompt=prompt, model_id="default")
 
             # Store report artifact
@@ -27,7 +27,7 @@ class ReportingAgent:
                 task_id=request.task_id,
                 agent_name="reporting-agent",
                 status=TaskStatus.completed,
-                summary="Report generated successfully",
+                summary="Đã tạo báo cáo thành công",
                 facts=[],
                 citations=[],
                 proposed_actions=[],
@@ -44,7 +44,7 @@ class ReportingAgent:
                 task_id=request.task_id,
                 agent_name="reporting-agent",
                 status=TaskStatus.failed,
-                summary=f"Report generation failed: {str(e)}",
+                summary=f"Tạo báo cáo thất bại: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,
                 metrics=AgentMetrics(latency_ms=latency, input_tokens=0, output_tokens=0),

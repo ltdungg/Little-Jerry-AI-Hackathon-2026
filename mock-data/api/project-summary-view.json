@@ -1,0 +1,19 @@
+{
+  "_description": "ProjectSummaryView — safe API response for project list",
+  "project_id": "prj_01JGREEN01",
+  "name": "Green Hope Environmental Initiative",
+  "program_name": "Community Resilience Program",
+  "status": "active",
+  "health": "amber",
+  "manager": {
+    "user_id": "user-minh",
+    "display_name": "Minh Nguyen"
+  },
+  "next_milestone": {
+    "name": "Mangrove Planting Phase 1 Complete",
+    "target_date": "2026-09-30"
+  },
+  "overdue_task_count": 1,
+  "high_risk_count": 2,
+  "data_as_of": "2026-07-14T14:00:00Z"
+}

@@ -1,0 +1,71 @@
+{
+  "_description": "DomainEvent envelope — audit trail events",
+  "events": [
+    {
+      "event_id": "evt_01JDE00001",
+      "event_type": "task.updated.v1",
+      "occurred_at": "2026-07-14T10:00:00Z",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JGREEN01",
+      "actor": {
+        "actor_type": "user",
+        "actor_id": "user-john"
+      },
+      "correlation_id": "corr_01J001001",
+      "causation_id": "wf_01JGRNT001",
+      "entity": {
+        "entity_type": "task",
+        "entity_id": "tsk_01JSEED004",
+        "version": 5
+      },
+      "safe_changes": {
+        "changed_fields": ["blocked_reason", "updated_by"]
+      },
+      "schema_version": 1
+    },
+    {
+      "event_id": "evt_01JDE00002",
+      "event_type": "risk.created.v1",
+      "occurred_at": "2026-07-11T10:10:00Z",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JGREEN01",
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "orchestrator-agent"
+      },
+      "correlation_id": "corr_01JSLK001",
+      "causation_id": null,
+      "entity": {
+        "entity_type": "risk",
+        "entity_id": "rsk_01JSUPP001",
+        "version": 1
+      },
+      "safe_changes": {
+        "changed_fields": ["title", "severity", "category"]
+      },
+      "schema_version": 1
+    },
+    {
+      "event_id": "evt_01JDE00003",
+      "event_type": "workflow.completed.v1",
+      "occurred_at": "2026-07-01T08:02:30Z",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JGREEN01",
+      "actor": {
+        "actor_type": "agent",
+        "actor_id": "reporting-agent"
+      },
+      "correlation_id": "corr_01JWKLY001",
+      "causation_id": "wf_01JWKLY001",
+      "entity": {
+        "entity_type": "workflow",
+        "entity_id": "wf_01JWKLY001",
+        "version": 6
+      },
+      "safe_changes": {
+        "changed_fields": ["status", "report_id", "result_summary"]
+      },
+      "schema_version": 1
+    }
+  ]
+}

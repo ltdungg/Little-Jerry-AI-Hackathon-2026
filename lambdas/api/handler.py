@@ -47,12 +47,12 @@ def handle_chat(event, request_ctx):
     """Synchronous chat: forward the user's message to the Orchestrator AgentCore
     runtime and return its result."""
     if not ORCHESTRATOR_RUNTIME_ARN:
-        return build_error_response(503, "AGENT_UNAVAILABLE", "Orchestrator runtime not configured")
+        return build_error_response(503, "AGENT_UNAVAILABLE", "Chưa cấu hình orchestrator runtime")
 
     body = parse_body(event)
     message = (body.get("message") or "").strip()
     if not message:
-        return build_error_response(400, "BAD_REQUEST", "message is required")
+        return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung tin nhắn (message)")
 
     project_id = body.get("project_id")
     workflow_id = str(uuid.uuid4())
@@ -91,7 +91,7 @@ def handle_chat(event, request_ctx):
         return build_response(200, {"workflow_id": workflow_id, "result": result})
     except Exception as e:
         logger.error("orchestrator_invoke_failed", error=str(e), workflow_id=workflow_id)
-        return build_error_response(502, "AGENT_ERROR", "Failed to reach orchestrator agent")
+        return build_error_response(502, "AGENT_ERROR", "Không kết nối được tới agent điều phối")
 
 def handle_create_workflow(event, request_ctx):
     # Implementation logic for async workflow

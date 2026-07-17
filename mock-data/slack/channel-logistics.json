@@ -1,0 +1,50 @@
+{
+  "channel": {
+    "id": "C03ABCDEF03",
+    "name": "logistics",
+    "is_channel": true,
+    "topic": "Logistics & Supply Chain",
+    "purpose": "Coordination of supplies, equipment, and delivery schedules",
+    "created": 1700000000,
+    "creator": "U03JOHN03"
+  },
+  "messages": [
+    {
+      "type": "message",
+      "user": "U03JOHN03",
+      "text": "Delivery schedule update: 500 mangrove seedling trays arriving Tuesday. Need 3 volunteers for unloading at the Can Gio depot.",
+      "ts": "1752122400.000100",
+      "thread_ts": "1752122400.000100",
+      "reply_count": 2,
+      "replies": [
+        {
+          "user": "U02SARAH02",
+          "text": "I can coordinate the volunteers. We have 8 people confirmed for Tuesday.",
+          "ts": "1752122700.000200"
+        },
+        {
+          "user": "U03JOHN03",
+          "text": "Perfect. The truck arrives at 7am. Please have everyone at the depot by 6:45am.",
+          "ts": "1752123000.000300"
+        }
+      ],
+      "channel_id": "C03ABCDEF03"
+    },
+    {
+      "type": "message",
+      "user": "U03JOHN03",
+      "text": "⚠️ Supplier issue: The water quality testing kit order (PO-2026-0189) has been delayed. Original delivery was July 15, now pushed to July 29.",
+      "ts": "1752208800.000400",
+      "thread_ts": "1752208800.000400",
+      "reply_count": 1,
+      "replies": [
+        {
+          "user": "U01MINH001",
+          "text": "This impacts the monitoring milestone. Let's discuss alternatives in the next standup.",
+          "ts": "1752209100.000500"
+        }
+      ],
+      "channel_id": "C03ABCDEF03"
+    }
+  ]
+}

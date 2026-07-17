@@ -1,0 +1,9 @@
+{
+  "_description": "Knowledge Base retrieval filter — built from trusted RequestContext, NOT from frontend",
+  "tenant_id": "ten_01JABCDEF001",
+  "project_ids": ["prj_01JGREEN01"],
+  "allowed_roles": ["project_manager"],
+  "allowed_user_id": "user-minh",
+  "allowed_sources": ["sharepoint", "slack"],
+  "maximum_classification": "internal"
+}

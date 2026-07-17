@@ -15,7 +15,7 @@ class CommunicationAgent:
         start = time.time()
         try:
             # Generate draft
-            prompt = f"Draft communication for: {request.instructions}\nContext: {request.inputs}"
+            prompt = f"Soạn nội dung liên lạc/thông báo cho yêu cầu: {request.instructions}\nNgữ cảnh: {request.inputs}"
             response = await self.model_provider.generate(prompt=prompt, model_id="default")
 
             # Create proposed action with confirmation token
@@ -32,7 +32,7 @@ class CommunicationAgent:
                 task_id=request.task_id,
                 agent_name="communication-agent",
                 status=TaskStatus.waiting_for_user,
-                summary="Communication draft generated.",
+                summary="Đã tạo bản nháp nội dung liên lạc.",
                 facts=[],
                 citations=[],
                 proposed_actions=[proposed_action],
@@ -49,7 +49,7 @@ class CommunicationAgent:
                 task_id=request.task_id,
                 agent_name="communication-agent",
                 status=TaskStatus.failed,
-                summary=f"Communication failed: {str(e)}",
+                summary=f"Liên lạc thất bại: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,
                 metrics=AgentMetrics(latency_ms=latency, input_tokens=0, output_tokens=0),

@@ -1,0 +1,64 @@
+{
+  "_description": "AgentTaskResult — knowledge-agent search result",
+  "workflow_id": "wf_01JWKLY001",
+  "task_id": "agt_01JK00101",
+  "agent_name": "knowledge-agent",
+  "status": "completed",
+  "summary": "Retrieved procurement policy requirements and Q2 budget summary from approved sources. Key findings: dual signature required for purchases $500–$5,000; budget at 68% spend with $48,000 remaining.",
+  "facts": [
+    {
+      "key": "procurement_threshold_dual_signature",
+      "value": "Purchases $500–$5,000 require dual signature (Project Manager + Finance)",
+      "source_citation_id": "cit_01JPROCO001"
+    },
+    {
+      "key": "q2_budget_spend_pct",
+      "value": "68% ($102,000 of $150,000)",
+      "source_citation_id": "cit_01JBUDG001"
+    },
+    {
+      "key": "q2_budget_remaining",
+      "value": "$48,000 remaining",
+      "source_citation_id": "cit_01JBUDG001"
+    },
+    {
+      "key": "q3_projected_spend",
+      "value": "$42,000 expected in Q3",
+      "source_citation_id": "cit_01JBUDG001"
+    }
+  ],
+  "citations": [
+    {
+      "citation_id": "cit_01JPROCO001",
+      "source_system": "sharepoint",
+      "document_id": "doc_01JPROCO01",
+      "document_title": "Procurement Policy 2026",
+      "source_uri": "https://greenhope.sharepoint.com/sites/greenhope/Shared%20Documents/Policy/Procurement%20Policy%202026.pdf",
+      "s3_uri": "s3://npo-ai-curated-dev/ten_01JABCDEF001/prj_01JGREEN01/sharepoint/doc_01JPROCO01.txt",
+      "page_or_section": "Section 4: Approval Process",
+      "excerpt": "Purchases $500–$5,000: Dual signature required (Project Manager + Finance)",
+      "last_modified_at": "2026-06-15T08:30:00Z"
+    },
+    {
+      "citation_id": "cit_01JBUDG001",
+      "source_system": "sharepoint",
+      "document_id": "doc_01JBUDG01",
+      "document_title": "Q2 2026 Budget Report",
+      "source_uri": "https://greenhope.sharepoint.com/sites/greenhope/Shared%20Documents/Finance/Q2%202026%20Budget%20Report.xlsx",
+      "s3_uri": "s3://npo-ai-curated-dev/ten_01JABCDEF001/prj_01JGREEN01/sharepoint/doc_01JBUDG001.txt",
+      "page_or_section": "Budget Summary",
+      "excerpt": "Total Allocation: $150,000. Spent to Date: $102,000 (68%). Remaining: $48,000 (32%).",
+      "last_modified_at": "2026-07-05T16:45:00Z"
+    }
+  ],
+  "proposed_actions": [],
+  "artifacts": [],
+  "warnings": [],
+  "confidence": 0.92,
+  "retryable": false,
+  "metrics": {
+    "latency_ms": 15000,
+    "input_tokens": 2500,
+    "output_tokens": 800
+  }
+}

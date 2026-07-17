@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "object_key": "ten_01JABCDEF001/sharepoint/con_01JSP000001/item-004-budget-report/2026/07/05/b2c3d4e5/20260705.json",
+    "bucket": "npo-ai-raw-dev",
+    "content_type": "application/json",
+    "classification": "internal",
+    "tenant_id": "ten_01JABCDEF001",
+    "connector_id": "con_01JSP000001",
+    "source_system": "sharepoint",
+    "sync_id": "syn_01JSYNC002"
+  },
+  "payload": {
+    "site_id": "greenhope.sharepoint.com,abc123-def456",
+    "site_name": "Green Hope Foundation",
+    "item_id": "item-004-budget-report",
+    "item_name": "Q2 2026 Budget Report.xlsx",
+    "item_path": "/sites/greenhope/Shared Documents/Finance/Q2 2026 Budget Report.xlsx",
+    "web_url": "https://greenhope.sharepoint.com/sites/greenhope/Shared%20Documents/Finance/Q2%202026%20Budget%20Report.xlsx",
+    "file_type": "xlsx",
+    "file_size_bytes": 156000,
+    "content_hash": "sha256:d4e5f6789012345678901234567890abcdef1234567890abcdef123456789012",
+    "metadata": {
+      "title": "Q2 2026 Budget Report",
+      "author": "John Doe",
+      "last_modified": "2026-07-05T16:45:00Z",
+      "created": "2026-04-01T08:00:00Z",
+      "version": "5.1"
+    },
+    "extracted_text_preview": "Green Hope Foundation — Q2 2026 Budget Report\nProject: Green Hope Environmental Initiative\nPeriod: April–June 2026\n\nBudget Summary:\nTotal Allocation: $150,000\nSpent to Date: $102,000 (68%)\nRemaining: $48,000 (32%)\n\nKey Expenses:\n- Seedlings & Planting: $32,000 (85% of $37,500 allocation)\n- Volunteer Coordination: $18,500 (62% of $30,000)\n- Equipment & Tools: $24,000 (80% of $30,000)\n- Water Quality Testing: $12,000 (60% of $20,000)\n- Administration: $15,500 (78% of $20,000)...",
+    "fetched_at": "2026-07-11T06:10:00Z"
+  }
+}

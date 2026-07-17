@@ -1,0 +1,109 @@
+{
+  "_description": "BusinessData — Project member items (PK: TENANT#<tenantId>#PROJECT#<projectId>, SK: MEMBER#<userId>)",
+  "items": [
+    {
+      "PK": "TENANT#ten_01JABCDEF001#PROJECT#prj_01JGREEN01",
+      "SK": "MEMBER#user-minh",
+      "entity_type": "PROJECT_MEMBER",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JGREEN01",
+      "user_id": "user-minh",
+      "project_role": "project_manager",
+      "capabilities": [
+        "project:read",
+        "task:read",
+        "task:write",
+        "risk:read",
+        "risk:write",
+        "report:create",
+        "slack:draft",
+        "slack:send"
+      ],
+      "status": "active",
+      "joined_at": "2026-01-01T00:00:00Z",
+      "version": 1
+    },
+    {
+      "PK": "TENANT#ten_01JABCDEF001#PROJECT#prj_01JGREEN01",
+      "SK": "MEMBER#user-sarah",
+      "entity_type": "PROJECT_MEMBER",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JGREEN01",
+      "user_id": "user-sarah",
+      "project_role": "npo_staff",
+      "capabilities": [
+        "project:read",
+        "task:read",
+        "task:write",
+        "slack:draft"
+      ],
+      "status": "active",
+      "joined_at": "2026-01-15T00:00:00Z",
+      "version": 1
+    },
+    {
+      "PK": "TENANT#ten_01JABCDEF001#PROJECT#prj_01JGREEN01",
+      "SK": "MEMBER#user-john",
+      "entity_type": "PROJECT_MEMBER",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JGREEN01",
+      "user_id": "user-john",
+      "project_role": "program_director",
+      "capabilities": [
+        "project:read",
+        "project:write",
+        "task:read",
+        "task:write",
+        "risk:read",
+        "risk:write",
+        "report:create",
+        "slack:draft",
+        "slack:send"
+      ],
+      "status": "active",
+      "joined_at": "2026-01-01T00:00:00Z",
+      "version": 1
+    },
+    {
+      "PK": "TENANT#ten_01JABCDEF001#PROJECT#prj_01JOCEAN01",
+      "SK": "MEMBER#user-sarah",
+      "entity_type": "PROJECT_MEMBER",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JOCEAN01",
+      "user_id": "user-sarah",
+      "project_role": "project_manager",
+      "capabilities": [
+        "project:read",
+        "task:read",
+        "task:write",
+        "risk:read",
+        "risk:write",
+        "report:create",
+        "slack:draft",
+        "slack:send"
+      ],
+      "status": "active",
+      "joined_at": "2026-02-01T00:00:00Z",
+      "version": 1
+    },
+    {
+      "PK": "TENANT#ten_01JABCDEF001#PROJECT#prj_01JHEALTH1",
+      "SK": "MEMBER#user-john",
+      "entity_type": "PROJECT_MEMBER",
+      "tenant_id": "ten_01JABCDEF001",
+      "project_id": "prj_01JHEALTH1",
+      "user_id": "user-john",
+      "project_role": "project_manager",
+      "capabilities": [
+        "project:read",
+        "task:read",
+        "task:write",
+        "risk:read",
+        "report:create"
+      ],
+      "status": "active",
+      "joined_at": "2026-03-01T00:00:00Z",
+      "version": 1
+    }
+  ]
+}

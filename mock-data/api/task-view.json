@@ -1,0 +1,29 @@
+{
+  "_description": "TaskView — safe API response for task detail",
+  "task_id": "tsk_01JSEED004",
+  "project_id": "prj_01JGREEN01",
+  "title": "Procure water quality testing kits",
+  "status": "blocked",
+  "priority": "critical",
+  "assignee": {
+    "user_id": "user-john",
+    "display_name": "John Doe"
+  },
+  "due_date": "2026-07-10",
+  "is_overdue": true,
+  "blocked_reason": "Original supplier delayed delivery by 2 weeks. Evaluating alternative supplier in District 7.",
+  "milestone": {
+    "milestone_id": "mil_01JWATE001",
+    "name": "Water Quality Monitoring Operational"
+  },
+  "related_risks": [
+    {
+      "risk_id": "rsk_01JSUPP001",
+      "title": "Equipment supplier delivery delay",
+      "severity": "high"
+    }
+  ],
+  "version": 5,
+  "updated_at": "2026-07-14T10:00:00Z",
+  "allowed_actions": ["edit", "comment"]
+}

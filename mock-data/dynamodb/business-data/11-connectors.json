@@ -1,0 +1,117 @@
+{
+  "_description": "BusinessData — Connector items",
+  "items": [
+    {
+      "_comment": "Connector summary — Slack",
+      "PK": "TENANT#ten_01JABCDEF001",
+      "SK": "CONNECTOR#con_01JSLACK001",
+      "entity_type": "CONNECTOR",
+      "connector_id": "con_01JSLACK001",
+      "tenant_id": "ten_01JABCDEF001",
+      "connector_type": "slack",
+      "display_name": "Green Hope Slack Workspace",
+      "status": "healthy",
+      "mode": "live",
+      "schedule_expression": "rate(1 hour)",
+      "last_successful_sync_at": "2026-07-14T14:00:00Z",
+      "last_attempted_sync_at": "2026-07-14T14:00:00Z",
+      "next_sync_at": "2026-07-14T15:00:00Z",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-07-14T14:00:00Z",
+      "version": 12,
+      "schema_version": 1
+    },
+    {
+      "_comment": "Connector config — Slack",
+      "PK": "TENANT#ten_01JABCDEF001#CONNECTOR#con_01JSLACK001",
+      "SK": "CONFIG",
+      "entity_type": "CONNECTOR_CONFIG",
+      "connector_id": "con_01JSLACK001",
+      "connector_type": "slack",
+      "secret_ref": "npo-ai/dev/connectors/con_01JSLACK001",
+      "allowed_sources": [
+        {
+          "source_id": "C01ABCDEF01",
+          "project_id": "prj_01JGREEN01",
+          "display_name": "general"
+        },
+        {
+          "source_id": "C02ABCDEF02",
+          "project_id": "prj_01JGREEN01",
+          "display_name": "green-hope-projects"
+        },
+        {
+          "source_id": "C03ABCDEF03",
+          "project_id": "prj_01JGREEN01",
+          "display_name": "logistics"
+        }
+      ]
+    },
+    {
+      "_comment": "Connector checkpoint — Slack channel general",
+      "PK": "TENANT#ten_01JABCDEF001#CONNECTOR#con_01JSLACK001",
+      "SK": "CHECKPOINT#C01ABCDEF01",
+      "entity_type": "CONNECTOR_CHECKPOINT",
+      "connector_id": "con_01JSLACK001",
+      "source_id": "C01ABCDEF01",
+      "last_cursor": "1752210000.000500",
+      "last_synced_at": "2026-07-14T14:00:00Z"
+    },
+    {
+      "_comment": "Connector summary — SharePoint",
+      "PK": "TENANT#ten_01JABCDEF001",
+      "SK": "CONNECTOR#con_01JSP000001",
+      "entity_type": "CONNECTOR",
+      "connector_id": "con_01JSP000001",
+      "tenant_id": "ten_01JABCDEF001",
+      "connector_type": "sharepoint",
+      "display_name": "Green Hope SharePoint",
+      "status": "healthy",
+      "mode": "live",
+      "schedule_expression": "rate(4 hours)",
+      "last_successful_sync_at": "2026-07-14T12:00:00Z",
+      "last_attempted_sync_at": "2026-07-14T12:00:00Z",
+      "next_sync_at": "2026-07-14T16:00:00Z",
+      "created_at": "2026-01-01T00:00:00Z",
+      "updated_at": "2026-07-14T12:00:00Z",
+      "version": 8,
+      "schema_version": 1
+    },
+    {
+      "_comment": "Connector config — SharePoint",
+      "PK": "TENANT#ten_01JABCDEF001#CONNECTOR#con_01JSP000001",
+      "SK": "CONFIG",
+      "entity_type": "CONNECTOR_CONFIG",
+      "connector_id": "con_01JSP000001",
+      "connector_type": "sharepoint",
+      "secret_ref": "npo-ai/dev/connectors/con_01JSP000001",
+      "allowed_sources": [
+        {
+          "source_id": "greenhope.sharepoint.com,abc123-def456",
+          "project_id": "prj_01JGREEN01",
+          "display_name": "Green Hope Foundation"
+        }
+      ]
+    },
+    {
+      "_comment": "Connector — Google Drive (degraded)",
+      "PK": "TENANT#ten_01JABCDEF001",
+      "SK": "CONNECTOR#con_01JGDRV001",
+      "entity_type": "CONNECTOR",
+      "connector_id": "con_01JGDRV001",
+      "tenant_id": "ten_01JABCDEF001",
+      "connector_type": "google_drive",
+      "display_name": "Green Hope Google Drive",
+      "status": "degraded",
+      "mode": "live",
+      "schedule_expression": "rate(6 hours)",
+      "last_successful_sync_at": "2026-07-12T18:00:00Z",
+      "last_attempted_sync_at": "2026-07-14T06:00:00Z",
+      "next_sync_at": "2026-07-14T12:00:00Z",
+      "created_at": "2026-03-01T00:00:00Z",
+      "updated_at": "2026-07-14T06:00:00Z",
+      "version": 5,
+      "schema_version": 1
+    }
+  ]
+}

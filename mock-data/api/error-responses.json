@@ -1,0 +1,57 @@
+{
+  "_description": "Error model examples — safe error responses",
+  "errors": [
+    {
+      "_label": "Entity version conflict",
+      "error": {
+        "code": "entity_version_conflict",
+        "message": "The task changed before your update was applied.",
+        "correlation_id": "corr_01J001002",
+        "retryable": false,
+        "details": {
+          "entity_type": "task",
+          "entity_id": "tsk_01JSEED004",
+          "current_version": 5
+        }
+      }
+    },
+    {
+      "_label": "Idempotency conflict",
+      "error": {
+        "code": "idempotency_conflict",
+        "message": "A request with this idempotency key was already processed with different content.",
+        "correlation_id": "corr_01J001003",
+        "retryable": false,
+        "details": {
+          "idempotency_key": "idem-01JWKLY001-key"
+        }
+      }
+    },
+    {
+      "_label": "Approval expired",
+      "error": {
+        "code": "approval_expired",
+        "message": "The approval request has expired and must be re-initiated.",
+        "correlation_id": "corr_01J001004",
+        "retryable": true,
+        "details": {
+          "approval_id": "apr_01J001002",
+          "expired_at": "2026-07-14T16:00:00Z"
+        }
+      }
+    },
+    {
+      "_label": "Insufficient evidence",
+      "error": {
+        "code": "insufficient_evidence",
+        "message": "The knowledge base returned no results matching your query with sufficient confidence.",
+        "correlation_id": "corr_01J001005",
+        "retryable": true,
+        "details": {
+          "query_topic": "procurement requirements for international suppliers",
+          "results_found": 0
+        }
+      }
+    }
+  ]
+}

@@ -21,7 +21,7 @@ class KnowledgeAgent:
             citations = []
             facts = []
 
-            prompt = f"Search organizational knowledge for: {request.instructions}\nAllowed sources: {allowed_sources}"
+            prompt = f"Tìm kiếm tri thức của tổ chức cho yêu cầu: {request.instructions}\nNguồn dữ liệu được phép: {allowed_sources}"
 
             response = await self.model_provider.generate(
                 prompt=prompt,
@@ -30,9 +30,11 @@ class KnowledgeAgent:
                 max_tokens=2048,
             )
 
-            if response.text and "insufficient" not in response.text.lower():
+            low = response.text.lower() if response.text else ""
+            insufficient = any(p in low for p in ["insufficient", "chưa đủ", "không đủ", "không tìm thấy"])
+            if response.text and not insufficient:
                 citation = Citation(
-                    source_system=SourceSystem.S3,
+                    source_system=SourceSystem.s3,
                     document_id="doc-seed-001",
                     document_title="Organizational Knowledge",
                     source_uri="s3://curated/tenant-aiv/general/doc-seed-001.txt",
@@ -51,7 +53,7 @@ class KnowledgeAgent:
                 task_id=request.task_id,
                 agent_name="knowledge-agent",
                 status=TaskStatus.completed,
-                summary=response.text[:200] if response.text else "No results found",
+                summary=response.text[:200] if response.text else "Không tìm thấy kết quả",
                 facts=facts,
                 citations=citations,
                 proposed_actions=[],
@@ -68,7 +70,7 @@ class KnowledgeAgent:
                 task_id=request.task_id,
                 agent_name="knowledge-agent",
                 status=TaskStatus.failed,
-                summary=f"Knowledge retrieval failed: {str(e)}",
+                summary=f"Truy xuất tri thức thất bại: {str(e)}",
                 facts=[], citations=[], proposed_actions=[], artifacts=[],
                 warnings=[str(e)], confidence=0.0, retryable=True,
                 metrics=AgentMetrics(latency_ms=latency, input_tokens=0, output_tokens=0),

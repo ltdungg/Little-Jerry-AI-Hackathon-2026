@@ -12,6 +12,14 @@ logger = structlog.get_logger()
 DEFAULT_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "apac.amazon.nova-lite-v1:0")
 _PLACEHOLDER_MODEL_IDS = {"", "mock", "default"}
 
+# Hệ thống là trợ lý cho tổ chức phi lợi nhuận tại Việt Nam -> luôn trả lời tiếng Việt.
+SYSTEM_PROMPT = os.getenv(
+    "AGENT_SYSTEM_PROMPT",
+    "Bạn là trợ lý AI của một tổ chức phi lợi nhuận (NPO) tại Việt Nam. "
+    "LUÔN trả lời bằng tiếng Việt, rõ ràng, ngắn gọn, lịch sự và chuyên nghiệp. "
+    "Khi không đủ thông tin, hãy nói rõ là chưa đủ dữ liệu thay vì bịa đặt.",
+)
+
 
 @dataclass
 class ModelResponse:
@@ -48,6 +56,7 @@ class BedrockProvider:
         def _call() -> dict[str, Any]:
             return self._client.converse(
                 modelId=resolved,
+                system=[{"text": SYSTEM_PROMPT}],
                 messages=[{"role": "user", "content": [{"text": prompt}]}],
                 inferenceConfig={"temperature": temperature, "maxTokens": max_tokens},
             )
