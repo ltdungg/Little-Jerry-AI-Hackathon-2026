@@ -26,8 +26,9 @@ resource "aws_lambda_function" "api_lambda" {
       WORKFLOW_TABLE  = module.data.workflow_state_table_name
       RAW_BUCKET      = module.storage.raw_bucket_name
       CURATED_BUCKET  = module.storage.curated_bucket_name
-      ARTIFACT_BUCKET = module.storage.artifact_bucket_name
-      REGION          = var.aws_region
+      ARTIFACT_BUCKET          = module.storage.artifact_bucket_name
+      REGION                   = var.aws_region
+      ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
     }
   }
   depends_on = [module.observability]
@@ -73,7 +74,7 @@ resource "aws_iam_role_policy" "api_lambda" {
       },
       {
         Effect   = "Allow"
-        Action   = ["bedrock:InvokeAgent"]
+        Action   = ["bedrock:InvokeAgent", "bedrock-agentcore:InvokeAgentRuntime"]
         Resource = "*"
       }
     ]

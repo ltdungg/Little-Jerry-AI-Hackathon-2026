@@ -12,7 +12,7 @@ enable_slack_ingestion      = false
 
 log_retention_days = 30
 
-allowed_origins = ["http://localhost:3000"]
+allowed_origins = ["http://localhost:3000", "https://main.ddvf1xez7zo9f.amplifyapp.com"]
 
 # ---- Frontend (Amplify) ----
 enable_amplify = true
