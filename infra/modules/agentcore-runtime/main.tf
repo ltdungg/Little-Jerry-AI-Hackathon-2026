@@ -35,8 +35,9 @@ resource "awscc_bedrockagentcore_runtime" "agent" {
   }
 
   environment_variables = {
-    AGENT_NAME       = each.key
-    BEDROCK_MODEL_ID = each.value.model_id
+    AGENT_NAME          = each.key
+    BEDROCK_MODEL_ID    = each.value.model_id
+    RUNTIME_NAME_PREFIX = replace("${var.project_name}_${var.environment}", "-", "_")
   }
 
   tags = var.tags

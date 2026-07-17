@@ -1,19 +1,18 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata } from "next"
+import "./globals.css"
+import { Providers } from "./providers"
 
 export const metadata: Metadata = {
-  title: "NPO AI Platform - Trợ lý AI",
-  description: "Trợ lý AI cho NPO AI Platform",
-};
+  title: "NPO AI Platform",
+  description: "AI-powered platform for NPO operations",
+}
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi">
-      <body className="min-h-screen bg-gray-50">{children}</body>
+      <body className="min-h-screen bg-background">
+        <Providers>{children}</Providers>
+      </body>
     </html>
-  );
+  )
 }

@@ -38,7 +38,7 @@ def lambda_handler(event, context):
         # Write metadata
         metadata = {
             **normalized,
-            "allowed_roles": raw_data.get("allowed_roles", ["npo_staff", "project_manager"]),
+            "allowed_roles": raw_data.get("allowed_roles", ["leader", "project_manager", "team_member"]),
             "allowed_user_ids": raw_data.get("allowed_user_ids", []),
             "classification": raw_data.get("classification", "internal"),
             "content_hash": content_hash,

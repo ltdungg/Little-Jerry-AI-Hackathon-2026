@@ -18,7 +18,7 @@ def build_response(status_code: int, body: dict, headers: dict | None = None) ->
     return {"statusCode": status_code, "headers": default_headers, "body": json.dumps(body, default=str)}
 
 def build_error_response(status_code: int, error_code: str, message: str, details: dict | None = None) -> dict:
-    body = {"error_code": error_code, "message": message}
+    body: dict[str, Any] = {"error_code": error_code, "message": message}
     if details:
         body["details"] = details
     return build_response(status_code, body)
@@ -27,9 +27,11 @@ def extract_claims(event: dict) -> dict:
     return event.get("requestContext", {}).get("authorizer", {}).get("claims", {})
 
 def build_request_context(claims: dict, event: dict):
-    from agents.common.contracts.context import RequestContext, UserRole
+    # Single-tenant: the org (AIV) is fixed; do not trust any tenant claim.
+    from agents.common.contracts.context import RequestContext, UserRole, DEFAULT_TENANT_ID
     groups = claims.get("cognito:groups", "").split(",") if claims.get("cognito:groups") else []
-    role = UserRole.npo_staff
+    # Default to the least-privileged role (volunteer) unless a valid group maps.
+    role = UserRole.volunteer
     for g in groups:
         try:
             role = UserRole(g.strip())
@@ -38,7 +40,7 @@ def build_request_context(claims: dict, event: dict):
             continue
     return RequestContext(
         session_id=claims.get("session_id", str(uuid.uuid4())),
-        tenant_id=claims.get("custom:tenant_id", "tenant-aiv"),
+        tenant_id=DEFAULT_TENANT_ID,
         user_id=claims.get("sub", "unknown"),
         user_role=role,
         source_ip=event.get("requestContext", {}).get("http", {}).get("sourceIp"),

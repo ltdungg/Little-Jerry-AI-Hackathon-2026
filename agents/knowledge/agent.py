@@ -2,9 +2,15 @@ import os
 import time
 import uuid
 from datetime import datetime, timezone
-from agents.common.contracts.agent import AgentTaskRequest, AgentTaskResult, AgentMetrics, Fact
-from agents.common.contracts.citation import Citation, SourceSystem
-from agents.common.contracts.agent import TaskStatus
+from agents.common.contracts.agent import (
+    AgentTaskRequest,
+    AgentTaskResult,
+    AgentMetrics,
+    Fact,
+    Citation,
+    SourceSystem,
+    TaskStatus,
+)
 from agents.common.model.provider import ModelProvider, get_provider
 from agents.common.observability.metrics import create_metric_collector
 

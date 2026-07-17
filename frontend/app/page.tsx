@@ -1,12 +1,22 @@
-import ChatInterface from "@/components/ChatInterface";
+"use client"
+
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/context/AuthContext"
 
 export default function Home() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading) {
+      router.replace(user ? "/dashboard" : "/login")
+    }
+  }, [user, loading, router])
+
   return (
-    <main className="container mx-auto p-4">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">NPO AI Platform</h1>
-      </header>
-      <ChatInterface />
-    </main>
-  );
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-sm text-muted-foreground">Loading...</div>
+    </div>
+  )
 }

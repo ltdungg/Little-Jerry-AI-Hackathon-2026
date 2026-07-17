@@ -26,8 +26,9 @@ resource "aws_cognito_user_pool_client" "client" {
   explicit_auth_flows                  = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
 }
 
+# Roles within the single organization (AIV).
 locals {
-  groups = ["npo_staff", "project_manager", "program_director", "knowledge_admin", "platform_admin", "auditor"]
+  groups = ["leader", "project_manager", "team_member", "volunteer"]
 }
 
 resource "aws_cognito_user_group" "groups" {

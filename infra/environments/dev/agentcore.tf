@@ -47,6 +47,13 @@ resource "aws_iam_role_policy" "agent_execution" {
         Resource = "*"
       },
       {
+        # Orchestrator điều phối gọi các agent runtime con (multi-agent thật).
+        Sid      = "InvokeSiblingRuntimes"
+        Effect   = "Allow"
+        Action   = ["bedrock-agentcore:InvokeAgentRuntime", "bedrock-agentcore:ListAgentRuntimes"]
+        Resource = "*"
+      },
+      {
         Sid      = "PullContainerImage"
         Effect   = "Allow"
         Action   = ["ecr:GetAuthorizationToken", "ecr:BatchCheckLayerAvailability", "ecr:GetDownloadUrlForLayer", "ecr:BatchGetImage"]
