@@ -1,0 +1,6 @@
+{
+  "dataset": [
+    {"id": "1", "question": "What is the policy?", "expected": "Internal"},
+    {"id": "2", "question": "Conflicting info", "expected": "N/A"}
+  ]
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "program_id": "prg_green_hope",
+    "tenant_id": "ten_01JABCDEF001",
+    "name": "Chương trình Phủ xanh Việt Nam",
+    "description": "Phục hồi rừng ngập mặn tại Cần Giờ",
+    "status": "active"
+  },
+  {
+    "program_id": "prg_ocean_rescue",
+    "tenant_id": "ten_01JABCDEF001",
+    "name": "Chương trình Làm sạch Đại dương",
+    "description": "Thu gom rác thải nhựa dọc bờ biển miền Trung",
+    "status": "active"
+  }
+]

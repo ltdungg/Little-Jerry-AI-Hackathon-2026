@@ -1,0 +1,13 @@
+{
+  "name": "create_slack_draft",
+  "description": "Create a slack message draft",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "channel": {"type": "string"},
+      "message": {"type": "string"}
+    },
+    "required": ["tenant_id", "channel", "message"]
+  }
+}

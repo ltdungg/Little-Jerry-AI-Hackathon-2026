@@ -1,0 +1,47 @@
+[project]
+name = "npo-ai-platform"
+version = "0.1.0"
+description = "NPO AI Platform"
+authors = [{name = "Admin", email = "admin@example.com"}]
+dependencies = [
+    "strands-agents",
+    "strands-agents-tools",
+    "pydantic>=2.0",
+    "boto3",
+    "aws-lambda-powertools",
+    "mangum",
+    "structlog",
+    "uvicorn",
+    "fastapi",
+    "aiohttp",
+]
+requires-python = ">=3.12"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["shared*", "agents*", "lambdas*", "tests*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    "moto[dynamodb,s3,secretsmanager]",
+    "mypy",
+    "ruff",
+    "httpx",
+]

@@ -1,0 +1,12 @@
+[
+  {
+    "thread_id": "slack-1",
+    "channel": "general",
+    "messages": ["Hey team, how is the cleanup going?", "Progress is good, we've covered 50%."]
+  },
+  {
+    "thread_id": "slack-2",
+    "channel": "projects",
+    "messages": ["Any updates on the grant?", "Still waiting on the committee decision."]
+  }
+]

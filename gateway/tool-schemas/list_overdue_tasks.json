@@ -1,0 +1,12 @@
+{
+  "name": "list_overdue_tasks",
+  "description": "List overdue tasks",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "project_id": {"type": "string"}
+    },
+    "required": ["tenant_id"]
+  }
+}

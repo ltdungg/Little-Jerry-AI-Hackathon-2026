@@ -1,0 +1,13 @@
+{
+  "name": "list_project_tasks",
+  "description": "List tasks for a project",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "project_id": {"type": "string"},
+      "status_filter": {"type": "string"}
+    },
+    "required": ["tenant_id", "project_id"]
+  }
+}

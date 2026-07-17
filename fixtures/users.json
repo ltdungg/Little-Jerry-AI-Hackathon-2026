@@ -1,0 +1,42 @@
+[
+  {
+    "user_id": "user-minh",
+    "cognito_sub": "sub_minh_001",
+    "tenant_id": "ten_01JABCDEF001",
+    "email_normalized": "minh@greenhope.org",
+    "display_name": "Minh Nguyen",
+    "status": "active",
+    "locale": "vi-VN",
+    "timezone": "Asia/Bangkok"
+  },
+  {
+    "user_id": "user-sarah",
+    "cognito_sub": "sub_sarah_002",
+    "tenant_id": "ten_01JABCDEF001",
+    "email_normalized": "sarah@greenhope.org",
+    "display_name": "Sarah Pham",
+    "status": "active",
+    "locale": "vi-VN",
+    "timezone": "Asia/Bangkok"
+  },
+  {
+    "user_id": "user-john",
+    "cognito_sub": "sub_john_003",
+    "tenant_id": "ten_01JABCDEF001",
+    "email_normalized": "john@greenhope.org",
+    "display_name": "John Doe",
+    "status": "active",
+    "locale": "vi-VN",
+    "timezone": "Asia/Bangkok"
+  },
+  {
+    "user_id": "user-lina",
+    "cognito_sub": "sub_lina_004",
+    "tenant_id": "ten_01JABCDEF002",
+    "email_normalized": "lina@oceanrescue.org",
+    "display_name": "Lina Le",
+    "status": "active",
+    "locale": "vi-VN",
+    "timezone": "Asia/Ho_Chi_Minh"
+  }
+]

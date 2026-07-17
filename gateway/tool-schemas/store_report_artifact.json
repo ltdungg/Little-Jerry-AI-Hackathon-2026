@@ -1,0 +1,14 @@
+{
+  "name": "store_report_artifact",
+  "description": "Store a report artifact",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "workflow_id": {"type": "string"},
+      "report_type": {"type": "string"},
+      "content": {"type": "string"}
+    },
+    "required": ["tenant_id", "workflow_id", "report_type", "content"]
+  }
+}

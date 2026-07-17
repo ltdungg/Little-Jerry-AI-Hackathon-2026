@@ -1,0 +1,13 @@
+{
+  "name": "propose_task_change",
+  "description": "Propose a change to a task",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "project_id": {"type": "string"},
+      "title": {"type": "string"}
+    },
+    "required": ["tenant_id", "project_id", "title"]
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "risk_id": "risk-001",
+    "project_id": "proj-green-hope",
+    "title": "Volunteer attrition during summer",
+    "severity": "high"
+  },
+  {
+    "risk_id": "risk-002",
+    "project_id": "proj-ocean-rescue",
+    "title": "Funding gap for Q3",
+    "severity": "medium"
+  },
+  {
+    "risk_id": "risk-003",
+    "project_id": "proj-community-health",
+    "title": "Permit delays",
+    "severity": "low"
+  }
+]

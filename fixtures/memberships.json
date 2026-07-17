@@ -1,0 +1,26 @@
+[
+  {
+    "membership_id": "mem_001",
+    "tenant_id": "ten_01JABCDEF001",
+    "user_id": "user-minh",
+    "role": "project_manager"
+  },
+  {
+    "membership_id": "mem_002",
+    "tenant_id": "ten_01JABCDEF001",
+    "user_id": "user-sarah",
+    "role": "npo_staff"
+  },
+  {
+    "membership_id": "mem_003",
+    "tenant_id": "ten_01JABCDEF001",
+    "user_id": "user-john",
+    "role": "program_director"
+  },
+  {
+    "membership_id": "mem_004",
+    "tenant_id": "ten_01JABCDEF002",
+    "user_id": "user-lina",
+    "role": "npo_staff"
+  }
+]

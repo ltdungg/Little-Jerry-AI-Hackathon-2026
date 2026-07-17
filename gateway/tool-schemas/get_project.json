@@ -1,0 +1,12 @@
+{
+  "name": "get_project",
+  "description": "Retrieve project details",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "project_id": {"type": "string"}
+    },
+    "required": ["tenant_id", "project_id"]
+  }
+}

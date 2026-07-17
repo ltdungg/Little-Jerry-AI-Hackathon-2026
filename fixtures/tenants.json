@@ -1,0 +1,22 @@
+[
+  {
+    "tenant_id": "ten_01JABCDEF001",
+    "name": "Green Hope Foundation",
+    "slug": "green-hope-foundation",
+    "status": "active",
+    "default_timezone": "Asia/Bangkok",
+    "default_locale": "vi-VN",
+    "data_classification_policy": "internal",
+    "version": 1
+  },
+  {
+    "tenant_id": "ten_01JABCDEF002",
+    "name": "Ocean Rescue Alliance",
+    "slug": "ocean-rescue-alliance",
+    "status": "active",
+    "default_timezone": "Asia/Ho_Chi_Minh",
+    "default_locale": "vi-VN",
+    "data_classification_policy": "internal",
+    "version": 1
+  }
+]

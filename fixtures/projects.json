@@ -1,0 +1,41 @@
+[
+  {
+    "tenant_id": "tenant-aiv",
+    "project_id": "proj-green-hope",
+    "name": "Green Hope Environmental Initiative",
+    "description": "Community environmental restoration and sustainability program",
+    "status": "active",
+    "start_date": "2025-09-01",
+    "end_date": "2026-08-31",
+    "owner": "user-minh",
+    "team_members": ["user-minh", "user-sarah", "user-john", "user-lisa"],
+    "budget": 150000,
+    "created_at": "2025-09-01T00:00:00Z"
+  },
+  {
+    "tenant_id": "tenant-aiv",
+    "project_id": "proj-ocean-rescue",
+    "name": "Ocean Rescue Marine Conservation",
+    "description": "Marine ecosystem protection and coastal cleanup operations",
+    "status": "active",
+    "start_date": "2025-11-01",
+    "end_date": "2026-10-31",
+    "owner": "user-sarah",
+    "team_members": ["user-sarah", "user-tom", "user-anna"],
+    "budget": 200000,
+    "created_at": "2025-11-01T00:00:00Z"
+  },
+  {
+    "tenant_id": "tenant-aiv",
+    "project_id": "proj-community-health",
+    "name": "Community Health Outreach",
+    "description": "Health education and wellness programs for underserved communities",
+    "status": "active",
+    "start_date": "2026-01-15",
+    "end_date": "2026-12-31",
+    "owner": "user-lisa",
+    "team_members": ["user-lisa", "user-john", "user-minh"],
+    "budget": 120000,
+    "created_at": "2026-01-15T00:00:00Z"
+  }
+]

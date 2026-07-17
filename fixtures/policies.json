@@ -1,0 +1,12 @@
+[
+  {
+    "policy_id": "pol-001",
+    "name": "Procurement approval process",
+    "details": "All purchases over $500 require dual signature."
+  },
+  {
+    "policy_id": "pol-002",
+    "name": "Volunteer management guidelines",
+    "details": "Standard operating procedures for onboarding and safety."
+  }
+]

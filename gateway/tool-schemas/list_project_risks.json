@@ -1,0 +1,13 @@
+{
+  "name": "list_project_risks",
+  "description": "List project risks",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tenant_id": {"type": "string"},
+      "project_id": {"type": "string"},
+      "severity_filter": {"type": "string"}
+    },
+    "required": ["tenant_id", "project_id"]
+  }
+}

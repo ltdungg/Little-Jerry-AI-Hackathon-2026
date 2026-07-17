@@ -1,0 +1,30 @@
+[
+  {
+    "task_id": "task-001",
+    "project_id": "proj-green-hope",
+    "title": "Finalize volunteer schedule",
+    "status": "completed",
+    "due_date": "2026-02-15"
+  },
+  {
+    "task_id": "task-002",
+    "project_id": "proj-green-hope",
+    "title": "Submit grant application",
+    "status": "in_progress",
+    "due_date": "2026-03-01"
+  },
+  {
+    "task_id": "task-003",
+    "project_id": "proj-ocean-rescue",
+    "title": "Conduct site assessment",
+    "status": "pending",
+    "due_date": "2026-04-10"
+  },
+  {
+    "task_id": "task-004",
+    "project_id": "proj-community-health",
+    "title": "Prepare quarterly report",
+    "status": "overdue",
+    "due_date": "2026-06-01"
+  }
+]
