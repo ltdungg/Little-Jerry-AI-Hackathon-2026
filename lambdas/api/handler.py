@@ -1,10 +1,10 @@
 import json
 import os
+import re
 import uuid
 import boto3
 import structlog
-from typing import Any
-from agents.common.contracts.context import RequestContext, UserRole
+from agents.common.clients.dynamodb_client import BusinessDataClient
 from lambdas.common.utils import parse_body, build_response, build_error_response, extract_claims, build_request_context
 
 logger = structlog.get_logger()
@@ -12,6 +12,13 @@ logger = structlog.get_logger()
 REGION = os.environ.get("REGION", "ap-southeast-2")
 ORCHESTRATOR_RUNTIME_ARN = os.environ.get("ORCHESTRATOR_RUNTIME_ARN", "")
 _agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
+
+PROJECT_TASKS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/?$")
+PROJECT_RISKS_RE = re.compile(r"^/v1/projects/([^/]+)/risks/?$")
+PROJECT_MILESTONES_RE = re.compile(r"^/v1/projects/([^/]+)/milestones/?$")
+PROJECT_TASK_PROPOSALS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/proposals/?$")
+PROJECT_DETAIL_RE = re.compile(r"^/v1/projects/([^/]+)/?$")
+
 
 def lambda_handler(event, context):
     path = event.get("requestContext", {}).get("http", {}).get("path", "")
@@ -23,25 +30,173 @@ def lambda_handler(event, context):
     logger.info("processing_request", path=path, method=method, user_id=request_ctx.user_id)
 
     try:
-        if path == "/v1/chat" and method == "POST":
+        if path == "/health" and method == "GET":
+            return build_response(200, {"status": "ok"})
+        elif path == "/v1/me" and method == "GET":
+            return handle_me(event, request_ctx)
+        elif path == "/v1/chat" and method == "POST":
             return handle_chat(event, request_ctx)
         elif path == "/v1/workflows" and method == "POST":
             return handle_create_workflow(event, request_ctx)
-        elif path.startswith("/v1/workflows/") and method == "GET":
-            return handle_get_workflow(event, request_ctx)
         elif path.startswith("/v1/workflows/") and "/confirm" in path and method == "POST":
             return handle_confirm_workflow(event, request_ctx)
         elif path.startswith("/v1/workflows/") and "/cancel" in path and method == "POST":
             return handle_cancel_workflow(event, request_ctx)
+        elif path.startswith("/v1/workflows/") and method == "GET":
+            return handle_get_workflow(event, request_ctx)
         elif path.startswith("/v1/reports/") and method == "GET":
             return handle_get_report(event, request_ctx)
-        elif path == "/health" and method == "GET":
-            return build_response(200, {"status": "ok"})
+        elif path == "/v1/projects" and method == "GET":
+            return handle_list_projects(event, request_ctx)
+        elif (m := PROJECT_TASK_PROPOSALS_RE.match(path)) and method == "POST":
+            return handle_create_task_proposal(event, request_ctx, m.group(1))
+        elif (m := PROJECT_TASKS_RE.match(path)) and method == "GET":
+            return handle_list_tasks(event, request_ctx, m.group(1))
+        elif (m := PROJECT_RISKS_RE.match(path)) and method == "GET":
+            return handle_list_risks(event, request_ctx, m.group(1))
+        elif (m := PROJECT_MILESTONES_RE.match(path)) and method == "GET":
+            return handle_list_milestones(event, request_ctx, m.group(1))
+        elif (m := PROJECT_DETAIL_RE.match(path)) and method == "GET":
+            return handle_get_project(event, request_ctx, m.group(1))
 
         return build_error_response(404, "NOT_FOUND", "Endpoint not found")
     except Exception as e:
         logger.error("internal_error", error=str(e), exc_info=True)
         return build_error_response(500, "INTERNAL_ERROR", "An unexpected error occurred")
+
+
+def _client(request_ctx) -> BusinessDataClient:
+    return BusinessDataClient(tenant_id=request_ctx.tenant_id)
+
+
+def handle_me(event, request_ctx):
+    role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    return build_response(200, {
+        "user_id": request_ctx.user_id,
+        "display_name": request_ctx.user_id,
+        "email": "",
+        "roles": [role],
+        "capabilities": [],
+    })
+
+
+def handle_list_projects(event, request_ctx):
+    items = _client(request_ctx).list_projects()
+    return build_response(200, [_project_view(p) for p in items])
+
+
+def handle_get_project(event, request_ctx, project_id):
+    item = _client(request_ctx).get_project(project_id)
+    if not item:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy dự án")
+    return build_response(200, _project_view(item))
+
+
+def handle_list_tasks(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_tasks(project_id, status_filter=qs.get("status"))
+    if qs.get("overdue_only") == "true":
+        items = _client(request_ctx).list_overdue_tasks(project_id)
+    return build_response(200, [_task_view(t) for t in items])
+
+
+def handle_list_risks(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_risks(project_id, severity_filter=qs.get("severity"))
+    return build_response(200, [_risk_view(r) for r in items])
+
+
+def handle_list_milestones(event, request_ctx, project_id):
+    items = _client(request_ctx).list_milestones(project_id)
+    return build_response(200, [_milestone_view(m) for m in items])
+
+
+def handle_create_task_proposal(event, request_ctx, project_id):
+    body = parse_body(event)
+    task_id = body.get("task_id") or str(uuid.uuid4())
+    token = f"tok-{uuid.uuid4().hex[:12]}"
+    preview = {
+        "task_id": task_id,
+        "title": body.get("title"),
+        "description": body.get("description"),
+        "assignee_user_id": body.get("assignee_user_id"),
+        "priority": body.get("priority", "medium"),
+        "due_date": body.get("due_date"),
+        "milestone_id": body.get("milestone_id"),
+        "status": "todo",
+    }
+    workflow_id = str(uuid.uuid4())
+    return build_response(202, {"workflow_id": workflow_id, "status": "waiting_for_user", "preview": preview, "confirmation_token": token})
+
+
+# ---------- View mappers: DynamoDB item -> frontend shape ----------
+def _project_view(p: dict) -> dict:
+    return {
+        "project_id": p.get("project_id"),
+        "name": p.get("name"),
+        "program_name": p.get("program_name", ""),
+        "description": p.get("description", ""),
+        "status": p.get("status", "active"),
+        "health": p.get("health", "unknown"),
+        "manager": p.get("manager", {"user_id": p.get("owner", ""), "display_name": p.get("owner", "")}),
+        "next_milestone": p.get("next_milestone"),
+        "overdue_task_count": p.get("overdue_task_count", 0),
+        "high_risk_count": p.get("high_risk_count", 0),
+        "start_date": p.get("start_date", ""),
+        "end_date": p.get("end_date", ""),
+        "tags": p.get("tags", []),
+        "updated_at": p.get("updated_at", p.get("created_at", "")),
+    }
+
+
+def _task_view(t: dict) -> dict:
+    return {
+        "task_id": t.get("task_id"),
+        "project_id": t.get("project_id"),
+        "title": t.get("title"),
+        "description": t.get("description", ""),
+        "status": t.get("status", "todo"),
+        "priority": t.get("priority", "medium"),
+        "assignee": t.get("assignee", {"user_id": t.get("assignee_user_id", ""), "display_name": t.get("assignee_user_id", "")}),
+        "due_date": t.get("due_date", ""),
+        "is_overdue": t.get("is_overdue", False),
+        "milestone": t.get("milestone"),
+        "related_risks": t.get("related_risks", []),
+        "version": t.get("version", 1),
+        "updated_at": t.get("updated_at", t.get("created_at", "")),
+        "allowed_actions": t.get("allowed_actions", []),
+    }
+
+
+def _risk_view(r: dict) -> dict:
+    return {
+        "risk_id": r.get("risk_id"),
+        "project_id": r.get("project_id"),
+        "title": r.get("title"),
+        "description": r.get("description", ""),
+        "status": r.get("status", "open"),
+        "category": r.get("category", ""),
+        "likelihood": r.get("likelihood", 1),
+        "impact": r.get("impact", 1),
+        "score": r.get("score", 1),
+        "severity": r.get("severity", "low"),
+        "owner": r.get("owner", {"user_id": r.get("owner_user_id", ""), "display_name": r.get("owner_user_id", "")}),
+        "mitigation": r.get("mitigation", ""),
+        "review_date": r.get("review_date", ""),
+    }
+
+
+def _milestone_view(m: dict) -> dict:
+    return {
+        "milestone_id": m.get("milestone_id"),
+        "name": m.get("name"),
+        "description": m.get("description", ""),
+        "status": m.get("status", "not_started"),
+        "health": m.get("health", "unknown"),
+        "target_date": m.get("target_date", ""),
+        "completed_at": m.get("completed_at"),
+        "owner": m.get("owner", {"user_id": m.get("owner_user_id", ""), "display_name": m.get("owner_user_id", "")}),
+    }
 
 def handle_chat(event, request_ctx):
     """Synchronous chat: forward the user's message to the Orchestrator AgentCore

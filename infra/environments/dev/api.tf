@@ -59,7 +59,7 @@ resource "aws_iam_role_policy" "api_lambda" {
       },
       {
         Effect = "Allow"
-        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query"]
+        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:Scan"]
         Resource = [
           module.data.business_data_table_arn,
           "${module.data.business_data_table_arn}/index/*",
@@ -76,6 +76,13 @@ resource "aws_iam_role_policy" "api_lambda" {
         Effect   = "Allow"
         Action   = ["bedrock:InvokeAgent", "bedrock-agentcore:InvokeAgentRuntime"]
         Resource = "*"
+      },
+      {
+        # Bảng BusinessData/WorkflowState mã hóa bằng KMS CMK -> cần quyền giải mã.
+        Sid      = "KmsDecryptBusinessData"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = [module.security.kms_app_arn]
       }
     ]
   })

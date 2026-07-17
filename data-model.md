@@ -189,7 +189,7 @@ Không lưu password, Cognito access token hoặc MFA secret.
     "task:read",
     "task:write",
     "report:create",
-    "slack:draft"
+    "slack:draft" 
   ],
   "status": "active",
   "joined_at": "2026-07-17T00:00:00Z",

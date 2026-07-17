@@ -23,12 +23,19 @@ resource "aws_apigatewayv2_authorizer" "auth" {
 
 locals {
   routes = [
+    "GET /v1/me",
     "POST /v1/chat",
     "POST /v1/workflows",
     "GET /v1/workflows/{workflow_id}",
     "POST /v1/workflows/{workflow_id}/confirm",
     "POST /v1/workflows/{workflow_id}/cancel",
     "GET /v1/reports/{report_id}",
+    "GET /v1/projects",
+    "GET /v1/projects/{project_id}",
+    "GET /v1/projects/{project_id}/tasks",
+    "GET /v1/projects/{project_id}/risks",
+    "GET /v1/projects/{project_id}/milestones",
+    "POST /v1/projects/{project_id}/tasks/proposals",
     "GET /health"
   ]
 }

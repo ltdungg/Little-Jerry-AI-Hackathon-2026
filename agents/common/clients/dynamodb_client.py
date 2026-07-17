@@ -1,52 +1,103 @@
+"""DynamoDB access for the BusinessData single-table (single-tenant AIV).
+
+Simplified single-tenant key pattern:
+  Project : PK=TENANT#<tenant>                       SK=PROJECT#<projectId>
+  Task    : PK=TENANT#<tenant>#PROJECT#<projectId>   SK=TASK#<taskId>
+  Risk    : PK=TENANT#<tenant>#PROJECT#<projectId>   SK=RISK#<riskId>
+  Milestone: PK=TENANT#<tenant>#PROJECT#<projectId>  SK=MILESTONE#<milestoneId>
+"""
+import os
+from datetime import datetime, timezone
+from typing import Any
+
 import boto3
-from typing import Any, Dict, List
+from boto3.dynamodb.conditions import Key
+
+
+def _table():
+    table_name = os.environ.get("BUSINESS_TABLE", "BusinessData")
+    region = os.environ.get("AWS_REGION", "ap-southeast-2")
+    return boto3.resource("dynamodb", region_name=region).Table(table_name)
+
 
 class BusinessDataClient:
-    def __init__(self, tenant_id: str, project_id: str):
+    def __init__(self, tenant_id: str = "aiv"):
         self.tenant_id = tenant_id
-        self.project_id = project_id
-        self.table = boto3.resource('dynamodb').Table('BusinessData')
+        self.table = _table()
 
-    def get_project(self, project_id: str) -> Dict[str, Any]:
-        return {}
+    # ---------- Projects ----------
+    def list_projects(self) -> list[dict[str, Any]]:
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}") & Key("SK").begins_with("PROJECT#")
+        )
+        return resp.get("Items", [])
 
-    def list_tasks(self) -> List[Dict[str, Any]]:
-        return []
+    def get_project(self, project_id: str) -> dict[str, Any] | None:
+        resp = self.table.get_item(
+            Key={"PK": f"TENANT#{self.tenant_id}", "SK": f"PROJECT#{project_id}"}
+        )
+        return resp.get("Item")
 
-    def list_overdue_tasks(self) -> List[Dict[str, Any]]:
-        return []
+    def put_project(self, project: dict[str, Any]) -> None:
+        item = {**project, "PK": f"TENANT#{self.tenant_id}", "SK": f"PROJECT#{project['project_id']}"}
+        self.table.put_item(Item=item)
 
-    def list_risks(self) -> List[Dict[str, Any]]:
-        return []
+    # ---------- Tasks ----------
+    def list_tasks(self, project_id: str, status_filter: str | None = None) -> list[dict[str, Any]]:
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("TASK#")
+        )
+        items = resp.get("Items", [])
+        if status_filter:
+            items = [i for i in items if i.get("status") == status_filter]
+        return items
 
-    def put_task(self, task: Dict[str, Any]) -> None:
-        pass
+    def list_overdue_tasks(self, project_id: str | None = None) -> list[dict[str, Any]]:
+        now = datetime.now(timezone.utc).date().isoformat()
+        projects = [project_id] if project_id else [p["project_id"] for p in self.list_projects()]
+        overdue: list[dict[str, Any]] = []
+        for pid in projects:
+            for t in self.list_tasks(pid):
+                due = t.get("due_date")
+                if due and due < now and t.get("status") not in ("done", "cancelled", "completed"):
+                    overdue.append(t)
+        return overdue
 
-    def update_task(self, task_id: str, updates: Dict[str, Any]) -> None:
-        pass
+    def put_task(self, project_id: str, task: dict[str, Any]) -> None:
+        item = {**task, "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"TASK#{task['task_id']}"}
+        self.table.put_item(Item=item)
 
-class WorkflowStateClient:
-    def __init__(self, tenant_id: str):
-        self.tenant_id = tenant_id
-        self.table = boto3.resource('dynamodb').Table('WorkflowState')
+    def update_task(self, project_id: str, task_id: str, updates: dict[str, Any]) -> None:
+        expr_names = {f"#{k}": k for k in updates}
+        expr_values = {f":{k}": v for k, v in updates.items()}
+        self.table.update_item(
+            Key={"PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"TASK#{task_id}"},
+            UpdateExpression="SET " + ", ".join(f"#{k} = :{k}" for k in updates),
+            ExpressionAttributeNames=expr_names,
+            ExpressionAttributeValues=expr_values,
+        )
 
-    def create_workflow(self, workflow_id: str, data: Dict[str, Any]) -> None:
-        pass
+    # ---------- Risks ----------
+    def list_risks(self, project_id: str, severity_filter: str | None = None) -> list[dict[str, Any]]:
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("RISK#")
+        )
+        items = resp.get("Items", [])
+        if severity_filter:
+            items = [i for i in items if i.get("severity") == severity_filter]
+        return items
 
-    def get_workflow(self, workflow_id: str) -> Dict[str, Any]:
-        return {}
+    def put_risk(self, project_id: str, risk: dict[str, Any]) -> None:
+        item = {**risk, "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"RISK#{risk['risk_id']}"}
+        self.table.put_item(Item=item)
 
-    def update_workflow_status(self, workflow_id: str, status: str) -> None:
-        pass
+    # ---------- Milestones ----------
+    def list_milestones(self, project_id: str) -> list[dict[str, Any]]:
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("MILESTONE#")
+        )
+        return resp.get("Items", [])
 
-    def create_event(self, event_data: Dict[str, Any]) -> None:
-        pass
-
-    def get_approval(self, approval_id: str) -> Dict[str, Any]:
-        return {}
-
-    def save_approval(self, approval: Dict[str, Any]) -> None:
-        pass
-
-    def create_idempotency_check(self, key: str) -> None:
-        pass
+    def put_milestone(self, project_id: str, milestone: dict[str, Any]) -> None:
+        item = {**milestone, "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"MILESTONE#{milestone['milestone_id']}"}
+        self.table.put_item(Item=item)

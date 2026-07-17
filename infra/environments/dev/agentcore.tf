@@ -10,7 +10,9 @@ module "agentcore" {
       model_id           = cfg.model_id
     }
   }
-  tags = var.resource_tags
+  tags                = var.resource_tags
+  business_table_name = module.data.business_data_table_name
+  aws_region          = var.aws_region
 }
 
 # ---------- Agent Execution Roles ----------
@@ -52,6 +54,19 @@ resource "aws_iam_role_policy" "agent_execution" {
         Effect   = "Allow"
         Action   = ["bedrock-agentcore:InvokeAgentRuntime", "bedrock-agentcore:ListAgentRuntimes"]
         Resource = "*"
+      },
+      {
+        # project_task agent đọc/viết task, risk, milestone thật trong DynamoDB.
+        Sid      = "BusinessDataAccess"
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query"]
+        Resource = [module.data.business_data_table_arn, "${module.data.business_data_table_arn}/index/*"]
+      },
+      {
+        Sid      = "KmsDecryptBusinessData"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = [module.security.kms_app_arn]
       },
       {
         Sid      = "PullContainerImage"

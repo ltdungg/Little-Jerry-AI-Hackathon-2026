@@ -11,7 +11,7 @@ def parse_body(event: dict) -> dict:
         return json.loads(body)
     return body
 
-def build_response(status_code: int, body: dict, headers: dict | None = None) -> dict:
+def build_response(status_code: int, body: dict | list, headers: dict | None = None) -> dict:
     default_headers = {"Content-Type": "application/json"}
     if headers:
         default_headers.update(headers)
