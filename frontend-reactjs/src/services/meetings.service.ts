@@ -28,9 +28,17 @@ function mapMeeting(m: any): Meeting {
   };
 }
 
-export async function listMeetings(): Promise<Meeting[]> {
+export interface ListMeetingsParams {
+  /** Backend has no server-side filter for this yet — matched client-side
+   * against `program_name`, which the real data stores as the project's
+   * display name. */
+  programName?: string;
+}
+
+export async function listMeetings(params: ListMeetingsParams = {}): Promise<Meeting[]> {
   const raw = await api.getMeetings();
-  return raw.map(mapMeeting);
+  const items = raw.map(mapMeeting);
+  return params.programName ? items.filter((m) => m.programName === params.programName) : items;
 }
 
 export async function getMeeting(id: string): Promise<Meeting | undefined> {

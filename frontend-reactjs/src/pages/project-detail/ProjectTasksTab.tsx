@@ -1,12 +1,11 @@
 import { useMemo, useState } from 'react';
-import { PageHeader } from '../components/common/PageHeader';
-import { Pill, type PillTone } from '../components/common/Pill';
-import { Select } from '../components/common/Select';
-import { Table, type Column } from '../components/common/Table';
-import { useMockList } from '../hooks/useMockList';
-import { listTasks, taskPriorityLabel, taskStatusLabel } from '../services/tasks.service';
-import { listProjects } from '../services/projects.service';
-import type { Task, TaskPriority, TaskStatus } from '../types';
+import { useOutletContext } from 'react-router-dom';
+import { Pill, type PillTone } from '../../components/common/Pill';
+import { Table, type Column } from '../../components/common/Table';
+import { useMockList } from '../../hooks/useMockList';
+import { listTasks, taskPriorityLabel, taskStatusLabel } from '../../services/tasks.service';
+import type { ProjectDetailContext } from '../ProjectDetailPage';
+import type { Task, TaskPriority, TaskStatus } from '../../types';
 
 type QuickFilter = 'all' | 'overdue' | 'unassigned' | 'no_due_date' | 'blocked';
 
@@ -31,33 +30,25 @@ function isOverdue(task: Task): boolean {
   return new Date(task.dueDate) < new Date('2026-07-18');
 }
 
-export function TasksPage() {
+export function ProjectTasksTab() {
+  const { project } = useOutletContext<ProjectDetailContext>();
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
-  const [programId, setProgramId] = useState('all');
-  const { items, loading } = useMockList(() => listTasks(), []);
-  const { items: projects } = useMockList(() => listProjects(), []);
+  const { items, loading } = useMockList(() => listTasks({ programId: project.id }), [project.id]);
 
   const filtered = useMemo(() => {
-    let result = items;
-    if (programId !== 'all') result = result.filter((t) => t.programId === programId);
     switch (quickFilter) {
       case 'overdue':
-        result = result.filter(isOverdue);
-        break;
+        return items.filter(isOverdue);
       case 'unassigned':
-        result = result.filter((t) => !t.assigneeId);
-        break;
+        return items.filter((t) => !t.assigneeId);
       case 'no_due_date':
-        result = result.filter((t) => !t.dueDate);
-        break;
+        return items.filter((t) => !t.dueDate);
       case 'blocked':
-        result = result.filter((t) => t.status === 'blocked');
-        break;
+        return items.filter((t) => t.status === 'blocked');
       default:
-        break;
+        return items;
     }
-    return result;
-  }, [items, quickFilter, programId]);
+  }, [items, quickFilter]);
 
   const columns: Column<Task>[] = [
     {
@@ -65,7 +56,6 @@ export function TasksPage() {
       render: (task) => (
         <div>
           <p className="font-medium text-slate-800">{task.title}</p>
-          <p className="text-xs text-slate-400">{task.programName}</p>
           {task.dependsOnTaskIds.length > 0 && (
             <p className="mt-0.5 text-[11px] text-amber-600">Phụ thuộc {task.dependsOnTaskIds.length} nhiệm vụ khác</p>
           )}
@@ -106,13 +96,8 @@ export function TasksPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        title="Nhiệm vụ"
-        subtitle="Toàn bộ nhiệm vụ của các chương trình — phát hiện nhiệm vụ nghẽn hoặc chưa có người phụ trách."
-      />
-
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+    <div>
+      <div className="flex flex-wrap items-center gap-2">
         {QUICK_FILTERS.map((f) => (
           <button
             key={f.value}
@@ -127,12 +112,6 @@ export function TasksPage() {
             {f.label}
           </button>
         ))}
-        <Select
-          value={programId}
-          onChange={setProgramId}
-          options={[{ value: 'all', label: 'Tất cả chương trình' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
-          className="ml-auto"
-        />
       </div>
 
       <div className="mt-4">

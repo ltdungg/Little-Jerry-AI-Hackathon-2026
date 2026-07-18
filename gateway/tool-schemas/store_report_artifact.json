@@ -1,13 +1,16 @@
 {
   "name": "store_report_artifact",
-  "description": "Store a report artifact",
+  "description": "Store a report artifact. If project_id is provided, also persists it as a queryable BusinessData Report item (docs/REPORT-EXPORT-SPEC.md) so it shows up in the project's Xuất báo cáo tab, not just as a raw S3 blob.",
   "inputSchema": {
     "type": "object",
     "properties": {
       "tenant_id": {"type": "string"},
       "workflow_id": {"type": "string"},
-      "report_type": {"type": "string"},
-      "content": {"type": "string"}
+      "report_type": {"type": "string", "description": "daily_status | weekly_status | risk_summary | progress_summary"},
+      "content": {"type": "string"},
+      "project_id": {"type": "string", "description": "Optional. When set, the report is also stored as a BusinessData Report item scoped to this project."},
+      "report_id": {"type": "string", "description": "Optional. Generated if omitted."},
+      "category": {"type": "string", "description": "daily | weekly | manual. Defaults to manual."}
     },
     "required": ["tenant_id", "workflow_id", "report_type", "content"]
   }

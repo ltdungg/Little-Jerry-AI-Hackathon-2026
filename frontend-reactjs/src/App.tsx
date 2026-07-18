@@ -4,16 +4,20 @@ import { AppShell } from './components/layout/AppShell';
 import { LoginPage } from './pages/LoginPage';
 import { ProjectsOverviewPage } from './pages/ProjectsOverviewPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
+import { ProjectOverviewTab } from './pages/project-detail/ProjectOverviewTab';
+import { ProjectTasksTab } from './pages/project-detail/ProjectTasksTab';
+import { ProjectIssuesTab } from './pages/project-detail/ProjectIssuesTab';
+import { ProjectDailyUpdatesTab } from './pages/project-detail/ProjectDailyUpdatesTab';
+import { ProjectReportsTab } from './pages/project-detail/ProjectReportsTab';
+import { ProjectHandoffTab } from './pages/project-detail/ProjectHandoffTab';
+import { ProjectMeetingsTab } from './pages/project-detail/ProjectMeetingsTab';
 import { AssistantPage } from './pages/AssistantPage';
 import { HomeDashboardPage } from './pages/HomeDashboardPage';
-import { TasksPage } from './pages/TasksPage';
-import { WeeklyUpdatesPage } from './pages/WeeklyUpdatesPage';
-import { IssuesPage } from './pages/IssuesPage';
 import { DecisionsPage } from './pages/DecisionsPage';
-import { MeetingsPage } from './pages/MeetingsPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { TeamReportPage } from './pages/TeamReportPage';
+import { WeeklyReportRollupPage } from './pages/WeeklyReportRollupPage';
 import { ActivityLogPage } from './pages/ActivityLogPage';
 import { OffboardingPage } from './pages/OffboardingPage';
 import { MembersPage } from './pages/MembersPage';
@@ -28,14 +32,11 @@ const BUILT_ROUTES = new Set([
   '/',
   '/projects',
   '/assistant',
-  '/tasks',
-  '/weekly-updates',
-  '/issues',
   '/decisions',
-  '/meetings',
   '/teams',
   '/knowledge',
   '/reports/team',
+  '/reports/weekly',
   '/admin/activity-log',
   '/offboarding',
   '/members',
@@ -58,16 +59,21 @@ function App() {
           <Route element={<AppShell />}>
             <Route path="/" element={<HomeDashboardPage />} />
             <Route path="/projects" element={<ProjectsOverviewPage />} />
-            <Route path="/projects/:id" element={<ProjectDetailPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailPage />}>
+              <Route index element={<ProjectOverviewTab />} />
+              <Route path="tasks" element={<ProjectTasksTab />} />
+              <Route path="issues" element={<ProjectIssuesTab />} />
+              <Route path="daily-updates" element={<ProjectDailyUpdatesTab />} />
+              <Route path="reports" element={<ProjectReportsTab />} />
+              <Route path="handoff" element={<ProjectHandoffTab />} />
+              <Route path="meetings" element={<ProjectMeetingsTab />} />
+            </Route>
             <Route path="/assistant" element={<AssistantPage />} />
-            <Route path="/tasks" element={<TasksPage />} />
-            <Route path="/weekly-updates" element={<WeeklyUpdatesPage />} />
-            <Route path="/issues" element={<IssuesPage />} />
             <Route path="/decisions" element={<DecisionsPage />} />
-            <Route path="/meetings" element={<MeetingsPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/knowledge" element={<DocumentsPage />} />
             <Route path="/reports/team" element={<TeamReportPage />} />
+            <Route path="/reports/weekly" element={<WeeklyReportRollupPage />} />
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/offboarding" element={<OffboardingPage />} />
             <Route path="/members" element={<MembersPage />} />
