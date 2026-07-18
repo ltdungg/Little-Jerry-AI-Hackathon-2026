@@ -173,11 +173,11 @@ Web application được xây dựng bằng **Next.js 14 App Router** với clie
 
 | Agent | Chức năng | Model |
 |-------|----------|-------|
-| Orchestrator | Phân loại, lập kế hoạch, phối hợp | Claude Sonnet |
-| Knowledge | Tìm kiếm tri thức, citation | Claude Sonnet |
-| Project & Task | Quản lý tasks, dry-run writes | Claude Sonnet |
-| Reporting | Tạo báo cáo từ verified data | Claude Sonnet |
-| Communication | Tạo nháp Slack/email | Claude Sonnet |
+| Orchestrator | Phân loại, lập kế hoạch, phối hợp | Amazon Nova Lite |
+| Knowledge | Tìm kiếm tri thức, citation | Amazon Nova Lite |
+| Project & Task | Quản lý tasks, dry-run writes | Amazon Nova Lite |
+| Reporting | Tạo báo cáo từ verified data | Amazon Nova Lite |
+| Communication | Tạo nháp Slack/email | Amazon Nova Lite |
 
 ## Lambda Tools (9 tools)
 
