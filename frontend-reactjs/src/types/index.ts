@@ -18,10 +18,19 @@ export interface AppUser {
 
 export type ProjectStatus = 'healthy' | 'at_risk' | 'overdue';
 
+export interface ProjectMember {
+  userId: string;
+  userName: string;
+  userInitials: string;
+  role: Role;
+  roleLabel: string;
+}
+
 export interface Project {
   id: string;
   name: string;
   program: string;
+  description: string;
   status: ProjectStatus;
   owner: string;
   ownerInitials: string;
@@ -30,7 +39,36 @@ export interface Project {
   highRiskCount: number;
   progress: number;
   team: string;
+  jiraUrl: string;
+  members: ProjectMember[];
   updatedAt: string;
+}
+
+export interface CreateProjectPayload {
+  name: string;
+  program: string;
+  description: string;
+  managerId: string;
+  jiraUrl: string;
+  members: { userId: string; role: Role }[];
+}
+
+export interface CreateTeamPayload {
+  name: string;
+  mission: string;
+  programNames: string[];
+  members: TeamMemberRef[];
+}
+
+export interface CreateMemberPayload {
+  name: string;
+  email: string;
+  role: Role;
+  roleName: string;
+  teamName: string;
+  programNames: string[];
+  kind: MemberKind;
+  managerId?: string;
 }
 
 export type SourceType = 'SharePoint' | 'Slack' | 'Meeting' | 'Docs';

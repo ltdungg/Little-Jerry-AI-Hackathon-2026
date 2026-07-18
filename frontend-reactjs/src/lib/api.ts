@@ -31,6 +31,13 @@ export async function getProjects() {
   return apiFetch<any[]>('/v1/projects');
 }
 
+export async function createProject(data: Record<string, unknown>) {
+  return apiFetch<any>('/v1/projects', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 /** Small lookup used by services (tasks/issues/decisions) to resolve a bare
  * project_id into a display name without an N+1 request per row. */
 export async function getProjectNameMap(): Promise<Record<string, string>> {
@@ -220,6 +227,13 @@ export async function getTeam(teamId: string) {
   return apiFetch<any>(`/v1/teams/${teamId}`);
 }
 
+export async function createTeam(data: Record<string, unknown>) {
+  return apiFetch<any>('/v1/teams', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 // ── Users (members / admin users) ──
 export async function getUsers(params?: { team?: string; kind?: string; status?: string }) {
   const qs = new URLSearchParams();
@@ -232,6 +246,13 @@ export async function getUsers(params?: { team?: string; kind?: string; status?:
 
 export async function updateUser(userId: string, data: Record<string, unknown>) {
   return apiFetch<any>(`/v1/users/${userId}`, { method: 'PATCH', body: JSON.stringify(data) });
+}
+
+export async function createUser(data: Record<string, unknown>) {
+  return apiFetch<any>('/v1/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
 
 // ── Admin ──

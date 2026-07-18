@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/common/Icon';
 import { StatCard } from '../components/common/StatCard';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { CreateProjectModal } from '../components/common/CreateProjectModal';
 import { useMockList } from '../hooks/useMockList';
 import { listProjects } from '../services/projects.service';
 import type { Project, ProjectStatus } from '../types';
@@ -28,7 +29,12 @@ export function ProjectsOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [programFilter, setProgramFilter] = useState('all');
   const [view, setView] = useState<'grid' | 'list'>('grid');
-  const { items: projects, loading } = useMockList(() => listProjects(), []);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { items: projects, loading, refresh } = useMockList(() => listProjects(), []);
+
+  const handleProjectCreated = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   const programs = useMemo(
     () => Array.from(new Set(projects.map((p) => p.program))),
@@ -66,6 +72,7 @@ export function ProjectsOverviewPage() {
         </div>
         <button
           type="button"
+          onClick={() => setShowCreateModal(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700"
         >
           <Icon name="Plus" size={16} />
@@ -188,6 +195,12 @@ export function ProjectsOverviewPage() {
           </table>
         </div>
       )}
+
+      <CreateProjectModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleProjectCreated}
+      />
     </div>
   );
 }

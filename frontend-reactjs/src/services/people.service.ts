@@ -1,5 +1,5 @@
 import * as api from '../lib/api';
-import type { MemberKind, MemberRecord, MemberStatus, Role, UserAccount, UserAccountStatus } from '../types';
+import type { CreateMemberPayload, MemberKind, MemberRecord, MemberStatus, Role, UserAccount, UserAccountStatus } from '../types';
 
 function initialsOf(name: string): string {
   return name
@@ -68,4 +68,18 @@ export async function listUserAccounts(): Promise<UserAccount[]> {
 export async function setUserAccountStatus(id: string, status: UserAccountStatus): Promise<UserAccount> {
   const raw = await api.updateUser(id, { status });
   return mapUserAccount(raw);
+}
+
+export async function createMember(payload: CreateMemberPayload): Promise<MemberRecord> {
+  const raw = await api.createUser({
+    name: payload.name,
+    email: payload.email,
+    role: payload.role,
+    role_label: payload.roleName,
+    team_name: payload.teamName,
+    program_names: payload.programNames,
+    kind: payload.kind,
+    manager_id: payload.managerId,
+  });
+  return mapMember(raw);
 }

@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PageHeader } from '../components/common/PageHeader';
 import { Pill } from '../components/common/Pill';
 import { Select } from '../components/common/Select';
 import { Table, type Column } from '../components/common/Table';
+import { Icon } from '../components/common/Icon';
+import { CreateMemberModal } from '../components/common/CreateMemberModal';
 import { useMockList } from '../hooks/useMockList';
 import { listMembers } from '../services/people.service';
 import type { MemberKind, MemberRecord, MemberStatus } from '../types';
@@ -21,7 +23,12 @@ const STATUS_LABEL: Record<MemberStatus, string> = {
 
 export function MembersPage() {
   const [kind, setKind] = useState<MemberKind | 'all'>('all');
-  const { items, loading } = useMockList(() => listMembers({ kind }), [kind]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { items, loading, refresh } = useMockList(() => listMembers({ kind }), [kind]);
+
+  const handleMemberCreated = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   const columns: Column<MemberRecord>[] = [
     {
@@ -50,7 +57,17 @@ export function MembersPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader title="Danh sách thành viên" subtitle="Toàn bộ nhân viên và tình nguyện viên trong tổ chức." />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Danh sách thành viên" subtitle="Toàn bộ nhân viên và tình nguyện viên trong tổ chức." />
+        <button
+          type="button"
+          onClick={() => setShowCreateModal(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700"
+        >
+          <Icon name="UserPlus" size={16} />
+          Thêm thành viên
+        </button>
+      </div>
 
       <div className="mt-4">
         <Select value={kind} onChange={(v) => setKind(v as MemberKind | 'all')} options={KIND_OPTIONS} />
@@ -63,6 +80,12 @@ export function MembersPage() {
           <Table columns={columns} rows={items} rowKey={(m) => m.id} emptyIcon="Contact" emptyTitle="Không có thành viên phù hợp" />
         )}
       </div>
+
+      <CreateMemberModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleMemberCreated}
+      />
     </div>
   );
 }

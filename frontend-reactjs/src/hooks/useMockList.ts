@@ -1,9 +1,10 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useEffect, useState, useCallback, type Dispatch, type SetStateAction } from 'react';
 
 interface UseMockListResult<T> {
   items: T[];
   setItems: Dispatch<SetStateAction<T[]>>;
   loading: boolean;
+  refresh: () => void;
 }
 
 /**
@@ -18,6 +19,9 @@ export function useMockList<T>(
 ): UseMockListResult<T> {
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,7 +35,7 @@ export function useMockList<T>(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, refreshKey]);
 
-  return { items, setItems, loading };
+  return { items, setItems, loading, refresh };
 }

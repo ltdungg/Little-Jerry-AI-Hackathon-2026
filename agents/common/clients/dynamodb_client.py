@@ -375,6 +375,12 @@ class BusinessDataClient:
         item = {**team, "PK": f"TENANT#{self.tenant_id}", "SK": f"TEAM#{team['team_id']}"}
         self.table.put_item(Item=item)
 
+    def update_team(self, team_id: str, updates: dict[str, Any]) -> None:
+        self._update_item(f"TENANT#{self.tenant_id}", f"TEAM#{team_id}", updates)
+
+    def delete_team(self, team_id: str) -> None:
+        self.table.delete_item(Key={"PK": f"TENANT#{self.tenant_id}", "SK": f"TEAM#{team_id}"})
+
     # ---------- User profiles (members / admin users) ----------
     def list_user_profiles(self) -> list[dict[str, Any]]:
         resp = self.table.query(
@@ -392,6 +398,9 @@ class BusinessDataClient:
 
     def update_user_profile(self, user_id: str, updates: dict[str, Any]) -> None:
         self._update_item(f"TENANT#{self.tenant_id}", f"USERPROFILE#{user_id}", updates)
+
+    def delete_user_profile(self, user_id: str) -> None:
+        self.table.delete_item(Key={"PK": f"TENANT#{self.tenant_id}", "SK": f"USERPROFILE#{user_id}"})
 
     # ---------- Weekly updates (per user) + team weekly reports ----------
     def list_weekly_updates(self, user_id: str) -> list[dict[str, Any]]:
