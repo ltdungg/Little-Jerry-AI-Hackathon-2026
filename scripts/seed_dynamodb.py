@@ -98,20 +98,23 @@ NOTIFICATIONS = [
 ]
 
 TEAMS = [
-    {"team_id": "team-green", "name": "Environment", "mission": "Phục hồi và bảo vệ môi trường cộng đồng.", "program_names": ["Green Hope Environmental Initiative"], "members": [
+    {"team_id": "team-green", "name": "Operations", "mission": "Be the engine behind our execution—turning vision into action through smart systems, seamless coordination, and efficient delivery.", "program_names": ["Green Hope Environmental Initiative"], "members": [
         {"user_id": "user-minh", "name": "Minh Nguyen", "initials": "MN", "role_label": "Trưởng nhóm"},
         {"user_id": "user-lina", "name": "Lina Le", "initials": "LL", "role_label": "Tình nguyện viên"},
     ], "status": "needs_support", "last_report_at": "2026-07-16T00:00:00Z"},
-    {"team_id": "team-ocean", "name": "Marine Conservation", "mission": "Bảo tồn hệ sinh thái biển và làm sạch bờ biển.", "program_names": ["Ocean Rescue Marine Conservation"], "members": [
+    {"team_id": "team-ocean", "name": "Research & Engineering", "mission": "Build the backbone of Vietnam's AI revolution—turning bold ideas into powerful, scalable systems.", "program_names": ["Ocean Rescue Marine Conservation"], "members": [
         {"user_id": "user-sarah", "name": "Sarah Pham", "initials": "SP", "role_label": "Trưởng nhóm"},
     ], "status": "active", "last_report_at": "2026-07-15T00:00:00Z"},
+    {"team_id": "team-marketing", "name": "Marketing & Communication", "mission": "We craft the voice and vision of AI for Vietnam - amplifying our mission, inspiring action, and connecting the world to Vietnam's AI future.", "program_names": [], "members": [], "status": "active", "last_report_at": ""},
+    {"team_id": "team-partnerships", "name": "Partnerships", "mission": "We build strategic partnerships that amplify AI for Vietnam's impact and drive collaborative growth across the AI ecosystem.", "program_names": [], "members": [], "status": "active", "last_report_at": ""},
+    {"team_id": "team-innovation", "name": "Innovation", "mission": "Be the catalyst for smarter work—transforming emerging AI ideas into practical tools and scalable systems across the organization.", "program_names": [], "members": [], "status": "active", "last_report_at": ""},
 ]
 
 USER_PROFILES = [
     {"user_id": "user-hoa", "name": "Hoa Tran", "email": "hoa.tran@aiv.org", "role": "leadership", "role_label": "Ban lãnh đạo", "team_name": "", "program_names": [], "kind": "staff", "status": "active", "start_date": "2024-01-01", "end_date": None, "manager_id": None},
-    {"user_id": "user-minh", "name": "Minh Nguyen", "email": "minh.nguyen@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Environment", "program_names": ["Green Hope Environmental Initiative"], "kind": "staff", "status": "active", "start_date": "2025-01-10", "end_date": None, "manager_id": "user-hoa"},
-    {"user_id": "user-sarah", "name": "Sarah Pham", "email": "sarah.pham@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Marine Conservation", "program_names": ["Ocean Rescue Marine Conservation"], "kind": "staff", "status": "active", "start_date": "2025-03-01", "end_date": None, "manager_id": "user-hoa"},
-    {"user_id": "user-lina", "name": "Lina Le", "email": "lina.le@aiv.org", "role": "volunteer", "role_label": "Tình nguyện viên", "team_name": "Environment", "program_names": ["Green Hope Environmental Initiative"], "kind": "volunteer", "status": "active", "start_date": "2026-02-01", "end_date": "2026-07-31", "manager_id": "user-minh"},
+    {"user_id": "user-minh", "name": "Minh Nguyen", "email": "minh.nguyen@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Operations", "program_names": ["Green Hope Environmental Initiative"], "kind": "staff", "status": "active", "start_date": "2025-01-10", "end_date": None, "manager_id": "user-hoa"},
+    {"user_id": "user-sarah", "name": "Sarah Pham", "email": "sarah.pham@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Research & Engineering", "program_names": ["Ocean Rescue Marine Conservation"], "kind": "staff", "status": "active", "start_date": "2025-03-01", "end_date": None, "manager_id": "user-hoa"},
+    {"user_id": "user-lina", "name": "Lina Le", "email": "lina.le@aiv.org", "role": "volunteer", "role_label": "Tình nguyện viên", "team_name": "Operations", "program_names": ["Green Hope Environmental Initiative"], "kind": "volunteer", "status": "active", "start_date": "2026-02-01", "end_date": "2026-07-31", "manager_id": "user-minh"},
 ]
 
 WEEKLY_UPDATES = [
@@ -120,34 +123,34 @@ WEEKLY_UPDATES = [
 ]
 
 TEAM_REPORTS = [
-    {"report_id": "rep-green-29", "team_id": "team-green", "team_name": "Environment", "week": "2026-W29", "member_submissions": [
+    {"report_id": "rep-green-29", "team_id": "team-green", "team_name": "Operations", "week": "2026-W29", "member_submissions": [
         {"user_id": "user-minh", "user_name": "Minh Nguyen", "user_initials": "MN", "submitted": True},
         {"user_id": "user-lina", "user_name": "Lina Le", "user_initials": "LL", "submitted": False},
     ], "highlights": ["Hoàn tất khảo sát địa điểm trồng cây"], "issues": ["Nhà tài trợ chậm giải ngân đợt 2"], "next_priorities": ["Chốt mốc giải ngân với nhà tài trợ"], "status": "draft"},
-    {"report_id": "rep-ocean-29", "team_id": "team-ocean", "team_name": "Marine Conservation", "week": "2026-W29", "member_submissions": [
+    {"report_id": "rep-ocean-29", "team_id": "team-ocean", "team_name": "Research & Engineering", "week": "2026-W29", "member_submissions": [
         {"user_id": "user-sarah", "user_name": "Sarah Pham", "user_initials": "SP", "submitted": True},
     ], "highlights": ["Khảo sát rạn san hô hoàn tất đúng hạn"], "issues": [], "next_priorities": ["Đặt lịch bảo trì thiết bị lặn"], "status": "published"},
 ]
 
 MEETINGS = [
-    {"meeting_id": "meet-001", "title": "Họp giao ban tuần — Environment", "date": "2026-07-15", "duration_minutes": 30, "participants": ["Minh Nguyen", "Lina Le"], "team_id": "team-green", "program_name": "Green Hope Environmental Initiative", "summary": "Rà soát tiến độ khảo sát địa điểm và thảo luận về việc chậm giải ngân grant.", "key_topics": ["Giải ngân grant đợt 2", "Tuyển tình nguyện viên"], "proposed_decisions": ["Hoãn đợt trồng cây tháng 8 sang tháng 9"], "action_items": [
+    {"meeting_id": "meet-001", "title": "Họp giao ban tuần — Operations", "date": "2026-07-15", "duration_minutes": 30, "participants": ["Minh Nguyen", "Lina Le"], "team_id": "team-green", "program_name": "Green Hope Environmental Initiative", "summary": "Rà soát tiến độ khảo sát địa điểm và thảo luận về việc chậm giải ngân grant.", "key_topics": ["Giải ngân grant đợt 2", "Tuyển tình nguyện viên"], "proposed_decisions": ["Hoãn đợt trồng cây tháng 8 sang tháng 9"], "action_items": [
         {"action_item_id": "ai-001", "title": "Liên hệ nhà tài trợ xác nhận mốc giải ngân", "owner": "Minh Nguyen", "due_date": "2026-07-22", "status": "confirmed"},
         {"action_item_id": "ai-002", "title": "Đăng tin tuyển tình nguyện viên phía Bắc", "owner": None, "due_date": None, "status": "proposed"},
     ], "open_questions": ["Ngân sách dự phòng nếu grant giải ngân trễ hơn 1 tháng?"]},
 ]
 
 DOCUMENTS = [
-    {"document_id": "doc-001", "title": "Grant_Application_Q3.docx", "team_name": "Environment", "program_name": "Green Hope Environmental Initiative", "kind": "report", "owner": "Minh Nguyen", "updated_at": "2026-07-10T00:00:00Z", "source": "SharePoint", "version": "v2", "status": "active", "ai_flag": None},
-    {"document_id": "doc-002", "title": "Quy trình an toàn khảo sát rạn san hô", "team_name": "Marine Conservation", "program_name": "Ocean Rescue Marine Conservation", "kind": "policy", "owner": "Sarah Pham", "updated_at": "2026-06-01T00:00:00Z", "source": "Docs", "version": "v1", "status": "active", "ai_flag": None},
-    {"document_id": "doc-003", "title": "Mẫu bàn giao dự án (2024)", "team_name": "Environment", "program_name": None, "kind": "template", "owner": "Minh Nguyen", "updated_at": "2025-11-01T00:00:00Z", "source": "SharePoint", "version": "v1", "status": "maybe_outdated", "ai_flag": "stale"},
+    {"document_id": "doc-001", "title": "Grant_Application_Q3.docx", "team_name": "Operations", "program_name": "Green Hope Environmental Initiative", "kind": "report", "owner": "Minh Nguyen", "updated_at": "2026-07-10T00:00:00Z", "source": "SharePoint", "version": "v2", "status": "active", "ai_flag": None},
+    {"document_id": "doc-002", "title": "Quy trình an toàn khảo sát rạn san hô", "team_name": "Research & Engineering", "program_name": "Ocean Rescue Marine Conservation", "kind": "policy", "owner": "Sarah Pham", "updated_at": "2026-06-01T00:00:00Z", "source": "Docs", "version": "v1", "status": "active", "ai_flag": None},
+    {"document_id": "doc-003", "title": "Mẫu bàn giao dự án (2024)", "team_name": "Operations", "program_name": None, "kind": "template", "owner": "Minh Nguyen", "updated_at": "2025-11-01T00:00:00Z", "source": "SharePoint", "version": "v1", "status": "maybe_outdated", "ai_flag": "stale"},
 ]
 
 HANDOFFS = [
-    {"handoff_id": "handoff-001", "from_name": "Lina Le", "to_name": None, "team_name": "Environment", "program_name": "Green Hope Environmental Initiative", "current_responsibilities": "Hỗ trợ khảo sát địa điểm và điều phối tình nguyện viên.", "in_progress_work": "Đang tổng hợp danh sách địa điểm trồng cây đợt tới.", "pending_decisions": "", "unresolved_issues": "Chưa có người thay thế phụ trách khảo sát.", "key_contacts": "Minh Nguyen — trưởng nhóm Environment.", "related_docs": "Grant_Application_Q3.docx", "risks": "Có thể gián đoạn tiến độ khảo sát nếu không bàn giao kịp.", "next_steps": "Bàn giao trực tiếp cho người tiếp nhận trước 31/7.", "status": "team_lead_review"},
+    {"handoff_id": "handoff-001", "from_name": "Lina Le", "to_name": None, "team_name": "Operations", "program_name": "Green Hope Environmental Initiative", "current_responsibilities": "Hỗ trợ khảo sát địa điểm và điều phối tình nguyện viên.", "in_progress_work": "Đang tổng hợp danh sách địa điểm trồng cây đợt tới.", "pending_decisions": "", "unresolved_issues": "Chưa có người thay thế phụ trách khảo sát.", "key_contacts": "Minh Nguyen — trưởng nhóm Operations.", "related_docs": "Grant_Application_Q3.docx", "risks": "Có thể gián đoạn tiến độ khảo sát nếu không bàn giao kịp.", "next_steps": "Bàn giao trực tiếp cho người tiếp nhận trước 31/7.", "status": "team_lead_review"},
 ]
 
 OFFBOARDING_RECORDS = [
-    {"offboarding_id": "off-001", "name": "Lina Le", "team_name": "Environment", "access_ends_at": "2026-07-31", "access_to_revoke": ["Kho tài liệu Environment", "Slack #proj-green-hope"], "owned_documents": [], "handoff_complete": False},
+    {"offboarding_id": "off-001", "name": "Lina Le", "team_name": "Operations", "access_ends_at": "2026-07-31", "access_to_revoke": ["Kho tài liệu Operations", "Slack #proj-green-hope"], "owned_documents": [], "handoff_complete": False},
 ]
 
 ROLE_PERMISSIONS = [
@@ -160,8 +163,8 @@ ROLE_PERMISSIONS = [
 ]
 
 ONBOARDING_CONTENT = {
-    "team_name": "Environment",
-    "team_intro": "Nhóm Environment phụ trách các chương trình phục hồi môi trường: khảo sát, trồng cây và vận động tài trợ.",
+    "team_name": "Operations",
+    "team_intro": "Nhóm Operations là đầu tàu vận hành của tổ chức — biến chiến lược thành hành động qua hệ thống, điều phối và triển khai các chương trình.",
     "program_intro": "Green Hope Environmental Initiative đang ở giai đoạn chuẩn bị đợt trồng cây tiếp theo và chờ giải ngân grant Q3.",
     "contacts": [
         {"name": "Minh Nguyen", "role_label": "Trưởng nhóm", "initials": "MN"},

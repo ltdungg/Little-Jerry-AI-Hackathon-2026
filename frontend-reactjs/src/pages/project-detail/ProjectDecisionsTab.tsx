@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { Icon } from '../components/common/Icon';
-import { PageHeader } from '../components/common/PageHeader';
-import { Pill, type PillTone } from '../components/common/Pill';
-import { Select } from '../components/common/Select';
-import { useAuth } from '../context/useAuth';
-import { useMockList } from '../hooks/useMockList';
+import { useOutletContext } from 'react-router-dom';
+import { Icon } from '../../components/common/Icon';
+import { Pill, type PillTone } from '../../components/common/Pill';
+import { Select } from '../../components/common/Select';
+import { useAuth } from '../../context/useAuth';
+import { useMockList } from '../../hooks/useMockList';
 import {
   approveDecision,
   decisionApprovalLabel,
   listDecisions,
   rejectDecision,
-} from '../services/decisions.service';
-import type { Decision, DecisionApprovalStatus } from '../types';
+} from '../../services/decisions.service';
+import type { ProjectDetailContext } from '../ProjectDetailPage';
+import type { Decision, DecisionApprovalStatus } from '../../types';
 
 const APPROVAL_TONE: Record<DecisionApprovalStatus, PillTone> = {
   ai_suggested: 'violet',
@@ -30,10 +31,14 @@ const APPROVAL_OPTIONS: { value: DecisionApprovalStatus | 'all'; label: string }
   { value: 'rejected', label: 'Bị từ chối' },
 ];
 
-export function DecisionsPage() {
+export function ProjectDecisionsTab() {
+  const { project } = useOutletContext<ProjectDetailContext>();
   const { user } = useAuth();
   const [approvalStatus, setApprovalStatus] = useState<DecisionApprovalStatus | 'all'>('all');
-  const { items, setItems, loading } = useMockList(() => listDecisions({ approvalStatus }), [approvalStatus]);
+  const { items, setItems, loading } = useMockList(
+    () => listDecisions({ approvalStatus, programId: project.id }),
+    [approvalStatus, project.id],
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selected = items.find((d) => d.id === selectedId) ?? items[0];
@@ -51,13 +56,8 @@ export function DecisionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        title="Quyết định"
-        subtitle="Lưu vết lý do, phương án và người phê duyệt — AI chỉ đề xuất, con người xác nhận."
-      />
-
-      <div className="mt-4">
+    <div className="max-w-5xl">
+      <div>
         <Select value={approvalStatus} onChange={(v) => setApprovalStatus(v as DecisionApprovalStatus | 'all')} options={APPROVAL_OPTIONS} />
       </div>
 
@@ -80,7 +80,6 @@ export function DecisionsPage() {
                 }`}
               >
                 <p className="text-sm font-medium text-slate-800">{decision.title}</p>
-                <p className="mt-0.5 text-xs text-slate-400">{decision.programName}</p>
                 <div className="mt-2 flex items-center gap-1.5">
                   <Pill tone={APPROVAL_TONE[decision.approvalStatus]}>{decisionApprovalLabel(decision.approvalStatus)}</Pill>
                   {decision.effectiveStatus === 'superseded' && <Pill tone="slate">Đã thay thế</Pill>}
@@ -92,10 +91,7 @@ export function DecisionsPage() {
           {selected && (
             <div className="rounded-xl border border-slate-200 bg-white p-5">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-wide text-brand-600">{selected.programName}</p>
-                  <h2 className="mt-1 text-lg font-semibold text-slate-900">{selected.title}</h2>
-                </div>
+                <h2 className="text-lg font-semibold text-slate-900">{selected.title}</h2>
                 <Pill tone={APPROVAL_TONE[selected.approvalStatus]}>{decisionApprovalLabel(selected.approvalStatus)}</Pill>
               </div>
 

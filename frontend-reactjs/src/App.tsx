@@ -8,18 +8,18 @@ import { ProjectOverviewTab } from './pages/project-detail/ProjectOverviewTab';
 import { ProjectTasksTab } from './pages/project-detail/ProjectTasksTab';
 import { ProjectIssuesTab } from './pages/project-detail/ProjectIssuesTab';
 import { ProjectDailyUpdatesTab } from './pages/project-detail/ProjectDailyUpdatesTab';
-import { ProjectReportsTab } from './pages/project-detail/ProjectReportsTab';
+import { ProjectDecisionsTab } from './pages/project-detail/ProjectDecisionsTab';
 import { ProjectHandoffTab } from './pages/project-detail/ProjectHandoffTab';
 import { ProjectMeetingsTab } from './pages/project-detail/ProjectMeetingsTab';
 import { AssistantPage } from './pages/AssistantPage';
 import { HomeDashboardPage } from './pages/HomeDashboardPage';
-import { DecisionsPage } from './pages/DecisionsPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { WeeklyReportRollupPage } from './pages/WeeklyReportRollupPage';
+import { ProjectReportPage } from './pages/ProjectReportPage';
+import { HandoffRollupPage } from './pages/HandoffRollupPage';
 import { ActivityLogPage } from './pages/ActivityLogPage';
 import { OffboardingPage } from './pages/OffboardingPage';
-import { MembersPage } from './pages/MembersPage';
 import { OrgChartPage } from './pages/OrgChartPage';
 import { DecisionArchivePage } from './pages/DecisionArchivePage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
@@ -31,13 +31,12 @@ const BUILT_ROUTES = new Set([
   '/',
   '/projects',
   '/assistant',
-  '/decisions',
   '/teams',
   '/knowledge',
   '/reports/weekly',
+  '/handoff',
   '/admin/activity-log',
   '/offboarding',
-  '/members',
   '/org-chart',
   '/knowledge/decisions',
   '/admin/users',
@@ -62,18 +61,18 @@ function App() {
               <Route path="tasks" element={<ProjectTasksTab />} />
               <Route path="issues" element={<ProjectIssuesTab />} />
               <Route path="daily-updates" element={<ProjectDailyUpdatesTab />} />
-              <Route path="reports" element={<ProjectReportsTab />} />
+              <Route path="decisions" element={<ProjectDecisionsTab />} />
               <Route path="handoff" element={<ProjectHandoffTab />} />
               <Route path="meetings" element={<ProjectMeetingsTab />} />
             </Route>
             <Route path="/assistant" element={<AssistantPage />} />
-            <Route path="/decisions" element={<DecisionsPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/knowledge" element={<DocumentsPage />} />
             <Route path="/reports/weekly" element={<WeeklyReportRollupPage />} />
+            <Route path="/reports/weekly/:projectId" element={<ProjectReportPage />} />
+            <Route path="/handoff" element={<HandoffRollupPage />} />
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/offboarding" element={<OffboardingPage />} />
-            <Route path="/members" element={<MembersPage />} />
             <Route path="/org-chart" element={<OrgChartPage />} />
             <Route path="/knowledge/decisions" element={<DecisionArchivePage />} />
             <Route path="/admin/users" element={<UsersAdminPage />} />
