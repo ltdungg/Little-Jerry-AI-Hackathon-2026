@@ -29,6 +29,7 @@ resource "aws_lambda_function" "api_lambda" {
       ARTIFACT_BUCKET          = module.storage.artifact_bucket_name
       REGION                   = var.aws_region
       ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
+      COGNITO_USER_POOL_ID     = module.auth.user_pool_id
     }
   }
   depends_on = [module.observability]
@@ -75,6 +76,16 @@ resource "aws_iam_role_policy" "api_lambda" {
       {
         Effect   = "Allow"
         Action   = ["bedrock:InvokeAgent", "bedrock-agentcore:InvokeAgentRuntime"]
+        Resource = "*"
+      },
+      {
+        Sid      = "CognitoAdminActions"
+        Effect   = "Allow"
+        Action   = [
+          "cognito-idp:AdminCreateUser",
+          "cognito-idp:AdminSetUserPassword",
+          "cognito-idp:AdminAddUserToGroup"
+        ]
         Resource = "*"
       },
       {

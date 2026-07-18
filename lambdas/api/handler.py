@@ -14,6 +14,8 @@ logger = structlog.get_logger()
 REGION = os.environ.get("REGION", "ap-southeast-2")
 ORCHESTRATOR_RUNTIME_ARN = os.environ.get("ORCHESTRATOR_RUNTIME_ARN", "")
 _agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
+_cognito = boto3.client("cognito-idp", region_name=REGION)
+COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID", "")
 
 PROJECT_TASKS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/?$")
 PROJECT_TASK_PROPOSALS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/proposals/?$")
@@ -190,6 +192,16 @@ def lambda_handler(event, context):
             return handle_list_decisions(event, request_ctx, m.group(1))
         elif (m := PROJECT_DETAIL_RE.match(path)) and method == "GET":
             return handle_get_project(event, request_ctx, m.group(1))
+        elif path == "/v1/admin/auth/jira/login" and method == "GET":
+            return handle_admin_login(event, request_ctx, "jira")
+        elif path == "/v1/admin/auth/jira/callback" and method == "GET":
+            return handle_admin_callback(event, request_ctx, "jira")
+        elif path == "/v1/admin/auth/slack/login" and method == "GET":
+            return handle_admin_login(event, request_ctx, "slack")
+        elif path == "/v1/admin/auth/slack/callback" and method == "GET":
+            return handle_admin_callback(event, request_ctx, "slack")
+        elif path == "/v1/admin/users" and method == "POST":
+            return handle_admin_create_user(event, request_ctx)
 
         return build_error_response(404, "NOT_FOUND", "Endpoint not found")
     except Exception as e:
@@ -1341,3 +1353,159 @@ def handle_get_report(event, request_ctx, report_id):
         "citations": report.get("citations", []),
         "created_at": report.get("created_at", ""),
     })
+
+
+# ---------- Admin OAuth Flow ----------
+def _get_secret(name: str) -> str:
+    sm = boto3.client("secretsmanager", region_name=REGION)
+    try:
+        return sm.get_secret_value(SecretId=name).get("SecretString", "")
+    except Exception as e:
+        logger.error("get_secret_failed", name=name, error=str(e))
+        return ""
+
+def _update_secret(name: str, value: str):
+    sm = boto3.client("secretsmanager", region_name=REGION)
+    sm.put_secret_value(SecretId=name, SecretString=value)
+
+def handle_admin_login(event, request_ctx, provider):
+    import urllib.parse
+    from agents.common.contracts.context import UserRole
+
+    if request_ctx.user_role not in (UserRole.leader, UserRole.project_manager):
+        return build_error_response(403, "FORBIDDEN", "Admin OAuth endpoints require leader/project_manager role")
+
+    project_name = os.environ.get("PROJECT_NAME", "npo-ai")
+    env = os.environ.get("ENVIRONMENT", "dev")
+    client_id_secret = f"{project_name}-{env}-{provider}-client-id"
+    client_id = _get_secret(client_id_secret)
+    if not client_id:
+        return build_error_response(500, "CONFIG_ERROR", f"Missing OAuth client id secret: {client_id_secret}")
+    
+    # URL callback to the same API
+    headers = event.get("headers", {})
+    host = headers.get("host", "localhost")
+    protocol = headers.get("x-forwarded-proto", "https")
+    redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
+    
+    if provider == "jira":
+        params = {
+            "audience": "api.atlassian.com",
+            "client_id": client_id,
+            "scope": "offline_access read:jira-work write:jira-work",
+            "redirect_uri": redirect_uri,
+            "state": "admin",
+            "response_type": "code",
+            "prompt": "consent",
+        }
+        url = "https://auth.atlassian.com/authorize?" + urllib.parse.urlencode(params)
+    else:  # slack
+        params = {
+            "client_id": client_id,
+            "scope": "chat:write,channels:read,groups:read",
+            "redirect_uri": redirect_uri,
+            "state": "admin",
+        }
+        url = "https://slack.com/oauth/v2/authorize?" + urllib.parse.urlencode(params)
+
+    return build_response(302, "", headers={"Location": url})
+
+def handle_admin_callback(event, request_ctx, provider):
+    import urllib.request
+    import urllib.parse
+    from agents.common.contracts.context import UserRole
+
+    if request_ctx.user_role not in (UserRole.leader, UserRole.project_manager):
+        return build_error_response(403, "FORBIDDEN", "Admin OAuth endpoints require leader/project_manager role")
+
+    qs = event.get("queryStringParameters") or {}
+    code = qs.get("code")
+    if not code:
+        return build_error_response(400, "BAD_REQUEST", "Missing authorization code")
+        
+    project_name = os.environ.get("PROJECT_NAME", "npo-ai")
+    env = os.environ.get("ENVIRONMENT", "dev")
+    client_id_secret = f"{project_name}-{env}-{provider}-client-id"
+    client_secret_secret = f"{project_name}-{env}-{provider}-client-secret"
+    client_id = _get_secret(client_id_secret)
+    client_secret = _get_secret(client_secret_secret)
+    if not client_id or not client_secret:
+        return build_error_response(500, "CONFIG_ERROR", f"Missing OAuth client config secrets: {client_id_secret}, {client_secret_secret}")
+    headers = event.get("headers", {})
+    host = headers.get("host", "localhost")
+    protocol = headers.get("x-forwarded-proto", "https")
+    redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
+    
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri
+    }
+    encoded_data = urllib.parse.urlencode(data).encode("utf-8")
+    
+    token_url = "https://auth.atlassian.com/oauth/token" if provider == "jira" else "https://slack.com/api/oauth.v2.access"
+    
+    try:
+        req = urllib.request.Request(token_url, data=encoded_data)
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+
+        with urllib.request.urlopen(req, timeout=10) as response:
+            resp_body = json.loads(response.read().decode("utf-8"))
+            
+            # Extract access_token (and bot token for Slack)
+            access_token = resp_body.get("access_token")
+            if provider == "slack" and not access_token:
+                # Slack uses 'authed_user' access_token or just the bot 'access_token'
+                pass
+                
+            if access_token:
+                _update_secret(f"{project_name}-{env}-{provider}-admin-access-token", access_token)
+                return build_response(200, {"status": "success", "message": f"Successfully authenticated {provider} for admin!"})
+            else:
+                return build_error_response(500, "TOKEN_ERROR", f"Failed to extract access token: {json.dumps(resp_body)}")
+                
+    except Exception as e:
+        logger.error("oauth_exchange_failed", provider=provider, error=str(e))
+        return build_error_response(500, "EXCHANGE_FAILED", str(e))
+
+def handle_admin_create_user(event, request_ctx):
+    role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    if role not in ["leader", "project_manager"]:
+        return build_error_response(403, "FORBIDDEN", "Only admin or manager can create users")
+
+    body = parse_body(event)
+    username = body.get("username")
+    email = body.get("email")
+    password = body.get("password")
+
+    if not username or not email or not password:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu username, email hoặc password")
+
+    if not COGNITO_USER_POOL_ID:
+        return build_error_response(500, "CONFIG_ERROR", "COGNITO_USER_POOL_ID is missing")
+
+    try:
+        _cognito.admin_create_user(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=username,
+            UserAttributes=[
+                {"Name": "email", "Value": email},
+                {"Name": "email_verified", "Value": "true"}
+            ],
+            TemporaryPassword=password,
+            MessageAction="SUPPRESS"
+        )
+
+        _cognito.admin_set_user_password(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=username,
+            Password=password,
+            Permanent=True
+        )
+
+        return build_response(200, {"status": "success", "username": username, "email": email})
+    except Exception as e:
+        logger.error("admin_create_user_failed", error=str(e))
+        return build_error_response(400, "CREATE_FAILED", str(e))

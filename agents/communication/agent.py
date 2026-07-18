@@ -11,6 +11,12 @@ from agents.common.contracts.agent import (
 from agents.common.model.provider import get_strands_model
 
 
+async def create_communication_agent(slack_client: Any = None) -> Agent:
+    """Create a Strands Agent for communication/drafting using Slack MCP Gateway."""
+    from agents.common.clients.mcp_client import fetch_mcp_tools_for_target
+    
+    # Fetch tools from Slack MCP Gateway
+    mcp_tools = await fetch_mcp_tools_for_target("slack")
 def create_communication_agent(slack_client: Any = None) -> Agent:
 
     @tool
@@ -88,6 +94,7 @@ def create_communication_agent(slack_client: Any = None) -> Agent:
     return Agent(
         name="communication",
         model=model,
+        tools=mcp_tools,
         tools=[draft_slack_message, draft_email, draft_meeting_summary, send_message],
         system_prompt=(
             "Bạn là trợ lý liên lạc của một tổ chức phi lợi nhuận (NPO) tại Việt Nam.\n"
@@ -119,7 +126,7 @@ class CommunicationAgent:
     async def handle(self, request: AgentTaskRequest) -> AgentTaskResult:
         start = time.time()
         try:
-            agent = create_communication_agent(slack_client=self._slack_client)
+            agent = await create_communication_agent(slack_client=self._slack_client)
             prompt = (
                 f"Yêu cầu từ người dùng: {request.instructions}\n"
                 f"Ngữ cảnh: {json.dumps(request.inputs, ensure_ascii=False) if request.inputs else 'Không có'}"

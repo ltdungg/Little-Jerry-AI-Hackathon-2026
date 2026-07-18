@@ -234,6 +234,14 @@ export async function updateUser(userId: string, data: Record<string, unknown>) 
   return apiFetch<any>(`/v1/users/${userId}`, { method: 'PATCH', body: JSON.stringify(data) });
 }
 
+// ── Admin ──
+export async function createAdminUser(data: { username: string; email: string; password: string }) {
+  return apiFetch<any>('/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
 // ── Weekly updates (current user) ──
 export async function getMyCurrentUpdate() {
   return apiFetch<any | null>('/v1/me/updates/current');
