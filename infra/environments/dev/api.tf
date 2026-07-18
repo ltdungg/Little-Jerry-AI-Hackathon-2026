@@ -28,6 +28,8 @@ resource "aws_lambda_function" "api_lambda" {
       CURATED_BUCKET  = module.storage.curated_bucket_name
       ARTIFACT_BUCKET          = module.storage.artifact_bucket_name
       REGION                   = var.aws_region
+      PROJECT_NAME             = var.project_name
+      ENVIRONMENT              = var.environment
       ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
       COGNITO_USER_POOL_ID     = module.auth.user_pool_id
     }
@@ -94,6 +96,20 @@ resource "aws_iam_role_policy" "api_lambda" {
         Effect   = "Allow"
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
         Resource = [module.security.kms_app_arn]
+      },
+      {
+        # OAuth flow reads client credentials and stores admin tokens in Secrets Manager.
+        Sid      = "SecretsManagerOAuth"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:PutSecretValue"]
+        Resource = [
+          aws_secretsmanager_secret.jira_client_id.arn,
+          aws_secretsmanager_secret.jira_client_secret.arn,
+          aws_secretsmanager_secret.slack_client_id.arn,
+          aws_secretsmanager_secret.slack_client_secret.arn,
+          aws_secretsmanager_secret.jira_admin_access_token.arn,
+          aws_secretsmanager_secret.slack_admin_access_token.arn,
+        ]
       }
     ]
   })

@@ -2,19 +2,61 @@
   {
     "risk_id": "risk-001",
     "project_id": "proj-green-hope",
-    "title": "Volunteer attrition during summer",
-    "severity": "high"
+    "title": "Thiếu hụt tình nguyện viên vào mùa hè",
+    "description": "Nhiều tình nguyện viên bỏ dở giữa chừng do điều kiện thời tiết khắc nghiệt",
+    "severity": "high",
+    "likelihood": 4,
+    "impact": 4,
+    "score": 16,
+    "status": "open",
+    "category": "nhân sự",
+    "owner_user_id": "user-minh",
+    "mitigation": "Tuyển thêm tình nguyện viên dự phòng và cải thiện chế độ hỗ trợ",
+    "created_at": "2026-01-15T08:00:00Z"
   },
   {
     "risk_id": "risk-002",
     "project_id": "proj-ocean-rescue",
-    "title": "Funding gap for Q3",
-    "severity": "medium"
+    "title": "Thiếu hụt ngân sách quý III",
+    "description": "Quỹ tài trợ bị cắt giảm 30% so với kế hoạch ban đầu",
+    "severity": "medium",
+    "likelihood": 3,
+    "impact": 3,
+    "score": 9,
+    "status": "open",
+    "category": "tài chính",
+    "owner_user_id": "user-sarah",
+    "mitigation": "Kêu gọi tài trợ bổ sung từ các doanh nghiệp địa phương",
+    "created_at": "2026-02-01T09:00:00Z"
   },
   {
     "risk_id": "risk-003",
     "project_id": "proj-community-health",
-    "title": "Permit delays",
-    "severity": "low"
+    "title": "Trì hoãn cấp phép hoạt động",
+    "description": "Ủy ban nhân dân chưa phê duyệt giấy phép tổ chức sự kiện cộng đồng",
+    "severity": "low",
+    "likelihood": 2,
+    "impact": 2,
+    "score": 4,
+    "status": "open",
+    "category": "pháp lý",
+    "owner_user_id": "user-lisa",
+    "mitigation": "Theo dõi sát tiến trình và chuẩn bị hồ sơ bổ sung nếu cần",
+    "created_at": "2026-03-01T10:00:00Z"
+  },
+  {
+    "risk_id": "risk-004",
+    "project_id": "proj-ocean-rescue",
+    "title": "Thiên tai mùa bão ảnh hưởng lịch trình",
+    "description": "Mùa bão từ tháng 9-11 có thể hủy các chiến dịch thu gom ven biển",
+    "severity": "high",
+    "likelihood": 4,
+    "impact": 5,
+    "score": 20,
+    "status": "open",
+    "category": "môi trường",
+    "owner_user_id": "user-tom",
+    "mitigation": "Lên phương án dự phòng và bảo hiểm cho thiết bị",
+    "created_at": "2026-04-01T08:30:00Z"
   }
 ]

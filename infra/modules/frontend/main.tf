@@ -51,6 +51,13 @@ resource "aws_amplify_app" "frontend" {
   # Vite SPA — no server-side rendering needed, use static hosting.
   platform = "WEB"
 
+  # SPA routing rule: rewrite 404 to index.html
+  custom_rule {
+    source = "/<*>"
+    status = "404-200"
+    target = "/index.html"
+  }
+
   environment_variables = local.frontend_env
 
   # Monorepo build spec for Vite: app lives under frontend-reactjs/ (appRoot).

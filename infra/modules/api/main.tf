@@ -4,7 +4,7 @@ resource "aws_apigatewayv2_api" "api" {
 
   cors_configuration {
     allow_origins = var.allowed_origins
-    allow_methods = ["GET", "POST", "OPTIONS"]
+    allow_methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     allow_headers = ["authorization", "content-type"]
     max_age       = 3600
   }
@@ -23,21 +23,16 @@ resource "aws_apigatewayv2_authorizer" "auth" {
 
 locals {
   routes = [
-    "GET /v1/me",
-    "POST /v1/chat",
-    "POST /v1/workflows",
-    "GET /v1/workflows/{workflow_id}",
-    "POST /v1/workflows/{workflow_id}/confirm",
-    "POST /v1/workflows/{workflow_id}/cancel",
-    "GET /v1/reports/{report_id}",
-    "GET /v1/projects",
-    "GET /v1/projects/{project_id}",
-    "GET /v1/projects/{project_id}/tasks",
-    "GET /v1/projects/{project_id}/risks",
-    "GET /v1/projects/{project_id}/milestones",
-    "POST /v1/projects/{project_id}/tasks/proposals",
-    "POST /v1/admin/users",
-    "GET /health"
+    "GET /health",
+    "GET /v1/admin/auth/jira/login",
+    "GET /v1/admin/auth/jira/callback",
+    "GET /v1/admin/auth/slack/login",
+    "GET /v1/admin/auth/slack/callback",
+    "GET /{proxy+}",
+    "POST /{proxy+}",
+    "PUT /{proxy+}",
+    "PATCH /{proxy+}",
+    "DELETE /{proxy+}"
   ]
 }
 
@@ -53,8 +48,8 @@ resource "aws_apigatewayv2_route" "routes" {
   api_id             = aws_apigatewayv2_api.api.id
   route_key          = each.value
   target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-  authorizer_id      = each.value == "GET /health" ? null : aws_apigatewayv2_authorizer.auth.id
-  authorization_type = each.value == "GET /health" ? "NONE" : "JWT"
+  authorizer_id      = length(regexall(".*\\{proxy\\+\\}.*", each.value)) > 0 ? aws_apigatewayv2_authorizer.auth.id : null
+  authorization_type = length(regexall(".*\\{proxy\\+\\}.*", each.value)) > 0 ? "JWT" : "NONE"
 }
 
 resource "aws_lambda_permission" "apigw" {
