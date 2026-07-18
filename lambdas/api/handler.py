@@ -1182,7 +1182,7 @@ def handle_chat(event, request_ctx):
     }
 
     # runtimeSessionId must be >= 33 chars.
-    session_id = f"sess{workflow_id.replace('-', '')}"
+    session_id = f"sess{conversation_session_id.replace('-', '')}"
 
     try:
         resp = _agentcore.invoke_agent_runtime(
