@@ -13,9 +13,21 @@ variable "tags" {
   default = {}
 }
 variable "business_table_name" { type = string }
+variable "memory_id" {
+  type    = string
+  default = ""
+}
 variable "aws_region" {
   type    = string
   default = "ap-southeast-2"
+}
+variable "knowledge_base_id" {
+  type    = string
+  default = ""
+}
+variable "artifact_bucket_name" {
+  type    = string
+  default = ""
 }
 
 # ── AgentCore Runtime per agent (AWS Cloud Control provider) ──
@@ -44,7 +56,10 @@ resource "awscc_bedrockagentcore_runtime" "agent" {
     BEDROCK_MODEL_ID    = each.value.model_id
     RUNTIME_NAME_PREFIX = replace("${var.project_name}_${var.environment}", "-", "_")
     BUSINESS_TABLE      = var.business_table_name
+    MEMORY_ID           = var.memory_id
     AWS_REGION          = var.aws_region
+    KNOWLEDGE_BASE_ID   = var.knowledge_base_id
+    ARTIFACT_BUCKET     = var.artifact_bucket_name
   }
 
   tags = var.tags

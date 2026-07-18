@@ -32,17 +32,13 @@ variable "user_pool_client_id" {
 
 locals {
   frontend_env = {
-    NEXT_PUBLIC_API_URL             = var.api_url
-    NEXT_PUBLIC_ENV                 = var.environment
-    NEXT_PUBLIC_AWS_REGION          = var.aws_region
-    NEXT_PUBLIC_USER_POOL_ID        = var.user_pool_id
-    NEXT_PUBLIC_USER_POOL_CLIENT_ID = var.user_pool_client_id
-    # Required for monorepo apps created outside the Amplify console (e.g. via
-    # Terraform/CloudFormation). The console sets this automatically when you
-    # pick "my app is a monorepo", but IaC-created apps must set it explicitly
-    # or Amplify's Next.js SSR adapter never runs and deploy-manifest.json is
-    # never generated.
-    AMPLIFY_MONOREPO_APP_ROOT = "frontend"
+    VITE_API_URL             = var.api_url
+    VITE_AWS_REGION          = var.aws_region
+    VITE_USER_POOL_ID        = var.user_pool_id
+    VITE_USER_POOL_CLIENT_ID = var.user_pool_client_id
+    # Required for monorepo: Amplify must know the app root directory.
+    # TODO: rename frontend-reactjs → frontend then change this back to "frontend"
+    AMPLIFY_MONOREPO_APP_ROOT = "frontend-reactjs"
   }
 }
 
@@ -51,21 +47,18 @@ resource "aws_amplify_app" "frontend" {
   name         = "${var.project_name}-${var.environment}-frontend"
   repository   = "https://github.com/${var.github_owner}/${var.github_repo}"
   access_token = var.github_access_token
-  description  = "NPO AI Platform Frontend"
-  # App has dynamic routes (app/dashboard/projects/[projectId]/...) that require
-  # a server, so it uses Amplify's Next.js SSR compute hosting.
-  platform = "WEB_COMPUTE"
+  description  = "NPO AI Platform Frontend (React + Vite)"
+  # Vite SPA — no server-side rendering needed, use static hosting.
+  platform = "WEB"
 
   environment_variables = local.frontend_env
 
-  # Monorepo build spec: app lives under frontend/ (appRoot), and for a Next.js
-  # SSR (WEB_COMPUTE) app the artifacts baseDirectory must be ".next" relative
-  # to appRoot. The "artifacts" key is mandatory - Amplify does not auto-fill
-  # it for hand-written monorepo build specs.
+  # Monorepo build spec for Vite: app lives under frontend-reactjs/ (appRoot).
+  # TODO: rename frontend-reactjs → frontend then change appRoot back to "frontend"
   build_spec = <<-EOT
 version: 1
 applications:
-  - appRoot: frontend
+  - appRoot: frontend-reactjs
     frontend:
       phases:
         preBuild:
@@ -75,7 +68,7 @@ applications:
           commands:
             - npm run build
       artifacts:
-        baseDirectory: .next
+        baseDirectory: dist
         files:
           - '**/*'
       cache:

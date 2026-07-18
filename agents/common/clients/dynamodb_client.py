@@ -101,3 +101,31 @@ class BusinessDataClient:
     def put_milestone(self, project_id: str, milestone: dict[str, Any]) -> None:
         item = {**milestone, "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"MILESTONE#{milestone['milestone_id']}"}
         self.table.put_item(Item=item)
+
+    # ---------- Reports ----------
+    def list_reports(self, project_id: str) -> list[dict[str, Any]]:
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("REPORT#")
+        )
+        return resp.get("Items", [])
+
+    # ---------- Cross-project queries (for Risk Analysis Agent) ----------
+    def list_all_risks(self) -> list[dict[str, Any]]:
+        """List all risks across all projects for cross-project risk analysis."""
+        projects = self.list_projects()
+        all_risks: list[dict[str, Any]] = []
+        for p in projects:
+            pid = p.get("project_id", "")
+            if pid:
+                all_risks.extend(self.list_risks(pid))
+        return all_risks
+
+    def list_all_tasks(self) -> list[dict[str, Any]]:
+        """List all tasks across all projects."""
+        projects = self.list_projects()
+        all_tasks: list[dict[str, Any]] = []
+        for p in projects:
+            pid = p.get("project_id", "")
+            if pid:
+                all_tasks.extend(self.list_tasks(pid))
+        return all_tasks

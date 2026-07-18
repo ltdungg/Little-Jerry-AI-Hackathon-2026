@@ -1,7 +1,7 @@
 project_name = "npo-ai"
 environment  = "dev"
 aws_region   = "ap-southeast-2"
-image_tag    = "latest"
+image_tag    = "3682822"
 
 embedding_model_id = "amazon.titan-embed-text-v2:0"
 
@@ -24,11 +24,11 @@ github_branch  = "main"
 # Amazon Nova via APAC cross-region inference profile (cheap, no Anthropic form,
 # on-demand not supported for direct model IDs in ap-southeast-2).
 agent_configs = {
-  orchestrator  = { model_id = "apac.amazon.nova-lite-v1:0" }
-  knowledge     = { model_id = "apac.amazon.nova-lite-v1:0" }
-  project_task  = { model_id = "apac.amazon.nova-lite-v1:0" }
-  reporting     = { model_id = "apac.amazon.nova-lite-v1:0" }
-  communication = { model_id = "apac.amazon.nova-lite-v1:0" }
+  orchestrator  = { model_id = "amazon.nova-lite-v1:0" }
+  knowledge     = { model_id = "amazon.nova-lite-v1:0" }
+  project_task  = { model_id = "amazon.nova-lite-v1:0" }
+  reporting     = { model_id = "amazon.nova-lite-v1:0" }
+  communication = { model_id = "amazon.nova-lite-v1:0" }
 }
 
 resource_tags = {

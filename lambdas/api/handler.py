@@ -210,6 +210,7 @@ def handle_chat(event, request_ctx):
         return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung tin nhắn (message)")
 
     project_id = body.get("project_id")
+    conversation_session_id = body.get("session_id") or str(uuid.uuid4())
     workflow_id = str(uuid.uuid4())
     role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
 
@@ -227,6 +228,7 @@ def handle_chat(event, request_ctx):
             "deadline_epoch_ms": 0,
             "user_id": request_ctx.user_id,
             "user_role": role,
+            "session_id": conversation_session_id,
         },
     }
 
