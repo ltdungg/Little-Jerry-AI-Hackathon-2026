@@ -3,12 +3,18 @@
     "doc_id": "meet-001",
     "project_id": "proj-green-hope",
     "date": "2026-05-10",
-    "summary": "Discussed volunteer coordination for summer events."
+    "summary": "Thảo luận về lịch phân công tình nguyện cho các sự kiện mùa hè tại Cần Giờ. Đã thống nhất chia thành 3 đội với đội trưởng từng khu vực."
   },
   {
     "doc_id": "meet-002",
     "project_id": "proj-ocean-rescue",
     "date": "2026-06-15",
-    "summary": "Review of cleanup equipment and budget allocation."
+    "summary": "Rà soát thiết bị thu gom và phân bổ ngân sách. Đã phê duyệt mua thêm 100 bộ dụng cụ và 5 thuyền kayak."
+  },
+  {
+    "doc_id": "meet-003",
+    "project_id": "proj-community-health",
+    "date": "2026-06-20",
+    "summary": "Lên kế hoạch buổi tư vấn sức khỏe miễn phí tại phường 12. Phối hợp với trạm y tế và đội ngũ y bác sĩ tình nguyện."
   }
 ]

@@ -2,6 +2,7 @@ import { useId, useRef, useState } from 'react';
 import { Icon } from '../components/common/Icon';
 import { sendChatMessage } from '../services/chat.service';
 import type { ChatMessage, SourceType } from '../types';
+import ReactMarkdown from 'react-markdown';
 
 const SOURCE_ICON: Record<SourceType, string> = {
   SharePoint: 'Cloud',
@@ -272,7 +273,9 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             Synthesized from {message.synthesizedFrom} sources
           </div>
         )}
-        <p className="text-sm leading-relaxed text-slate-700">{message.content}</p>
+        <div className="prose prose-sm prose-slate max-w-none text-sm leading-relaxed text-slate-700 prose-p:my-1 prose-ul:my-1 prose-ol:my-1">
+          <ReactMarkdown>{message.content}</ReactMarkdown>
+        </div>
 
         {message.sources && message.sources.length > 0 && (
           <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2.5">

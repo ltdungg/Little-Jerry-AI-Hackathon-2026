@@ -1,12 +1,17 @@
 [
   {
     "id": "sp-1",
-    "name": "Project Plan Q3",
+    "name": "Kế hoạch Dự án Quý 3/2026",
     "url": "https://graph.microsoft.com/v1.0/drive/items/sp-1"
   },
   {
     "id": "sp-2",
-    "name": "Volunteer Onboarding Manual",
+    "name": "Hướng dẫn Tiếp nhận Tình nguyện viên",
     "url": "https://graph.microsoft.com/v1.0/drive/items/sp-2"
+  },
+  {
+    "id": "sp-3",
+    "name": "Báo cáo Tài chính Tháng 6/2026",
+    "url": "https://graph.microsoft.com/v1.0/drive/items/sp-3"
   }
 ]

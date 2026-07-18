@@ -2,8 +2,8 @@
   {
     "tenant_id": "tenant-aiv",
     "project_id": "proj-green-hope",
-    "name": "Green Hope Environmental Initiative",
-    "description": "Community environmental restoration and sustainability program",
+    "name": "Chương trình Phủ xanh Việt Nam",
+    "description": "Phục hồi rừng ngập mặn tại Cần Giờ và bảo tồn hệ sinh thái ven biển",
     "status": "active",
     "start_date": "2025-09-01",
     "end_date": "2026-08-31",
@@ -15,8 +15,8 @@
   {
     "tenant_id": "tenant-aiv",
     "project_id": "proj-ocean-rescue",
-    "name": "Ocean Rescue Marine Conservation",
-    "description": "Marine ecosystem protection and coastal cleanup operations",
+    "name": "Dự án Làm sạch Đại dương",
+    "description": "Thu gom rác thải nhựa dọc bờ biển miền Trung và bảo tồn hệ sinh thái biển",
     "status": "active",
     "start_date": "2025-11-01",
     "end_date": "2026-10-31",
@@ -28,8 +28,8 @@
   {
     "tenant_id": "tenant-aiv",
     "project_id": "proj-community-health",
-    "name": "Community Health Outreach",
-    "description": "Health education and wellness programs for underserved communities",
+    "name": "Chương trình Chăm sóc Sức khỏe Cộng đồng",
+    "description": "Giáo dục sức khỏe và chương trình rèn luyện cho các cộng đồng khó khăn",
     "status": "active",
     "start_date": "2026-01-15",
     "end_date": "2026-12-31",

@@ -31,7 +31,7 @@ class ModelResponse:
 
 class ModelProvider(Protocol):
     async def generate(
-        self, prompt: str, model_id: str = "", temperature: float = 0.3, max_tokens: int = 2048
+        self, prompt: str, model_id: str = "", temperature: float = 0.3, max_tokens: int = 8192
     ) -> ModelResponse: ...
 
 
@@ -48,7 +48,7 @@ class BedrockProvider:
         self._default_model = DEFAULT_MODEL_ID
 
     async def generate(
-        self, prompt: str, model_id: str = "", temperature: float = 0.3, max_tokens: int = 2048
+        self, prompt: str, model_id: str = "", temperature: float = 0.3, max_tokens: int = 8192
     ) -> ModelResponse:
         resolved = self._default_model if (model_id or "") in _PLACEHOLDER_MODEL_IDS else model_id
         logger.info("bedrock_generate", model_id=resolved, prompt_length=len(prompt))
@@ -86,7 +86,7 @@ class BedrockProvider:
 
 class MockProvider:
     async def generate(
-        self, prompt: str, model_id: str = "", temperature: float = 0.3, max_tokens: int = 2048
+        self, prompt: str, model_id: str = "", temperature: float = 0.3, max_tokens: int = 8192
     ) -> ModelResponse:
         return ModelResponse("mock response", 0, 0, model_id)
 
@@ -99,7 +99,7 @@ def get_provider(provider_type: str | None = None) -> ModelProvider:
     return BedrockProvider()
 
 
-def get_strands_model(model_id: str = "", temperature: float = 0.3, max_tokens: int = 2048):
+def get_strands_model(model_id: str = "", temperature: float = 0.3, max_tokens: int = 8192):
     """Create a Strands BedrockModel for use with Strands Agent."""
     from strands.models.bedrock import BedrockModel
 

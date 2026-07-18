@@ -1453,16 +1453,27 @@ def handle_admin_callback(event, request_ctx, provider):
 
         with urllib.request.urlopen(req, timeout=10) as response:
             resp_body = json.loads(response.read().decode("utf-8"))
-            
-            # Extract access_token (and bot token for Slack)
+
+            # Extract access_token and refresh_token
             access_token = resp_body.get("access_token")
-            if provider == "slack" and not access_token:
-                # Slack uses 'authed_user' access_token or just the bot 'access_token'
-                pass
-                
+            refresh_token = resp_body.get("refresh_token")
+            expires_in = resp_body.get("expires_in", 3600)
+
             if access_token:
-                _update_secret(f"{project_name}-{env}-{provider}-admin-access-token", access_token)
-                return build_response(200, {"status": "success", "message": f"Successfully authenticated {provider} for admin!"})
+                # Store both tokens as JSON for auto-refresh
+                import time
+                token_data = {
+                    "access_token": access_token,
+                    "refresh_token": refresh_token or "",
+                    "expires_at": time.time() + expires_in,
+                }
+                _update_secret(f"{project_name}-{env}-{provider}-admin-access-token", json.dumps(token_data))
+                return build_response(200, {
+                    "status": "success",
+                    "message": f"Successfully authenticated {provider} for admin!",
+                    "expires_in": expires_in,
+                    "has_refresh_token": bool(refresh_token),
+                })
             else:
                 return build_error_response(500, "TOKEN_ERROR", f"Failed to extract access token: {json.dumps(resp_body)}")
                 

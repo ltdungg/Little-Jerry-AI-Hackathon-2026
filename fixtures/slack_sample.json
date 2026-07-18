@@ -2,11 +2,25 @@
   {
     "thread_id": "slack-1",
     "channel": "general",
-    "messages": ["Hey team, how is the cleanup going?", "Progress is good, we've covered 50%."]
+    "messages": [
+      "Chào team, tiến độ thu gom rác thế nào rồi?",
+      "Tiến độ tốt rồi, đã hoàn thành 50%."
+    ]
   },
   {
     "thread_id": "slack-2",
     "channel": "projects",
-    "messages": ["Any updates on the grant?", "Still waiting on the committee decision."]
+    "messages": [
+      "Có tin gì mới về đơn tài trợ chưa?",
+      "Đang chờ quyết định từ hội đồng, dự kiến tuần sau có kết quả."
+    ]
+  },
+  {
+    "thread_id": "slack-3",
+    "channel": "green-hope",
+    "messages": [
+      "Lịch tình nguyện tuần này đã phân công xong chưa?",
+      "Xong rồi, mỗi đội 5 người, bắt đầu từ thứ 7 lúc 7h sáng."
+    ]
   }
 ]
