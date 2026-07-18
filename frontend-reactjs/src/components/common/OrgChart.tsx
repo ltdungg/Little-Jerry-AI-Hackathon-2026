@@ -91,7 +91,7 @@ function OrgNode({
 }
 
 export function OrgChart({ members }: OrgChartProps) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set(members.map((m) => m.id)));
 
   // Find root members (those who don't have a manager, or their manager isn't in the list)
   const memberIds = new Set(members.map(m => m.id));

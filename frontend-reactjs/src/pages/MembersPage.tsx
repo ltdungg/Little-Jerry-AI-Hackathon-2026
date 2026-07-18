@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import { Icon } from '../components/common/Icon';
 import { PageHeader } from '../components/common/PageHeader';
-import { OrgChart } from '../components/common/OrgChart';
 import { Pill } from '../components/common/Pill';
 import { Select } from '../components/common/Select';
 import { Table, type Column } from '../components/common/Table';
@@ -23,7 +21,6 @@ const STATUS_LABEL: Record<MemberStatus, string> = {
 
 export function MembersPage() {
   const [kind, setKind] = useState<MemberKind | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'table' | 'chart'>('table');
   const { items, loading } = useMockList(() => listMembers({ kind }), [kind]);
 
   const columns: Column<MemberRecord>[] = [
@@ -55,36 +52,15 @@ export function MembersPage() {
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader title="Danh sách thành viên" subtitle="Toàn bộ nhân viên và tình nguyện viên trong tổ chức." />
 
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-4">
         <Select value={kind} onChange={(v) => setKind(v as MemberKind | 'all')} options={KIND_OPTIONS} />
-        
-        <div className="flex bg-slate-100 p-1 rounded-lg">
-          <button
-            type="button"
-            onClick={() => setViewMode('table')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'table' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <Icon name="List" size={14} />
-            Dạng bảng
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('chart')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${viewMode === 'chart' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <Icon name="Network" size={14} />
-            Sơ đồ tổ chức
-          </button>
-        </div>
       </div>
 
       <div className="mt-4">
         {loading ? (
           <p className="text-sm text-slate-400">Đang tải...</p>
-        ) : viewMode === 'table' ? (
-          <Table columns={columns} rows={items} rowKey={(m) => m.id} emptyIcon="Contact" emptyTitle="Không có thành viên phù hợp" />
         ) : (
-          <OrgChart members={items} />
+          <Table columns={columns} rows={items} rowKey={(m) => m.id} emptyIcon="Contact" emptyTitle="Không có thành viên phù hợp" />
         )}
       </div>
     </div>

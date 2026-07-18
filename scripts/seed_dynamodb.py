@@ -108,9 +108,10 @@ TEAMS = [
 ]
 
 USER_PROFILES = [
-    {"user_id": "user-minh", "name": "Minh Nguyen", "email": "minh.nguyen@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Environment", "program_names": ["Green Hope Environmental Initiative"], "kind": "staff", "status": "active", "start_date": "2025-01-10", "end_date": None},
-    {"user_id": "user-sarah", "name": "Sarah Pham", "email": "sarah.pham@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Marine Conservation", "program_names": ["Ocean Rescue Marine Conservation"], "kind": "staff", "status": "active", "start_date": "2025-03-01", "end_date": None},
-    {"user_id": "user-lina", "name": "Lina Le", "email": "lina.le@aiv.org", "role": "volunteer", "role_label": "Tình nguyện viên", "team_name": "Environment", "program_names": ["Green Hope Environmental Initiative"], "kind": "volunteer", "status": "active", "start_date": "2026-02-01", "end_date": "2026-07-31"},
+    {"user_id": "user-hoa", "name": "Hoa Tran", "email": "hoa.tran@aiv.org", "role": "leadership", "role_label": "Ban lãnh đạo", "team_name": "", "program_names": [], "kind": "staff", "status": "active", "start_date": "2024-01-01", "end_date": None, "manager_id": None},
+    {"user_id": "user-minh", "name": "Minh Nguyen", "email": "minh.nguyen@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Environment", "program_names": ["Green Hope Environmental Initiative"], "kind": "staff", "status": "active", "start_date": "2025-01-10", "end_date": None, "manager_id": "user-hoa"},
+    {"user_id": "user-sarah", "name": "Sarah Pham", "email": "sarah.pham@aiv.org", "role": "team_lead", "role_label": "Trưởng nhóm", "team_name": "Marine Conservation", "program_names": ["Ocean Rescue Marine Conservation"], "kind": "staff", "status": "active", "start_date": "2025-03-01", "end_date": None, "manager_id": "user-hoa"},
+    {"user_id": "user-lina", "name": "Lina Le", "email": "lina.le@aiv.org", "role": "volunteer", "role_label": "Tình nguyện viên", "team_name": "Environment", "program_names": ["Green Hope Environmental Initiative"], "kind": "volunteer", "status": "active", "start_date": "2026-02-01", "end_date": "2026-07-31", "manager_id": "user-minh"},
 ]
 
 WEEKLY_UPDATES = [

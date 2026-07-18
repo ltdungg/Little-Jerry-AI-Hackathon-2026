@@ -756,6 +756,7 @@ def _user_profile_view(u: dict) -> dict:
         "status": u.get("status", "active"),
         "start_date": u.get("start_date", ""),
         "end_date": u.get("end_date"),
+        "manager_id": u.get("manager_id"),
     }
 
 
