@@ -143,6 +143,51 @@ export interface TeamWeeklyReport {
 }
 
 // ---------------------------------------------------------------------------
+// Daily updates (cập nhật tiến độ task hằng ngày, theo dự án)
+// ---------------------------------------------------------------------------
+
+export interface DailyTaskProgress {
+  taskId: string;
+  taskTitle: string;
+  statusBefore: TaskStatus;
+  statusAfter: TaskStatus;
+  note?: string;
+}
+
+export interface DailyUpdate {
+  id: string;
+  userId: string;
+  userName: string;
+  userInitials: string;
+  date: string;
+  programId: string;
+  taskUpdates: DailyTaskProgress[];
+  status: UpdateStatus;
+}
+
+// ---------------------------------------------------------------------------
+// Project reports (báo cáo ngày/tuần do AgentCore sinh, chỉnh sửa được, xuất PDF)
+// ---------------------------------------------------------------------------
+
+export type ProjectReportType = 'daily_status' | 'weekly_status';
+export type ProjectReportStatus = 'generating' | 'draft' | 'edited' | 'exported' | 'failed';
+export type ProjectReportTrigger = 'manual' | 'schedule';
+
+export interface ProjectReport {
+  id: string;
+  projectId: string;
+  reportType: ProjectReportType;
+  periodLabel: string;
+  status: ProjectReportStatus;
+  generatedBy: ProjectReportTrigger;
+  contentMarkdown: string;
+  isEdited: boolean;
+  editedAt: string | null;
+  pdfExportedAt: string | null;
+  createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Notifications
 // ---------------------------------------------------------------------------
 
@@ -284,6 +329,7 @@ export interface MemberRecord {
   name: string;
   initials: string;
   email: string;
+  role: Role;
   roleLabel: string;
   teamName: string;
   programNames: string[];
@@ -291,6 +337,7 @@ export interface MemberRecord {
   status: MemberStatus;
   startDate: string;
   endDate: string | null;
+  managerId?: string;
 }
 
 // ---------------------------------------------------------------------------

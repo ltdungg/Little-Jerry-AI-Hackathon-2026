@@ -82,6 +82,15 @@ export async function listTasks(params: ListTasksParams = {}): Promise<Task[]> {
   return rawTasks.map((t) => mapTask(t, projectNames));
 }
 
+export async function listTasksForUser(userId: string): Promise<Task[]> {
+  const [rawTasks, projectNames] = await Promise.all([
+    api.getAllTasks(),
+    api.getProjectNameMap(),
+  ]);
+  const tasks = rawTasks.map((t) => mapTask(t, projectNames));
+  return tasks.filter((t) => t.assigneeId === userId);
+}
+
 export async function updateTaskStatus(id: string, status: TaskStatus): Promise<Task> {
   const raw = await api.updateTask(requireProjectId(id), id, { status });
   const projectNames = await api.getProjectNameMap();

@@ -15,6 +15,9 @@ from agents.common.clients.jira_mcp import (
     parse_jira_issue,
 )
 from lambdas.common.utils import parse_body, build_response, build_error_response, extract_claims, build_request_context
+from lambdas.common.pdf_renderer import render_report_pdf
+from agents.common.clients.s3_client import store_report_pdf, presign_s3_uri
+from shared.report_generators import REPORT_GENERATORS, REPORT_TITLES
 
 logger = structlog.get_logger()
 
@@ -23,6 +26,10 @@ ORCHESTRATOR_RUNTIME_ARN = os.environ.get("ORCHESTRATOR_RUNTIME_ARN", "")
 _agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
 _cognito = boto3.client("cognito-idp", region_name=REGION)
 COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID", "")
+ARTIFACT_BUCKET = os.environ.get("ARTIFACT_BUCKET", "")
+
+VALID_REPORT_TYPES = set(REPORT_GENERATORS.keys())
+VALID_REPORT_CATEGORIES = frozenset({"daily", "weekly", "manual"})
 
 PROJECT_TASKS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/?$")
 PROJECT_TASK_PROPOSALS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/proposals/?$")
@@ -42,6 +49,9 @@ WORKFLOW_CONFIRM_RE = re.compile(r"^/v1/workflows/([^/]+)/confirm/?$")
 WORKFLOW_CANCEL_RE = re.compile(r"^/v1/workflows/([^/]+)/cancel/?$")
 WORKFLOW_DETAIL_RE = re.compile(r"^/v1/workflows/([^/]+)/?$")
 REPORT_DETAIL_RE = re.compile(r"^/v1/reports/([^/]+)/?$")
+REPORT_EXPORT_PDF_RE = re.compile(r"^/v1/reports/([^/]+)/export-pdf/?$")
+PROJECT_REPORTS_RE = re.compile(r"^/v1/projects/([^/]+)/reports/?$")
+PROJECT_DAILY_UPDATES_RE = re.compile(r"^/v1/projects/([^/]+)/daily-updates/?$")
 
 TEAM_DETAIL_RE = re.compile(r"^/v1/teams/([^/]+)/?$")
 TEAM_REPORTS_RE = re.compile(r"^/v1/teams/([^/]+)/reports/?$")
@@ -93,8 +103,20 @@ def lambda_handler(event, context):
             return handle_get_workflow(event, request_ctx, m.group(1))
         elif path == "/v1/reports/leadership-summary" and method == "GET":
             return handle_leadership_summary(event, request_ctx)
+        elif (m := REPORT_EXPORT_PDF_RE.match(path)) and method == "POST":
+            return handle_export_report_pdf(event, request_ctx, m.group(1))
         elif (m := REPORT_DETAIL_RE.match(path)) and method == "GET":
             return handle_get_report(event, request_ctx, m.group(1))
+        elif (m := REPORT_DETAIL_RE.match(path)) and method in ("PUT", "PATCH"):
+            return handle_update_report(event, request_ctx, m.group(1))
+        elif (m := PROJECT_REPORTS_RE.match(path)) and method == "GET":
+            return handle_list_project_reports(event, request_ctx, m.group(1))
+        elif (m := PROJECT_REPORTS_RE.match(path)) and method == "POST":
+            return handle_create_report(event, request_ctx, m.group(1))
+        elif (m := PROJECT_DAILY_UPDATES_RE.match(path)) and method == "GET":
+            return handle_list_daily_updates(event, request_ctx, m.group(1))
+        elif (m := PROJECT_DAILY_UPDATES_RE.match(path)) and method == "POST":
+            return handle_submit_daily_update(event, request_ctx, m.group(1))
         elif path == "/v1/projects" and method == "GET":
             return handle_list_projects(event, request_ctx)
         elif path == "/v1/tasks" and method == "GET":
@@ -1394,19 +1416,190 @@ def handle_cancel_workflow(event, request_ctx, workflow_id):
     return build_response(200, {"workflow_id": workflow_id, "status": "cancelled"})
 
 
+def _report_view(r: dict) -> dict:
+    return {
+        "report_id": r.get("report_id"),
+        "project_id": r.get("project_id"),
+        "category": r.get("category", "manual"),
+        "report_type": r.get("report_type", ""),
+        "title": r.get("title", ""),
+        "period_start": r.get("period_start", ""),
+        "period_end": r.get("period_end", ""),
+        "status": r.get("status", "draft"),
+        "content": r.get("content", ""),
+        "pdf_s3_uri": r.get("pdf_s3_uri"),
+        "generated_at": r.get("generated_at", ""),
+        "edited_at": r.get("edited_at"),
+        "exported_at": r.get("exported_at"),
+        "version": r.get("version", 1),
+    }
+
+
 def handle_get_report(event, request_ctx, report_id):
     report = _client(request_ctx).get_report_by_id(report_id)
     if not report:
         return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo")
-    return build_response(200, {
-        "report_id": report.get("report_id"),
-        "title": report.get("title", ""),
-        "report_type": report.get("report_type", ""),
-        "content": report.get("content", ""),
-        "s3_uri": report.get("s3_uri", ""),
-        "citations": report.get("citations", []),
-        "created_at": report.get("created_at", ""),
+    return build_response(200, _report_view(report))
+
+
+def handle_list_project_reports(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_reports(project_id, category_filter=qs.get("category"))
+    return build_response(200, [_report_view(r) for r in items])
+
+
+def handle_list_all_reports(event, request_ctx):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_all_reports(category_filter=qs.get("category"))
+    if qs.get("project_id"):
+        items = [r for r in items if r.get("project_id") == qs["project_id"]]
+    return build_response(200, [_report_view(r) for r in items])
+
+
+def _create_report_now(request_ctx, project_id: str, report_type: str, category: str) -> dict:
+    client = _client(request_ctx)
+    generator = REPORT_GENERATORS[report_type]
+    content = generator(project_id, client)
+    now = _now()
+    today = now[:10]
+    report = {
+        "report_id": str(uuid.uuid4()),
+        "project_id": project_id,
+        "category": category,
+        "report_type": report_type,
+        "title": f"{REPORT_TITLES.get(report_type, 'Báo cáo')} — {today}",
+        "period_start": today,
+        "period_end": today,
+        "status": "draft",
+        "content": content,
+        "pdf_s3_uri": None,
+        "generated_at": now,
+        "edited_at": None,
+        "exported_at": None,
+        "version": 1,
+        "created_at": now,
+        "created_by": request_ctx.user_id,
+    }
+    client.put_report(project_id, report)
+    return report
+
+
+def handle_create_report(event, request_ctx, project_id):
+    body = parse_body(event)
+    report_type = body.get("report_type", "weekly_status")
+    if report_type not in VALID_REPORT_TYPES:
+        return build_error_response(400, "BAD_REQUEST", f"report_type phải là một trong: {', '.join(sorted(VALID_REPORT_TYPES))}")
+    if not _client(request_ctx).get_project(project_id):
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy dự án")
+
+    report = _create_report_now(request_ctx, project_id, report_type, category="manual")
+    _record_activity(request_ctx, "edited", f"Tạo báo cáo thủ công \"{report['title']}\"")
+    return build_response(201, _report_view(report))
+
+
+def handle_update_report(event, request_ctx, report_id):
+    body = parse_body(event)
+    content = body.get("content")
+    if content is None:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung (content)")
+
+    client = _client(request_ctx)
+    report = client.get_report_by_id(report_id)
+    if not report:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo")
+
+    client.update_report(report["project_id"], report_id, {
+        "content": content,
+        "status": "edited",
+        "edited_at": _now(),
+        "version": report.get("version", 1) + 1,
     })
+    _record_activity(request_ctx, "edited", f"Sửa báo cáo \"{report.get('title')}\"")
+    return build_response(200, _report_view(client.get_report_by_id(report_id)))
+
+
+def handle_export_report_pdf(event, request_ctx, report_id):
+    if not ARTIFACT_BUCKET:
+        return build_error_response(500, "CONFIG_ERROR", "ARTIFACT_BUCKET chưa được cấu hình")
+
+    client = _client(request_ctx)
+    report = client.get_report_by_id(report_id)
+    if not report:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo")
+
+    subtitle = f"{report.get('project_id', '')} · {report.get('period_start', '')} → {report.get('period_end', '')}"
+    pdf_bytes = render_report_pdf(
+        title=report.get("title", "Báo cáo"),
+        subtitle=subtitle,
+        content_markdown=report.get("content", ""),
+        edited=report.get("status") in ("edited", "exported") and bool(report.get("edited_at")),
+    )
+
+    pdf_s3_uri = store_report_pdf(ARTIFACT_BUCKET, request_ctx.tenant_id, report["project_id"], report_id, pdf_bytes)
+
+    now = _now()
+    client.update_report(report["project_id"], report_id, {
+        "pdf_s3_uri": pdf_s3_uri,
+        "status": "exported",
+        "exported_at": now,
+    })
+    _record_activity(request_ctx, "exported", f"Báo cáo \"{report.get('title')}\"")
+
+    download_url = presign_s3_uri(pdf_s3_uri, expires_in=900)
+    return build_response(200, {
+        "report_id": report_id,
+        "pdf_s3_uri": pdf_s3_uri,
+        "download_url": download_url,
+        "expires_in": 900,
+    })
+
+
+# ---------- Daily updates (cập nhật tiến độ task hằng ngày, theo dự án) ----------
+def _daily_update_view(u: dict) -> dict:
+    return {
+        "id": f"{u.get('date', '')}#{u.get('user_id', '')}",
+        "user_id": u.get("user_id"),
+        "user_name": u.get("user_name", ""),
+        "date": u.get("date", ""),
+        "project_id": u.get("project_id"),
+        "task_updates": u.get("task_updates", []),
+        "status": u.get("status", "submitted"),
+    }
+
+
+def handle_list_daily_updates(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    date = qs.get("date") or datetime.now(timezone.utc).date().isoformat()
+    items = _client(request_ctx).list_daily_updates(project_id, date=date)
+    return build_response(200, [_daily_update_view(u) for u in items])
+
+
+def handle_submit_daily_update(event, request_ctx, project_id):
+    body = parse_body(event)
+    task_updates = body.get("task_updates")
+    if not task_updates:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu task_updates")
+    date = body.get("date") or datetime.now(timezone.utc).date().isoformat()
+
+    client = _client(request_ctx)
+    update = {
+        "user_id": request_ctx.user_id,
+        "user_name": body.get("user_name", request_ctx.user_id),
+        "date": date,
+        "project_id": project_id,
+        "task_updates": task_updates,
+        "status": "submitted",
+    }
+    client.put_daily_update(project_id, update)
+
+    for tu in task_updates:
+        task_id = tu.get("task_id")
+        status_after = tu.get("status_after")
+        if task_id and status_after and client.get_task(project_id, task_id):
+            client.update_task(project_id, task_id, {"status": status_after, "updated_at": _now()})
+
+    _record_activity(request_ctx, "edited", f"Cập nhật hằng ngày {date} — dự án {project_id}")
+    return build_response(201, _daily_update_view(update))
 
 
 # ---------- Admin OAuth Flow ----------

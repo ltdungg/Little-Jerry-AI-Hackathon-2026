@@ -43,9 +43,17 @@ function mapOffboarding(o: any): OffboardingRecord {
   };
 }
 
-export async function listHandoffs(): Promise<Handoff[]> {
+export interface ListHandoffsParams {
+  /** Backend has no server-side filter for this yet — matched client-side
+   * against `program_name`, which the real data stores as the project's
+   * display name (see Meeting/Handoff seed fixtures). */
+  programName?: string;
+}
+
+export async function listHandoffs(params: ListHandoffsParams = {}): Promise<Handoff[]> {
   const raw = await api.getHandoffs();
-  return raw.map(mapHandoff);
+  const items = raw.map(mapHandoff);
+  return params.programName ? items.filter((h) => h.programName === params.programName) : items;
 }
 
 export async function updateHandoffStatus(id: string, status: HandoffStatus): Promise<Handoff> {

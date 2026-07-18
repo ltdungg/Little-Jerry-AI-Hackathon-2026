@@ -5,6 +5,8 @@ Simplified single-tenant key pattern:
   Task    : PK=TENANT#<tenant>#PROJECT#<projectId>   SK=TASK#<taskId>
   Risk    : PK=TENANT#<tenant>#PROJECT#<projectId>   SK=RISK#<riskId>
   Milestone: PK=TENANT#<tenant>#PROJECT#<projectId>  SK=MILESTONE#<milestoneId>
+  Report   : PK=TENANT#<tenant>#PROJECT#<projectId>  SK=REPORT#<createdAt>#<reportId>
+  DailyUpdate: PK=TENANT#<tenant>#PROJECT#<projectId> SK=DAILYUPDATE#<date>#<userId>
 """
 import os
 from datetime import datetime, timezone
@@ -137,12 +139,30 @@ class BusinessDataClient:
         item = {**milestone, "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"MILESTONE#{milestone['milestone_id']}"}
         self.table.put_item(Item=item)
 
-    # ---------- Reports ----------
-    def list_reports(self, project_id: str) -> list[dict[str, Any]]:
+    # ---------- Reports (daily/weekly/manual — docs/REPORT-EXPORT-SPEC.md) ----------
+    def list_reports(self, project_id: str, category_filter: str | None = None) -> list[dict[str, Any]]:
         resp = self.table.query(
-            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("REPORT#")
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("REPORT#"),
+            ScanIndexForward=False,
         )
-        return resp.get("Items", [])
+        items = resp.get("Items", [])
+        if category_filter:
+            items = [r for r in items if r.get("category") == category_filter]
+        return items
+
+    def list_all_reports(self, category_filter: str | None = None) -> list[dict[str, Any]]:
+        all_reports: list[dict[str, Any]] = []
+        for p in self.list_projects():
+            pid = p.get("project_id", "")
+            if pid:
+                all_reports.extend(self.list_reports(pid, category_filter=category_filter))
+        return all_reports
+
+    def get_report(self, project_id: str, report_id: str) -> dict[str, Any] | None:
+        for r in self.list_reports(project_id):
+            if r.get("report_id") == report_id:
+                return r
+        return None
 
     def get_report_by_id(self, report_id: str) -> dict[str, Any] | None:
         """Report SK embeds created_at, so a bare report_id needs a bounded
@@ -155,6 +175,38 @@ class BusinessDataClient:
                 if r.get("report_id") == report_id:
                     return r
         return None
+
+    def put_report(self, project_id: str, report: dict[str, Any]) -> None:
+        item = {
+            **report,
+            "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}",
+            "SK": f"REPORT#{report['created_at']}#{report['report_id']}",
+        }
+        self.table.put_item(Item=item)
+
+    def update_report(self, project_id: str, report_id: str, updates: dict[str, Any]) -> None:
+        report = self.get_report(project_id, report_id)
+        if not report:
+            raise ValueError(f"report {report_id} not found in project {project_id}")
+        self._update_item(f"TENANT#{self.tenant_id}#PROJECT#{project_id}", report["SK"], updates)
+
+    # ---------- Daily updates (cập nhật tiến độ task hằng ngày, theo dự án) ----------
+    def list_daily_updates(self, project_id: str, date: str | None = None) -> list[dict[str, Any]]:
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#PROJECT#{project_id}") & Key("SK").begins_with("DAILYUPDATE#")
+        )
+        items = resp.get("Items", [])
+        if date:
+            items = [u for u in items if u.get("date") == date]
+        return items
+
+    def put_daily_update(self, project_id: str, update: dict[str, Any]) -> None:
+        item = {
+            **update,
+            "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}",
+            "SK": f"DAILYUPDATE#{update['date']}#{update['user_id']}",
+        }
+        self.table.put_item(Item=item)
 
     # ---------- Issues ----------
     def list_issues(self, project_id: str, status_filter: str | None = None) -> list[dict[str, Any]]:

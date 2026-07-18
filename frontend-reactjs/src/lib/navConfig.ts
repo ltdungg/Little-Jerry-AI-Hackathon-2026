@@ -6,48 +6,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Home',
     items: [
       {
-        label: 'Bảng thông tin của tôi',
+        label: 'Trang chủ',
         path: '/',
         icon: 'LayoutDashboard',
-        blurb: 'Tổng quan cá nhân hoá theo vai trò của bạn trong AIV.',
+        blurb: 'Tổng quan công việc, cập nhật và thông báo.',
         features: [
           'Nhiệm vụ, cập nhật và thông báo quan trọng nhất trong ngày',
           'Tổng hợp nhanh tình hình các chương trình bạn tham gia',
-          'Lối tắt tới trợ lý AI và các trang hay dùng',
-        ],
-      },
-      {
-        label: 'Nhiệm vụ của tôi',
-        path: '/my-tasks',
-        icon: 'ListChecks',
-        blurb: 'Toàn bộ nhiệm vụ được giao cho bạn, theo mức ưu tiên.',
-        features: [
-          'Xem nhiệm vụ được giao và mức độ ưu tiên',
-          'Cập nhật tiến độ trực tiếp trên từng nhiệm vụ',
-          'Xem quyết định liên quan đến công việc của bạn',
-          'Theo dõi thời hạn hoàn thành',
-        ],
-      },
-      {
-        label: 'Cập nhật của tôi',
-        path: '/my-updates',
-        icon: 'RefreshCw',
-        blurb: 'Nhật ký cập nhật tiến độ hằng tuần của bạn.',
-        features: [
-          'Bản nháp báo cáo tuần được hệ thống tự tạo',
-          'Bổ sung thông tin thủ công và gửi cho trưởng nhóm',
-          'Xem lại báo cáo của các tuần trước',
-        ],
-      },
-      {
-        label: 'Thông báo',
-        path: '/notifications',
-        icon: 'Bell',
-        blurb: 'Toàn bộ thông báo liên quan đến công việc của bạn.',
-        features: [
-          'Nhiệm vụ mới, sắp đến hạn hoặc quá hạn',
-          'Khó khăn mới và quyết định cần xem xét',
-          'Tuỳ chỉnh loại thông báo và tần suất nhận',
         ],
       },
     ],
@@ -57,41 +22,11 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Sparkles',
     items: [
       {
-        label: 'Hỏi AIV',
+        label: 'Trợ lý trí tuệ nhân tạo',
         path: '/assistant',
         icon: 'MessageCircle',
-        blurb: 'Đặt câu hỏi bằng ngôn ngữ tự nhiên, nhận câu trả lời có dẫn nguồn.',
+        blurb: 'Hỏi, tra cứu lịch sử và các câu trả lời đã lưu.',
         features: [],
-      },
-      {
-        label: 'Lịch sử trao đổi',
-        path: '/assistant/history',
-        icon: 'History',
-        blurb: 'Toàn bộ các cuộc trao đổi trước đây với trợ lý AIV.',
-        features: [
-          'Tạo, đổi tên và xoá cuộc trao đổi (khi được phép)',
-          'Tìm lại nhanh những câu hỏi đã hỏi trước đó',
-        ],
-      },
-      {
-        label: 'Câu trả lời đã lưu',
-        path: '/assistant/saved',
-        icon: 'Bookmark',
-        blurb: 'Những câu trả lời quan trọng bạn đã lưu lại để tham khảo.',
-        features: [
-          'Lưu câu trả lời kèm nguồn tham khảo gốc',
-          'Chia sẻ câu trả lời đã lưu với nhóm',
-        ],
-      },
-      {
-        label: 'Tìm kiếm kiến thức',
-        path: '/assistant/search',
-        icon: 'Search',
-        blurb: 'Tìm kiếm nâng cao trong toàn bộ kho kiến thức của tổ chức.',
-        features: [
-          'Lọc theo nhóm, chương trình, khoảng thời gian, loại tài liệu',
-          'Chỉ hiển thị thông tin đã được xác nhận',
-        ],
       },
     ],
   },
@@ -100,44 +35,11 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Workflow',
     items: [
       {
-        label: 'Chương trình',
+        label: 'Công việc',
         path: '/projects',
         icon: 'FolderKanban',
-        blurb: 'Theo dõi sức khoẻ và tiến độ của mọi chương trình đang hoạt động.',
+        blurb: 'Danh sách dự án của bạn — bấm vào một dự án để xem nhiệm vụ, khó khăn, cập nhật hằng ngày, xuất báo cáo, bàn giao và cuộc họp của riêng dự án đó.',
         features: [],
-      },
-      {
-        label: 'Nhiệm vụ',
-        path: '/tasks',
-        icon: 'CheckSquare',
-        blurb: 'Toàn bộ nhiệm vụ của các chương trình và nhóm.',
-        features: [
-          'Nhiệm vụ quá hạn, chưa có người phụ trách, chưa có thời hạn',
-          'Công việc phụ thuộc giữa các nhiệm vụ',
-          'Bình luận và tài liệu đính kèm trên từng nhiệm vụ',
-        ],
-      },
-      {
-        label: 'Cập nhật hằng tuần',
-        path: '/weekly-updates',
-        icon: 'CalendarClock',
-        blurb: 'Quản lý và tổng hợp báo cáo tiến độ hằng tuần của các nhóm.',
-        features: [
-          'Hệ thống tự tổng hợp bản nháp báo cáo nhóm và toàn tổ chức',
-          'Hiển thị người chưa gửi báo cáo và gửi nhắc nhở',
-          'Phê duyệt, công bố và tải báo cáo dưới dạng tài liệu',
-        ],
-      },
-      {
-        label: 'Khó khăn',
-        path: '/issues',
-        icon: 'AlertTriangle',
-        blurb: 'Ghi nhận, theo dõi và giải quyết khó khăn của tổ chức.',
-        features: [
-          'Trí tuệ nhân tạo đề xuất khó khăn phát hiện từ hoạt động thực tế',
-          'Mức độ ảnh hưởng: Thấp, Trung bình, Cao, Nghiêm trọng',
-          'Cơ chế báo động và nâng cấp xử lý khi quá hạn',
-        ],
       },
       {
         label: 'Quyết định',
@@ -150,21 +52,10 @@ export const NAV_GROUPS: NavGroup[] = [
           'Theo dõi quyết định đã được thay thế bởi quyết định mới',
         ],
       },
-      {
-        label: 'Cuộc họp',
-        path: '/meetings',
-        icon: 'CalendarDays',
-        blurb: 'Nội dung, tóm tắt và việc cần làm sau mỗi cuộc họp.',
-        features: [
-          'Tự động tạo tóm tắt, quyết định đề xuất và danh sách công việc',
-          'Xác nhận hoặc từ chối nhiệm vụ được đề xuất sau họp',
-          'Gửi nội dung sau cuộc họp cho người tham gia',
-        ],
-      },
     ],
   },
   {
-    label: 'Con người và bàn giao',
+    label: 'Con người',
     icon: 'Users',
     items: [
       {
@@ -188,27 +79,6 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Hướng dẫn người mới',
-        path: '/onboarding',
-        icon: 'Compass',
-        blurb: 'Giúp tình nguyện viên và nhân viên mới nhanh chóng hiểu công việc.',
-        features: [
-          'Giới thiệu nhóm, chương trình, người liên hệ, tài liệu bắt buộc',
-          'Trợ lý hướng dẫn trả lời câu hỏi dựa trên quyền truy cập',
-          'Theo dõi tiến độ hoàn thành quá trình làm quen',
-        ],
-      },
-      {
-        label: 'Bàn giao',
-        path: '/handoff',
-        icon: 'ArrowLeftRight',
-        blurb: 'Tạo nội dung bàn giao khi thành viên rời chương trình.',
-        features: [
-          'Hệ thống tạo bản nháp bàn giao từ công việc đang thực hiện',
-          'Người tiếp nhận xác nhận và chuyển nhiệm vụ, trách nhiệm',
-        ],
-      },
-      {
         label: 'Kết thúc tham gia',
         path: '/offboarding',
         icon: 'LogOut',
@@ -228,10 +98,11 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Bảng thông tin của nhóm',
         path: '/reports/team',
         icon: 'BarChart2',
-        blurb: 'Tổng hợp báo cáo, kết quả nổi bật và khó khăn của nhóm.',
+        blurb: 'Tổng hợp báo cáo, kết quả nổi bật và khó khăn của nhóm xuyên suốt mọi dự án nhóm phụ trách.',
         features: [
           'Tổng hợp báo cáo của tất cả thành viên trong nhóm',
           'Ưu tiên của tuần tiếp theo do trưởng nhóm chốt',
+          'Quản lý chi tiết theo từng dự án nằm trong tab "Xuất báo cáo" của dự án đó',
         ],
       },
       {
@@ -248,10 +119,10 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Báo cáo hằng tuần',
         path: '/reports/weekly',
         icon: 'FileText',
-        blurb: 'Báo cáo tiến độ hằng tuần theo nhóm và toàn tổ chức.',
+        blurb: 'Xem nhanh trạng thái báo cáo tuần của tất cả dự án — bấm vào một dự án để mở đúng nơi tạo/sửa/xuất PDF.',
         features: [
-          'Tự động tổng hợp từ cập nhật của các thành viên',
-          'Người điều phối kiểm tra trước khi công bố',
+          'Tổng hợp trạng thái báo cáo tuần mới nhất của mọi dự án',
+          'Việc tạo, chỉnh sửa và xuất PDF thực hiện trong tab "Xuất báo cáo" của từng dự án',
         ],
       },
       {

@@ -15,6 +15,8 @@ dependencies = [
     "fastapi",
     "aiohttp",
     "langgraph>=1.2.9",
+    "markdown",
+    "weasyprint",
 ]
 requires-python = ">=3.12"
 
