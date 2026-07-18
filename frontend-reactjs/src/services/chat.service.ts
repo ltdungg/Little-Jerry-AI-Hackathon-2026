@@ -1,55 +1,83 @@
-import { delay, nextId } from './mockClient';
-import { CITATIONS } from '../lib/mockData';
-import type { ChatSession, SavedAnswer } from '../types';
+import * as api from '../lib/api';
+import type { ChatSession, Citation, SavedAnswer, SourceType } from '../types';
 
-const chatSessions: ChatSession[] = [
-  { id: 'session-1', title: 'Rủi ro Rural Education tuần này', lastMessageAt: 'Hôm nay', messageCount: 4 },
-  { id: 'session-2', title: 'Phương án khoan giếng vs đường ống', lastMessageAt: '2 ngày trước', messageCount: 6 },
-  { id: 'session-3', title: 'Người phụ trách Community Digital Infrastructure', lastMessageAt: '5 ngày trước', messageCount: 2 },
-  { id: 'session-4', title: 'Tóm tắt hoạt động tháng 6 — Education', lastMessageAt: '3 tuần trước', messageCount: 8 },
-];
+const SOURCE_SYSTEM_MAP: Record<string, SourceType> = {
+  sharepoint: 'SharePoint',
+  slack: 'Slack',
+  s3: 'Docs',
+  google_drive: 'Docs',
+  manual: 'Docs',
+};
 
-let savedAnswers: SavedAnswer[] = [
-  {
-    id: 'saved-1',
-    question: 'Tại sao chúng ta chọn phương án khoan giếng thay vì kéo đường ống?',
-    answer:
-      'Quyết định D-2024-014 ghi nhận nhóm Health & WASH chọn phương án khoan giếng vì chi phí bảo trì thấp hơn 40% so với kéo đường ống trên địa hình đồi núi.',
-    citations: [CITATIONS[0]],
-    savedAt: '2 ngày trước',
-    savedBy: 'Sarah Johnson',
-  },
-  {
-    id: 'saved-2',
-    question: 'Ai đang chịu trách nhiệm chương trình Community Digital Infrastructure?',
-    answer: 'Elena Lopez là người phụ trách chương trình Community Digital Infrastructure, thuộc nhóm Tech for Good.',
-    citations: [],
-    savedAt: '1 tuần trước',
-    savedBy: 'Sarah Johnson',
-  },
-];
+function mapCitation(c: any): Citation {
+  return {
+    id: c.citation_id,
+    title: c.document_title || c.source_uri || 'Nguồn không tên',
+    snippet: c.excerpt || '',
+    source: SOURCE_SYSTEM_MAP[c.source_system] || 'Docs',
+    updatedAt: c.last_modified_at || '',
+  };
+}
+
+export interface ChatAnswer {
+  content: string;
+  citations: Citation[];
+  sources: SourceType[];
+}
+
+/** Sends a message to the real Orchestrator via POST /v1/chat. */
+export async function sendChatMessage(message: string, projectId?: string, sessionId?: string): Promise<ChatAnswer> {
+  const res = await api.sendMessage(message, projectId, sessionId);
+  const citations = (res.citations || []).map(mapCitation);
+  return {
+    content: res.answer || '',
+    citations,
+    sources: Array.from(new Set(citations.map((c: Citation) => c.source))),
+  };
+}
+
+function mapSession(s: any): ChatSession {
+  return {
+    id: s.session_id,
+    title: s.title || '',
+    lastMessageAt: s.last_message_at || '',
+    messageCount: s.message_count || 0,
+  };
+}
+
+/** Saved-answer citations are stored verbatim as already-mapped Citation
+ * objects (unlike chat citations, which arrive fresh from the backend in its
+ * raw `source_system`/`document_title` shape via mapCitation above). */
+function mapSavedAnswer(s: any): SavedAnswer {
+  return {
+    id: s.saved_id,
+    question: s.question,
+    answer: s.answer,
+    citations: s.citations || [],
+    savedAt: s.saved_at || '',
+    savedBy: s.saved_by || '',
+  };
+}
 
 export async function listChatSessions(): Promise<ChatSession[]> {
-  return delay([...chatSessions]);
+  const raw = await api.getChatSessions();
+  return raw.map(mapSession);
 }
 
 export async function renameChatSession(id: string, title: string): Promise<ChatSession> {
-  const idx = chatSessions.findIndex((s) => s.id === id);
-  if (idx >= 0) chatSessions[idx] = { ...chatSessions[idx], title };
-  return delay(chatSessions[idx]);
+  return mapSession(await api.renameChatSession(id, title));
 }
 
 export async function listSavedAnswers(): Promise<SavedAnswer[]> {
-  return delay([...savedAnswers]);
+  const raw = await api.getSavedAnswers();
+  return raw.map(mapSavedAnswer);
 }
 
 export async function removeSavedAnswer(id: string): Promise<void> {
-  savedAnswers = savedAnswers.filter((a) => a.id !== id);
-  await delay(undefined, 150);
+  await api.deleteSavedAnswer(id);
 }
 
 export async function saveAnswer(question: string, answer: string, citations: SavedAnswer['citations'], savedBy: string): Promise<SavedAnswer> {
-  const entry: SavedAnswer = { id: nextId('saved'), question, answer, citations, savedAt: 'vừa xong', savedBy };
-  savedAnswers = [entry, ...savedAnswers];
-  return delay(entry);
+  const raw = await api.createSavedAnswer({ question, answer, saved_by: savedBy, citations });
+  return mapSavedAnswer(raw);
 }

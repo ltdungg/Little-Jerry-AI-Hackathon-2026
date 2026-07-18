@@ -2,15 +2,21 @@ import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { Pill } from '../components/common/Pill';
 import { Table, type Column } from '../components/common/Table';
-import { useMockList } from '../hooks/useMockList';
-import { listLatestWeeklyReports, reportStatusLabel } from '../services/projectReports.service';
+import { useMockResource } from '../hooks/useMockResource';
+import { listAllWeeklyReports, reportStatusLabel } from '../services/projectReports.service';
+import { listProjects } from '../services/projects.service';
 import type { Project, ProjectReport } from '../types';
 
 type Row = { project: Project; report: ProjectReport | undefined };
 
+async function loadRows(): Promise<Row[]> {
+  const [projects, reportsByProject] = await Promise.all([listProjects(), listAllWeeklyReports()]);
+  return projects.map((project) => ({ project, report: reportsByProject[project.id] }));
+}
+
 export function WeeklyReportRollupPage() {
   const navigate = useNavigate();
-  const { items, loading } = useMockList(() => listLatestWeeklyReports(), []);
+  const { data: rows, loading } = useMockResource(loadRows, []);
 
   const columns: Column<Row>[] = [
     {
@@ -51,12 +57,12 @@ export function WeeklyReportRollupPage() {
       />
 
       <div className="mt-6">
-        {loading ? (
+        {loading || !rows ? (
           <p className="text-sm text-slate-400">Đang tải...</p>
         ) : (
           <Table
             columns={columns}
-            rows={items}
+            rows={rows}
             rowKey={(row) => row.project.id}
             onRowClick={(row) => navigate(`/projects/${row.project.id}/reports`)}
             emptyIcon="FileText"

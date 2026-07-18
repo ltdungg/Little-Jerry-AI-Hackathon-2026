@@ -4,7 +4,7 @@
     "cognito_sub": "sub_john_003",
     "tenant_id": "aiv",
     "email_normalized": "john@aiv.org",
-    "display_name": "John Doe",
+    "display_name": "Nguyễn Văn An",
     "status": "active",
     "locale": "vi-VN",
     "timezone": "Asia/Ho_Chi_Minh"
@@ -14,7 +14,7 @@
     "cognito_sub": "sub_minh_001",
     "tenant_id": "aiv",
     "email_normalized": "minh@aiv.org",
-    "display_name": "Minh Nguyen",
+    "display_name": "Trần Thị Minh",
     "status": "active",
     "locale": "vi-VN",
     "timezone": "Asia/Ho_Chi_Minh"
@@ -24,7 +24,7 @@
     "cognito_sub": "sub_sarah_002",
     "tenant_id": "aiv",
     "email_normalized": "sarah@aiv.org",
-    "display_name": "Sarah Pham",
+    "display_name": "Lê Minh Sarah",
     "status": "active",
     "locale": "vi-VN",
     "timezone": "Asia/Ho_Chi_Minh"
@@ -34,7 +34,7 @@
     "cognito_sub": "sub_lina_004",
     "tenant_id": "aiv",
     "email_normalized": "lina@aiv.org",
-    "display_name": "Lina Le",
+    "display_name": "Phạm Thu Lina",
     "status": "active",
     "locale": "vi-VN",
     "timezone": "Asia/Ho_Chi_Minh"

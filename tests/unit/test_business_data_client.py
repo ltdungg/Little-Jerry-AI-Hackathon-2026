@@ -82,8 +82,12 @@ def test_issue_crud_and_cross_project_lookup(client):
     assert updated["status"] == "investigating"
     assert updated["owner_name"] == "Sarah"
 
-    client.delete_issue("proj-1", "iss-1")
-    assert client.get_issue("proj-1", "iss-1") is None
+    # Dismissing an AI-suggested issue is a soft-close, not a delete (matches
+    # handle_dismiss_issue in lambdas/api/handler.py).
+    client.update_issue("proj-1", "iss-1", {"status": "closed", "dismissed": True})
+    dismissed = client.get_issue("proj-1", "iss-1")
+    assert dismissed["status"] == "closed"
+    assert dismissed["dismissed"] is True
 
 
 def test_team_report_lifecycle(client):

@@ -18,6 +18,81 @@ module "agentcore" {
   artifact_bucket_name = module.storage.artifact_bucket_name
 }
 
+# ---------- Tools Lambda for AgentCore Gateway ----------
+resource "aws_lambda_function" "tools_lambda" {
+  function_name = "${var.project_name}-${var.environment}-tools"
+  package_type  = "Image"
+  image_uri     = data.aws_ecr_image.api_latest.image_uri
+  architectures = ["arm64"]
+  role          = aws_iam_role.tools_lambda_role.arn
+  memory_size   = 256
+  timeout       = 30
+  environment {
+    variables = {
+      BUSINESS_TABLE = module.data.business_data_table_name
+      WORKFLOW_TABLE = module.data.workflow_state_table_name
+      RAW_BUCKET     = module.storage.raw_bucket_name
+      CURATED_BUCKET = module.storage.curated_bucket_name
+      ARTIFACT_BUCKET = module.storage.artifact_bucket_name
+      REGION         = var.aws_region
+      PROJECT_NAME   = var.project_name
+      ENVIRONMENT    = var.environment
+    }
+  }
+  image_config {
+    command = ["lambdas.tools.handler.lambda_handler"]
+  }
+  depends_on = [module.observability]
+}
+
+resource "aws_iam_role" "tools_lambda_role" {
+  name = "${var.project_name}-${var.environment}-tools-lambda"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "tools_lambda" {
+  name = "tools-lambda-policy"
+  role = aws_iam_role.tools_lambda_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query", "dynamodb:Scan"]
+        Resource = [
+          module.data.business_data_table_arn,
+          "${module.data.business_data_table_arn}/index/*",
+          module.data.workflow_state_table_arn,
+          "${module.data.workflow_state_table_arn}/index/*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject"]
+        Resource = ["${module.storage.curated_bucket_arn}/*", "${module.storage.artifact_bucket_arn}/*"]
+      },
+      {
+        Sid      = "KmsDecryptBusinessData"
+        Effect   = "Allow"
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Resource = [module.security.kms_app_arn]
+      }
+    ]
+  })
+}
+
 # ---------- AgentCore Memory: persistent conversation memory ----------
 module "agentcore_memory" {
   source       = "../../modules/agentcore-memory"
@@ -91,6 +166,16 @@ resource "aws_iam_role_policy" "agent_execution" {
         Effect   = "Allow"
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
         Resource = [module.security.kms_app_arn]
+      },
+      {
+        # MCP client reads admin tokens from Secrets Manager for Jira/Slack integration.
+        Sid      = "SecretsManagerAccess"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = [
+          aws_secretsmanager_secret.jira_admin_access_token.arn,
+          aws_secretsmanager_secret.slack_admin_access_token.arn,
+        ]
       },
       {
         Sid      = "PullContainerImage"

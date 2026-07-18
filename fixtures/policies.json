@@ -1,12 +1,17 @@
 [
   {
     "policy_id": "pol-001",
-    "name": "Procurement approval process",
-    "details": "All purchases over $500 require dual signature."
+    "name": "Quy trình phê duyệt mua sắm",
+    "details": "Tất cả các khoản mua sắm trên 10 triệu đồng cần có chữ ký xác nhận của cả líder và quản lý dự án."
   },
   {
     "policy_id": "pol-002",
-    "name": "Volunteer management guidelines",
-    "details": "Standard operating procedures for onboarding and safety."
+    "name": "Hướng dẫn quản lý tình nguyện viên",
+    "details": "Quy trình chuẩn tiếp nhận và hướng dẫn an toàn cho tình nguyện viên mới."
+  },
+  {
+    "policy_id": "pol-003",
+    "name": "Chính sách bảo mật dữ liệu",
+    "details": "Bảo vệ thông tin cá nhân của tình nguyện viên và cộng đồngBeneficiary. Không chia sẻ dữ liệu ra bên ngoài."
   }
 ]

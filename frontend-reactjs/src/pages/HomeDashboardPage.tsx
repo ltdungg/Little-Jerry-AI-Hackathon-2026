@@ -19,7 +19,7 @@ const SHORTCUTS = [
 export function HomeDashboardPage() {
   const { user } = useAuth();
   const { items: tasks } = useMockList(() => listTasks({ assigneeId: user?.id }), [user?.id]);
-  const { data: currentUpdate } = useMockResource(() => getMyCurrentUpdate(user!.id), [user?.id]);
+  const { data: currentUpdate } = useMockResource(() => getMyCurrentUpdate(), []);
   const { items: notifications } = useMockList(() => listNotifications(), []);
   const { items: aiIssues } = useMockList(() => listIssues({ source: 'ai_suggested' }), []);
 

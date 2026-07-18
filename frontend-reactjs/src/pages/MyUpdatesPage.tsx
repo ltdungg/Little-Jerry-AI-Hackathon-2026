@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Icon } from '../components/common/Icon';
 import { PageHeader } from '../components/common/PageHeader';
 import { Pill } from '../components/common/Pill';
-import { useAuth } from '../context/useAuth';
 import { useMockResource } from '../hooks/useMockResource';
 import {
   getMyCurrentUpdate,
@@ -13,9 +12,8 @@ import {
 import type { WeeklyUpdate } from '../types';
 
 export function MyUpdatesPage() {
-  const { user } = useAuth();
-  const { data: current, loading } = useMockResource(() => getMyCurrentUpdate(user!.id), [user?.id]);
-  const { data: history } = useMockResource(() => listMyUpdates(user!.id), [user?.id]);
+  const { data: current, loading } = useMockResource(() => getMyCurrentUpdate(), []);
+  const { data: history } = useMockResource(() => listMyUpdates(), []);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">

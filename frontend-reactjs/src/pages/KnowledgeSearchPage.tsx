@@ -8,7 +8,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { useMockList } from '../hooks/useMockList';
 import { listDocuments } from '../services/documents.service';
 import { listDecisions } from '../services/decisions.service';
-import { PROJECTS } from '../lib/mockData';
+import { listProjects } from '../services/projects.service';
 
 export function KnowledgeSearchPage() {
   const [query, setQuery] = useState('');
@@ -17,9 +17,10 @@ export function KnowledgeSearchPage() {
 
   const { items: documents } = useMockList(() => listDocuments(), []);
   const { items: decisions } = useMockList(() => listDecisions({ onlyConfirmed: true }), []);
+  const { items: projects } = useMockList(() => listProjects(), []);
 
   const results = useMemo(() => {
-    const programName = programId === 'all' ? null : PROJECTS.find((p) => p.id === programId)?.name ?? null;
+    const programName = programId === 'all' ? null : projects.find((p) => p.id === programId)?.name ?? null;
 
     const docResults = documents
       .filter((d) => (onlyConfirmed ? d.status === 'active' : true))
@@ -33,7 +34,7 @@ export function KnowledgeSearchPage() {
       .map((d) => ({ kind: 'decision' as const, id: d.id, title: d.title, subtitle: d.programName, updatedAt: d.decidedAt }));
 
     return [...docResults, ...decisionResults];
-  }, [documents, decisions, query, programId, onlyConfirmed]);
+  }, [documents, decisions, projects, query, programId, onlyConfirmed]);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
@@ -44,7 +45,7 @@ export function KnowledgeSearchPage() {
         <Select
           value={programId}
           onChange={setProgramId}
-          options={[{ value: 'all', label: 'Tất cả chương trình' }, ...PROJECTS.map((p) => ({ value: p.id, label: p.name }))]}
+          options={[{ value: 'all', label: 'Tất cả chương trình' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
         />
       </div>
 

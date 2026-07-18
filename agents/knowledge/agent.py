@@ -47,6 +47,7 @@ def create_knowledge_agent() -> Agent:
                     "type": "KNOWLEDGE_BASE",
                     "knowledgeBaseConfiguration": {
                         "knowledgeBaseId": KNOWLEDGE_BASE_ID,
+                        "modelArn": f"arn:aws:bedrock:{BEDROCK_REGION}::foundation-model/{os.getenv('BEDROCK_MODEL_ID', 'anthropic.claude-3-haiku-20240307-v1:0')}",
                     },
                 },
             )

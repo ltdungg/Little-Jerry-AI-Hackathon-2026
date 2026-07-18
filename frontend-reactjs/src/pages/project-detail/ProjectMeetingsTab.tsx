@@ -11,7 +11,7 @@ import type { Meeting, MeetingActionItem } from '../../types';
 export function ProjectMeetingsTab() {
   const { project } = useOutletContext<ProjectDetailContext>();
   const { user } = useAuth();
-  const { items, setItems, loading } = useMockList(() => listMeetings({ programId: project.id }), [project.id]);
+  const { items, setItems, loading } = useMockList(() => listMeetings({ programName: project.name }), [project.name]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = items.find((m) => m.id === selectedId) ?? items[0];
 

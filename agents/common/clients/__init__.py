@@ -1,5 +1,6 @@
 from .agent_client import AgentClient, LocalAgentClient, AgentCoreRuntimeClient, A2AAgentClient
 from .dynamodb_client import BusinessDataClient
+from .workflow_client import WorkflowStateClient
 from .s3_client import store_curated_document, store_report_artifact, get_document
 
 __all__ = [
@@ -8,6 +9,7 @@ __all__ = [
     "AgentCoreRuntimeClient",
     "A2AAgentClient",
     "BusinessDataClient",
+    "WorkflowStateClient",
     "store_curated_document",
     "store_report_artifact",
     "get_document",

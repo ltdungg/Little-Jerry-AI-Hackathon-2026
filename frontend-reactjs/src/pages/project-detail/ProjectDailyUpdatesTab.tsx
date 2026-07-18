@@ -4,25 +4,28 @@ import { Icon } from '../../components/common/Icon';
 import { useAuth } from '../../context/useAuth';
 import { useMockList } from '../../hooks/useMockList';
 import { useMockResource } from '../../hooks/useMockResource';
-import {
-  listDailyUpdates,
-  sendDailyReminders,
-  submitDailyUpdate,
-  TODAY_LABEL,
-} from '../../services/dailyUpdates.service';
+import { listDailyUpdates, submitDailyUpdate } from '../../services/dailyUpdates.service';
 import { listTasks, taskStatusLabel } from '../../services/tasks.service';
-import { getTeam } from '../../services/teams.service';
+import { listTeams } from '../../services/teams.service';
 import type { ProjectDetailContext } from '../ProjectDetailPage';
 import type { TaskStatus } from '../../types';
 
 const STATUS_OPTIONS: TaskStatus[] = ['todo', 'in_progress', 'blocked', 'done'];
+
+const TODAY_LABEL = new Date().toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+async function resolveTeamMembers(projectName: string) {
+  const teams = await listTeams();
+  const team = teams.find((t) => t.programNames.includes(projectName));
+  return team?.members ?? [];
+}
 
 export function ProjectDailyUpdatesTab() {
   const { project } = useOutletContext<ProjectDetailContext>();
   const { user } = useAuth();
 
   const { items: tasks, loading: loadingTasks } = useMockList(() => listTasks({ programId: project.id }), [project.id]);
-  const { data: team } = useMockResource(() => getTeam(project.teamId), [project.teamId]);
+  const { data: members } = useMockResource(() => resolveTeamMembers(project.name), [project.name]);
   const { items: updates, setItems: setUpdates, loading: loadingUpdates } = useMockList(
     () => listDailyUpdates({ programId: project.id }),
     [project.id],
@@ -35,26 +38,25 @@ export function ProjectDailyUpdatesTab() {
   const [noteDraft, setNoteDraft] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  const members = team?.members ?? [];
-  const notSubmitted = members.filter((m) => !updates.some((u) => u.userId === m.id));
+  const teamMembers = members ?? [];
+  const notSubmitted = teamMembers.filter((m) => !updates.some((u) => u.userId === m.id));
 
   async function handleSubmit() {
     if (!user || myTasks.length === 0) return;
     setSubmitting(true);
-    const taskUpdates = myTasks.map((t) => ({
-      taskId: t.id,
-      taskTitle: t.title,
-      statusBefore: t.status,
-      statusAfter: statusDraft[t.id] ?? t.status,
-      note: noteDraft[t.id]?.trim() || undefined,
-    }));
-    const saved = await submitDailyUpdate(project.id, user.id, user.name, user.initials, taskUpdates);
-    setUpdates((prev) => [...prev.filter((u) => u.id !== saved.id), saved]);
-    setSubmitting(false);
-  }
-
-  async function handleRemind() {
-    await sendDailyReminders(project.id, notSubmitted.map((m) => m.id));
+    try {
+      const taskUpdates = myTasks.map((t) => ({
+        taskId: t.id,
+        taskTitle: t.title,
+        statusBefore: t.status,
+        statusAfter: statusDraft[t.id] ?? t.status,
+        note: noteDraft[t.id]?.trim() || undefined,
+      }));
+      const saved = await submitDailyUpdate(project.id, user.name, taskUpdates);
+      setUpdates((prev) => [...prev.filter((u) => u.id !== saved.id), saved]);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const loading = loadingTasks || loadingUpdates;
@@ -66,24 +68,12 @@ export function ProjectDailyUpdatesTab() {
       </p>
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-slate-800">Ai đã gửi cập nhật hôm nay</p>
-          {notSubmitted.length > 0 && (
-            <button
-              type="button"
-              onClick={handleRemind}
-              className="flex items-center gap-1.5 text-xs font-medium text-brand-600 hover:underline"
-            >
-              <Icon name="Bell" size={12} />
-              Gửi nhắc nhở cho {notSubmitted.length} người chưa gửi
-            </button>
-          )}
-        </div>
+        <p className="text-sm font-semibold text-slate-800">Ai đã gửi cập nhật hôm nay</p>
         {loading ? (
           <p className="mt-3 text-sm text-slate-400">Đang tải...</p>
         ) : (
           <div className="mt-3 flex flex-wrap gap-2">
-            {members.map((m) => {
+            {teamMembers.map((m) => {
               const submitted = updates.some((u) => u.userId === m.id);
               return (
                 <span
@@ -97,6 +87,9 @@ export function ProjectDailyUpdatesTab() {
                 </span>
               );
             })}
+            {notSubmitted.length === 0 && teamMembers.length > 0 && (
+              <span className="text-xs text-slate-400">Mọi người đã gửi cập nhật.</span>
+            )}
           </div>
         )}
       </div>

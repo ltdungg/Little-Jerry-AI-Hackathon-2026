@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { Icon } from '../components/common/Icon';
 import { StatCard } from '../components/common/StatCard';
 import { StatusBadge } from '../components/common/StatusBadge';
-import { PROJECTS } from '../lib/mockData';
+import { useMockList } from '../hooks/useMockList';
+import { listProjects } from '../services/projects.service';
 import type { Project, ProjectStatus } from '../types';
 
 const PROGRAM_ICON: Record<string, string> = {
@@ -27,29 +28,30 @@ export function ProjectsOverviewPage() {
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
   const [programFilter, setProgramFilter] = useState('all');
   const [view, setView] = useState<'grid' | 'list'>('grid');
+  const { items: projects, loading } = useMockList(() => listProjects(), []);
 
   const programs = useMemo(
-    () => Array.from(new Set(PROJECTS.map((p) => p.program))),
-    [],
+    () => Array.from(new Set(projects.map((p) => p.program))),
+    [projects],
   );
 
   const filtered = useMemo(() => {
-    return PROJECTS.filter((p) => {
+    return projects.filter((p) => {
       if (statusFilter !== 'all' && p.status !== statusFilter) return false;
       if (programFilter !== 'all' && p.program !== programFilter) return false;
       if (query && !p.name.toLowerCase().includes(query.toLowerCase())) return false;
       return true;
     });
-  }, [query, statusFilter, programFilter]);
+  }, [projects, query, statusFilter, programFilter]);
 
   const stats = useMemo(
     () => ({
-      total: PROJECTS.length,
-      healthy: PROJECTS.filter((p) => p.status === 'healthy').length,
-      atRisk: PROJECTS.filter((p) => p.status === 'at_risk').length,
-      overdue: PROJECTS.filter((p) => p.status === 'overdue').length,
+      total: projects.length,
+      healthy: projects.filter((p) => p.status === 'healthy').length,
+      atRisk: projects.filter((p) => p.status === 'at_risk').length,
+      overdue: projects.filter((p) => p.status === 'overdue').length,
     }),
-    [],
+    [projects],
   );
 
   return (
@@ -139,7 +141,9 @@ export function ProjectsOverviewPage() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <p className="mt-10 text-center text-sm text-slate-400">Đang tải...</p>
+      ) : filtered.length === 0 ? (
         <div className="mt-16 flex flex-col items-center justify-center text-center">
           <Icon name="SearchX" size={32} className="text-slate-300" />
           <p className="mt-3 text-sm font-medium text-slate-600">Không tìm thấy dự án phù hợp</p>

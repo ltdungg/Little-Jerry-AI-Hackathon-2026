@@ -30,7 +30,6 @@ export interface Project {
   highRiskCount: number;
   progress: number;
   team: string;
-  teamId: string;
   updatedAt: string;
 }
 
@@ -131,21 +130,15 @@ export interface TeamMemberSubmission {
 
 export type TeamReportStatus = 'draft' | 'approved' | 'published';
 
-/** Một mục trong Bảng thông tin nhóm, gắn nhãn dự án để lọc theo tab "Xuất báo cáo" của từng dự án. Để trống `programId` nếu là ý chung của cả nhóm. */
-export interface TeamReportItem {
-  text: string;
-  programId?: string;
-}
-
 export interface TeamWeeklyReport {
   id: string;
   teamId: string;
   teamName: string;
   week: string;
   memberSubmissions: TeamMemberSubmission[];
-  highlights: TeamReportItem[];
-  issues: TeamReportItem[];
-  nextPriorities: TeamReportItem[];
+  highlights: string[];
+  issues: string[];
+  nextPriorities: string[];
   status: TeamReportStatus;
 }
 
@@ -176,7 +169,7 @@ export interface DailyUpdate {
 // Project reports (báo cáo ngày/tuần do AgentCore sinh, chỉnh sửa được, xuất PDF)
 // ---------------------------------------------------------------------------
 
-export type ProjectReportType = 'daily_update' | 'weekly_update';
+export type ProjectReportType = 'daily_status' | 'weekly_status';
 export type ProjectReportStatus = 'generating' | 'draft' | 'edited' | 'exported' | 'failed';
 export type ProjectReportTrigger = 'manual' | 'schedule';
 
@@ -188,9 +181,7 @@ export interface ProjectReport {
   status: ProjectReportStatus;
   generatedBy: ProjectReportTrigger;
   contentMarkdown: string;
-  contentAiOriginal: string;
   isEdited: boolean;
-  editedBy: string | null;
   editedAt: string | null;
   pdfExportedAt: string | null;
   createdAt: string;
@@ -301,7 +292,6 @@ export interface Meeting {
   durationMinutes: number;
   participants: string[];
   teamId: string;
-  programId: string;
   programName: string;
   summary: string;
   keyTopics: string[];
@@ -448,7 +438,6 @@ export interface Handoff {
   fromName: string;
   toName: string | null;
   teamName: string;
-  programId: string;
   programName: string;
   currentResponsibilities: string;
   inProgressWork: string;

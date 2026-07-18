@@ -19,8 +19,7 @@ resource "aws_secretsmanager_secret" "slack_client_secret" {
 resource "aws_secretsmanager_secret" "jira_admin_access_token" {
   name = "${var.project_name}-${var.environment}-jira-admin-access-token"
 }
+
 resource "aws_secretsmanager_secret" "slack_admin_access_token" {
   name = "${var.project_name}-${var.environment}-slack-admin-access-token"
 }
-
-

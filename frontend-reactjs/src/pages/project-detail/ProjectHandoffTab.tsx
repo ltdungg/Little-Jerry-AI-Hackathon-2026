@@ -22,7 +22,7 @@ const NEXT_ACTION_LABEL: Record<HandoffStatus, string> = {
 
 export function ProjectHandoffTab() {
   const { project } = useOutletContext<ProjectDetailContext>();
-  const { items, setItems, loading } = useMockList(() => listHandoffs({ programId: project.id }), [project.id]);
+  const { items, setItems, loading } = useMockList(() => listHandoffs({ programName: project.name }), [project.name]);
 
   async function handleAdvance(handoff: Handoff) {
     const next = NEXT_STEP[handoff.status];

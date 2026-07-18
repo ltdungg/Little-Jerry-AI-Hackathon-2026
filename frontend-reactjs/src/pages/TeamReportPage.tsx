@@ -50,9 +50,9 @@ export function TeamReportPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Section title="Kết quả nổi bật" items={report.highlights.map((i) => i.text)} icon="Sparkles" />
-            <Section title="Khó khăn" items={report.issues.map((i) => i.text)} icon="AlertTriangle" />
-            <Section title="Ưu tiên tuần tiếp theo" items={report.nextPriorities.map((i) => i.text)} icon="ArrowRight" />
+            <Section title="Kết quả nổi bật" items={report.highlights} icon="Sparkles" />
+            <Section title="Khó khăn" items={report.issues} icon="AlertTriangle" />
+            <Section title="Ưu tiên tuần tiếp theo" items={report.nextPriorities} icon="ArrowRight" />
             <Section
               title="Ai chưa gửi báo cáo"
               items={report.memberSubmissions.filter((m) => !m.submitted).map((m) => m.userName)}

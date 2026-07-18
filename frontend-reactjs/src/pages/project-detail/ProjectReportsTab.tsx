@@ -3,30 +3,20 @@ import { useOutletContext } from 'react-router-dom';
 import { Icon } from '../../components/common/Icon';
 import { Pill } from '../../components/common/Pill';
 import { StatCard } from '../../components/common/StatCard';
-import { useAuth } from '../../context/useAuth';
 import { useMockList } from '../../hooks/useMockList';
 import { useMockResource } from '../../hooks/useMockResource';
-import { printReportAsPdf } from '../../lib/reportPrint';
 import {
+  exportReportPdf,
   generateReports,
   listProjectReports,
-  markReportExported,
   reportStatusLabel,
   reportTypeLabel,
-  revertReport,
   updateReportContent,
 } from '../../services/projectReports.service';
-import {
-  addTeamReportItem,
-  approveTeamReport,
-  getTeamReportForProject,
-  publishTeamReport,
-  removeTeamReportItem,
-  sendReminders,
-  type TeamReportSection,
-} from '../../services/updates.service';
+import { approveTeamReport, getTeamReport, publishTeamReport, sendReminders } from '../../services/updates.service';
+import { listTeams } from '../../services/teams.service';
 import type { ProjectDetailContext } from '../ProjectDetailPage';
-import type { ProjectReport, ProjectReportType, TeamReportItem } from '../../types';
+import type { ProjectReport, ProjectReportType, Team, TeamWeeklyReport } from '../../types';
 
 export function ProjectReportsTab() {
   const { project } = useOutletContext<ProjectDetailContext>();
@@ -34,7 +24,7 @@ export function ProjectReportsTab() {
   return (
     <div className="flex flex-col gap-6">
       <GeneratedReportsSection projectId={project.id} projectName={project.name} />
-      <TeamDashboardSection projectId={project.id} />
+      <TeamDashboardSection projectName={project.name} />
     </div>
   );
 }
@@ -44,43 +34,45 @@ export function ProjectReportsTab() {
 // ---------------------------------------------------------------------------
 
 function GeneratedReportsSection({ projectId, projectName }: { projectId: string; projectName: string }) {
-  const { user } = useAuth();
   const { items: reports, setItems: setReports, loading } = useMockList(() => listProjectReports(projectId), [projectId]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = reports.find((r) => r.id === selectedId) ?? null;
-  const [revertNonce, setRevertNonce] = useState(0);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
-  const [selectedTypes, setSelectedTypes] = useState<ProjectReportType[]>(['daily_update']);
+  const [selectedTypes, setSelectedTypes] = useState<ProjectReportType[]>(['daily_status']);
   const [generating, setGenerating] = useState(false);
+  const [exportingId, setExportingId] = useState<string | null>(null);
 
   async function handleGenerate() {
     if (selectedTypes.length === 0) return;
     setGenerating(true);
-    const created = await generateReports(projectId, selectedTypes, 'manual');
-    setReports((prev) => [...created, ...prev]);
-    setGenerating(false);
-    setShowGenerateModal(false);
-    if (created[0]) setSelectedId(created[0].id);
+    try {
+      const created = await generateReports(projectId, selectedTypes);
+      setReports((prev) => [...created, ...prev]);
+      setShowGenerateModal(false);
+      if (created[0]) setSelectedId(created[0].id);
+    } finally {
+      setGenerating(false);
+    }
   }
 
   async function handleSave(content: string) {
     if (!selected) return;
-    const updated = await updateReportContent(selected.id, content, user?.name ?? '');
+    const updated = await updateReportContent(selected.id, content);
     setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
   }
 
-  async function handleRevert() {
+  async function handleExportPdf() {
     if (!selected) return;
-    const updated = await revertReport(selected.id);
-    setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
-    setRevertNonce((n) => n + 1);
-  }
-
-  async function handleExportPdf(content: string) {
-    if (!selected) return;
-    printReportAsPdf(`${projectName} — ${reportTypeLabel(selected.reportType)}`, content);
-    const updated = await markReportExported(selected.id);
-    setReports((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    setExportingId(selected.id);
+    try {
+      const { downloadUrl } = await exportReportPdf(selected.id);
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+      setReports((prev) =>
+        prev.map((r) => (r.id === selected.id ? { ...r, status: 'exported', pdfExportedAt: 'vừa xong' } : r)),
+      );
+    } finally {
+      setExportingId(null);
+    }
   }
 
   return (
@@ -146,10 +138,11 @@ function GeneratedReportsSection({ projectId, projectName }: { projectId: string
 
       {selected && (
         <ReportEditorPanel
-          key={`${selected.id}:${revertNonce}`}
+          key={selected.id}
           report={selected}
+          projectName={projectName}
+          exporting={exportingId === selected.id}
           onSave={handleSave}
-          onRevert={handleRevert}
           onExportPdf={handleExportPdf}
         />
       )}
@@ -159,7 +152,7 @@ function GeneratedReportsSection({ projectId, projectName }: { projectId: string
           <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-lg">
             <p className="text-sm font-semibold text-slate-800">Xuất báo cáo</p>
             <div className="mt-3 flex flex-col gap-2">
-              {(['daily_update', 'weekly_update'] as ProjectReportType[]).map((type) => (
+              {(['daily_status', 'weekly_status'] as ProjectReportType[]).map((type) => (
                 <label key={type} className="flex items-center gap-2 text-sm text-slate-700">
                   <input
                     type="checkbox"
@@ -199,31 +192,48 @@ function GeneratedReportsSection({ projectId, projectName }: { projectId: string
   );
 }
 
+function statusTone(status: ProjectReport['status']) {
+  return (
+    {
+      generating: 'slate' as const,
+      draft: 'blue' as const,
+      edited: 'amber' as const,
+      exported: 'emerald' as const,
+      failed: 'rose' as const,
+    }[status]
+  );
+}
+
 function ReportEditorPanel({
   report,
+  projectName,
+  exporting,
   onSave,
-  onRevert,
   onExportPdf,
 }: {
   report: ProjectReport;
+  projectName: string;
+  exporting: boolean;
   onSave: (content: string) => Promise<void>;
-  onRevert: () => Promise<void>;
-  onExportPdf: (content: string) => void;
+  onExportPdf: () => Promise<void>;
 }) {
   const [content, setContent] = useState(report.contentMarkdown);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
     setSaving(true);
-    await onSave(content);
-    setSaving(false);
+    try {
+      await onSave(content);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="mt-4 rounded-lg border border-slate-200 p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-800">
-          {reportTypeLabel(report.reportType)} — {report.periodLabel}
+          {reportTypeLabel(report.reportType)} — {projectName} · {report.periodLabel}
         </p>
         <Pill tone={statusTone(report.status)}>{reportStatusLabel(report.status)}</Pill>
       </div>
@@ -238,14 +248,6 @@ function ReportEditorPanel({
       <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
-          onClick={onRevert}
-          disabled={!report.isEdited}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
-        >
-          Khôi phục bản gốc AI
-        </button>
-        <button
-          type="button"
           onClick={handleSave}
           disabled={saving}
           className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
@@ -254,10 +256,11 @@ function ReportEditorPanel({
         </button>
         <button
           type="button"
-          onClick={() => onExportPdf(content)}
-          className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
+          onClick={onExportPdf}
+          disabled={exporting}
+          className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
         >
-          <Icon name="Download" size={13} />
+          {exporting ? <Icon name="Loader2" size={13} className="animate-spin" /> : <Icon name="Download" size={13} />}
           Xuất PDF
         </button>
       </div>
@@ -265,63 +268,33 @@ function ReportEditorPanel({
   );
 }
 
-function statusTone(status: ProjectReport['status']) {
-  return (
-    {
-      generating: 'slate' as const,
-      draft: 'blue' as const,
-      edited: 'amber' as const,
-      exported: 'emerald' as const,
-      failed: 'rose' as const,
-    }[status]
-  );
-}
-
 // ---------------------------------------------------------------------------
-// Bảng thông tin nhóm (lát cắt theo dự án)
+// Bảng thông tin nhóm (nhóm phụ trách dự án này)
 // ---------------------------------------------------------------------------
 
-function TeamDashboardSection({ projectId }: { projectId: string }) {
-  const { data, setData, loading } = useMockResource(() => getTeamReportForProject(projectId), [projectId]);
-  const [newItemText, setNewItemText] = useState<Record<TeamReportSection, string>>({
-    highlights: '',
-    issues: '',
-    nextPriorities: '',
-  });
+function TeamDashboardSection({ projectName }: { projectName: string }) {
+  const { data, loading } = useMockResource(() => resolveTeamReport(projectName), [projectName]);
+  const [reportState, setReportState] = useState<TeamWeeklyReport | null>(null);
+  const report = reportState ?? data?.report ?? null;
+  const team = data?.team;
 
   if (loading) return <p className="text-sm text-slate-400">Đang tải Bảng thông tin nhóm...</p>;
-  if (!data) return null;
-
-  const { report, team } = data;
-
-  function indexedItemsForProject(items: TeamReportItem[]) {
-    return items.map((item, index) => ({ item, index })).filter(({ item }) => item.programId === projectId);
-  }
-
-  async function handleAdd(section: TeamReportSection) {
-    const text = newItemText[section].trim();
-    if (!text) return;
-    const updated = await addTeamReportItem(report.id, section, { text, programId: projectId });
-    setData({ report: updated, team });
-    setNewItemText((prev) => ({ ...prev, [section]: '' }));
-  }
-
-  async function handleRemove(section: TeamReportSection, index: number) {
-    const updated = await removeTeamReportItem(report.id, section, index);
-    setData({ report: updated, team });
-  }
+  if (!team || !report) return null;
 
   async function handleApprove() {
+    if (!report) return;
     const updated = await approveTeamReport(report.id);
-    setData({ report: updated, team });
+    setReportState(updated);
   }
 
   async function handlePublish() {
+    if (!report) return;
     const updated = await publishTeamReport(report.id);
-    setData({ report: updated, team });
+    setReportState(updated);
   }
 
   async function handleRemind() {
+    if (!report) return;
     await sendReminders(report.teamId, report.memberSubmissions.filter((m) => !m.submitted));
   }
 
@@ -333,7 +306,7 @@ function TeamDashboardSection({ projectId }: { projectId: string }) {
         <div>
           <p className="text-sm font-semibold text-slate-800">Bảng thông tin nhóm — {team.name}</p>
           <p className="mt-0.5 text-xs text-slate-400">
-            Chỉ hiển thị phần liên quan tới dự án này. Xem toàn cảnh nhóm (mọi dự án) tại "Bảng thông tin của nhóm".
+            Nhóm phụ trách dự án này. Xem toàn cảnh nhóm (mọi dự án) tại "Bảng thông tin của nhóm".
           </p>
         </div>
         <Pill tone={report.status === 'published' ? 'emerald' : report.status === 'approved' ? 'blue' : 'slate'}>
@@ -342,9 +315,14 @@ function TeamDashboardSection({ projectId }: { projectId: string }) {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <StatCard label="Thành viên đã gửi" value={`${report.memberSubmissions.length - notSubmitted.length}/${report.memberSubmissions.length}`} icon="Users" tone={notSubmitted.length === 0 ? 'emerald' : 'amber'} />
-        <StatCard label="Khó khăn của dự án" value={indexedItemsForProject(report.issues).length} icon="AlertTriangle" tone={indexedItemsForProject(report.issues).length > 0 ? 'amber' : 'default'} />
-        <StatCard label="Ưu tiên tuần tới" value={indexedItemsForProject(report.nextPriorities).length} icon="ArrowRight" />
+        <StatCard
+          label="Thành viên đã gửi"
+          value={`${report.memberSubmissions.length - notSubmitted.length}/${report.memberSubmissions.length}`}
+          icon="Users"
+          tone={notSubmitted.length === 0 ? 'emerald' : 'amber'}
+        />
+        <StatCard label="Khó khăn đang nêu" value={report.issues.length} icon="AlertTriangle" tone={report.issues.length > 0 ? 'amber' : 'default'} />
+        <StatCard label="Ưu tiên tuần tới" value={report.nextPriorities.length} icon="ArrowRight" />
       </div>
 
       {notSubmitted.length > 0 && (
@@ -358,38 +336,11 @@ function TeamDashboardSection({ projectId }: { projectId: string }) {
         </button>
       )}
 
-      <EditableItemList
-        title="Kết quả nổi bật"
-        icon="Sparkles"
-        entries={indexedItemsForProject(report.highlights)}
-        onRemove={(index) => handleRemove('highlights', index)}
-        value={newItemText.highlights}
-        onChange={(v) => setNewItemText((prev) => ({ ...prev, highlights: v }))}
-        onAdd={() => handleAdd('highlights')}
-      />
-      <EditableItemList
-        title="Khó khăn"
-        icon="AlertTriangle"
-        entries={indexedItemsForProject(report.issues)}
-        onRemove={(index) => handleRemove('issues', index)}
-        value={newItemText.issues}
-        onChange={(v) => setNewItemText((prev) => ({ ...prev, issues: v }))}
-        onAdd={() => handleAdd('issues')}
-      />
-      <EditableItemList
-        title="Ưu tiên tuần tiếp theo"
-        icon="ArrowRight"
-        entries={indexedItemsForProject(report.nextPriorities)}
-        onRemove={(index) => handleRemove('nextPriorities', index)}
-        value={newItemText.nextPriorities}
-        onChange={(v) => setNewItemText((prev) => ({ ...prev, nextPriorities: v }))}
-        onAdd={() => handleAdd('nextPriorities')}
-      />
+      <BulletList title="Kết quả nổi bật" icon="Sparkles" items={report.highlights} />
+      <BulletList title="Khó khăn" icon="AlertTriangle" items={report.issues} />
+      <BulletList title="Ưu tiên tuần tiếp theo" icon="ArrowRight" items={report.nextPriorities} />
 
       <div className="mt-5 flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
-        <p className="mr-auto text-xs text-slate-400">
-          Duyệt/công bố áp dụng cho toàn bộ báo cáo của nhóm (mọi dự án), không chỉ riêng dự án này.
-        </p>
         <button
           type="button"
           onClick={handleApprove}
@@ -411,61 +362,28 @@ function TeamDashboardSection({ projectId }: { projectId: string }) {
   );
 }
 
-function EditableItemList({
-  title,
-  icon,
-  entries,
-  onRemove,
-  value,
-  onChange,
-  onAdd,
-}: {
-  title: string;
-  icon: string;
-  entries: { item: TeamReportItem; index: number }[];
-  onRemove: (index: number) => void;
-  value: string;
-  onChange: (value: string) => void;
-  onAdd: () => void;
-}) {
+async function resolveTeamReport(projectName: string): Promise<{ team: Team; report: TeamWeeklyReport } | undefined> {
+  const teams = await listTeams();
+  const team = teams.find((t) => t.programNames.includes(projectName));
+  if (!team) return undefined;
+  const report = await getTeamReport(team.id);
+  if (!report) return undefined;
+  return { team, report };
+}
+
+function BulletList({ title, icon, items }: { title: string; icon: string; items: string[] }) {
+  if (items.length === 0) return null;
   return (
     <div className="mt-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</p>
-      {entries.length === 0 ? (
-        <p className="mt-1.5 text-sm text-slate-400">Chưa có mục nào cho dự án này.</p>
-      ) : (
-        <ul className="mt-1.5 flex flex-col gap-1.5">
-          {entries.map(({ item, index }) => (
-            <li key={index} className="flex items-start justify-between gap-2 text-sm text-slate-600">
-              <span className="flex items-start gap-2">
-                <Icon name={icon} size={13} className="mt-0.5 shrink-0 text-brand-400" />
-                {item.text}
-              </span>
-              <button type="button" onClick={() => onRemove(index)} className="shrink-0 text-slate-300 hover:text-rose-500">
-                <Icon name="X" size={13} />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="mt-2 flex items-center gap-2">
-        <input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onAdd();
-          }}
-          placeholder="Thêm mục mới cho dự án này..."
-          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
-        />
-        <button
-          type="button"
-          onClick={onAdd}
-          className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-        >
-          Thêm
-        </button>
-      </div>
+      <ul className="mt-1.5 flex flex-col gap-1.5">
+        {items.map((item) => (
+          <li key={item} className="flex items-start gap-2 text-sm text-slate-600">
+            <Icon name={icon} size={13} className="mt-0.5 shrink-0 text-brand-400" />
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
