@@ -95,7 +95,7 @@ Tenant ID: {state['tenant_id']}
    - action="list_project_tasks": params={{"project_key": "Mã dự án Jira (VD: PROJ, WD)", "status_filter": "todo/in_progress/done"}} - Lấy danh sách task từ Jira.
    - action="list_overdue_tasks": params={{"project_key": "Mã dự án Jira"}} - Lấy task trễ hạn từ Jira.
    - action="search_issues": params={{"jql": "JQL query"}} - Tìm kiếm issues bằng JQL.
-   - action="get_all_boards": params={{} } - Lấy danh sách tất cả boards.
+   - action="get_all_boards": params={{{{}}}} - Lấy danh sách tất cả boards.
    - action="any_jira_action": params={{"tool_name": "Tên MCP tool", ...params}} - Gọi bất kỳ Jira MCP tool nào.
 
 2. source="slack" (qua Slack API - dữ liệu thực từ Slack):
@@ -107,7 +107,7 @@ Tenant ID: {state['tenant_id']}
    - action="search_documents": params={{"query": "Từ khóa", "top_k": 5}} - Tìm tài liệu chi tiết.
 
 4. source="dynamodb" (dữ liệu nội bộ từ DynamoDB):
-   - action="list_projects": params={{} } - Liệt kê tất cả projects.
+   - action="list_projects": params={{{{}}}} - Liệt kê tất cả projects.
    - action="list_tasks": params={{"project_id": "ID dự án"}} - Liệt kê tasks.
 
 [HƯỚNG DẪN QUAN TRỌNG]
