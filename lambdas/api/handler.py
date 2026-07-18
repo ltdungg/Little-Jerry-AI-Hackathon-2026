@@ -379,9 +379,12 @@ def handle_admin_callback(event, request_ctx, provider):
         
     project_name = os.environ.get("PROJECT_NAME", "npo-ai")
     env = os.environ.get("ENVIRONMENT", "dev")
-    client_id = _get_secret(f"{project_name}-{env}-{provider}-client-id")
-    client_secret = _get_secret(f"{project_name}-{env}-{provider}-client-secret")
-    
+    client_id_secret = f"{project_name}-{env}-{provider}-client-id"
+    client_secret_secret = f"{project_name}-{env}-{provider}-client-secret"
+    client_id = _get_secret(client_id_secret)
+    client_secret = _get_secret(client_secret_secret)
+    if not client_id or not client_secret:
+        return build_error_response(500, "CONFIG_ERROR", f"Missing OAuth client config secrets: {client_id_secret}, {client_secret_secret}")
     headers = event.get("headers", {})
     host = headers.get("host", "localhost")
     protocol = headers.get("x-forwarded-proto", "https")
