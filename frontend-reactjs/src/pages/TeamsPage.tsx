@@ -1,15 +1,32 @@
+import { useState, useCallback } from 'react';
 import { Icon } from '../components/common/Icon';
 import { PageHeader } from '../components/common/PageHeader';
 import { Pill } from '../components/common/Pill';
+import { CreateTeamModal } from '../components/common/CreateTeamModal';
 import { useMockList } from '../hooks/useMockList';
 import { listTeams } from '../services/teams.service';
 
 export function TeamsPage() {
-  const { items: teams, loading } = useMockList(() => listTeams(), []);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { items: teams, loading, refresh } = useMockList(() => listTeams(), []);
+
+  const handleTeamCreated = useCallback(() => {
+    refresh();
+  }, [refresh]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader title="Các nhóm" subtitle="Mục tiêu, thành viên và chương trình phụ trách của từng nhóm." />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Các nhóm" subtitle="Mục tiêu, thành viên và chương trình phụ trách của từng nhóm." />
+        <button
+          type="button"
+          onClick={() => setShowCreateModal(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700"
+        >
+          <Icon name="Plus" size={16} />
+          Tạo nhóm
+        </button>
+      </div>
 
       {loading ? (
         <p className="mt-6 text-sm text-slate-400">Đang tải...</p>
@@ -53,6 +70,12 @@ export function TeamsPage() {
           ))}
         </div>
       )}
+
+      <CreateTeamModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleTeamCreated}
+      />
     </div>
   );
 }

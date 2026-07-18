@@ -16,6 +16,13 @@ module "agentcore" {
   aws_region          = var.aws_region
   knowledge_base_id   = module.bedrock_kb.knowledge_base_id
   artifact_bucket_name = module.storage.artifact_bucket_name
+  gateway_env_vars = {
+    GATEWAY_MCP_URL       = module.gateway.gateway_url
+    GATEWAY_CLIENT_ID     = module.gateway.cognito_client_id
+    GATEWAY_CLIENT_SECRET = module.gateway.cognito_client_secret
+    GATEWAY_USER_POOL_ID  = module.gateway.cognito_user_pool_id
+    GATEWAY_SCOPE         = module.gateway.gateway_scope
+  }
 }
 
 # ---------- Tools Lambda for AgentCore Gateway ----------
@@ -197,4 +204,92 @@ resource "aws_iam_role_policy" "agent_execution" {
       }
     ]
   })
+}
+
+# ---------- Jira Webhook Receiver Lambda ----------
+resource "aws_lambda_function" "jira_webhook" {
+  function_name = "${var.project_name}-${var.environment}-jira-webhook"
+  package_type  = "Image"
+  image_uri     = data.aws_ecr_image.api_latest.image_uri
+  architectures = ["arm64"]
+  role          = aws_iam_role.jira_webhook_role.arn
+  memory_size   = 256
+  timeout       = 30
+  environment {
+    variables = {
+      BUSINESS_TABLE = module.data.business_data_table_name
+      REGION         = var.aws_region
+    }
+  }
+  image_config {
+    command = ["lambdas.jira_webhook.handler.lambda_handler"]
+  }
+  depends_on = [module.observability]
+}
+
+resource "aws_iam_role" "jira_webhook_role" {
+  name = "${var.project_name}-${var.environment}-jira-webhook"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "jira_webhook" {
+  name = "jira-webhook-policy"
+  role = aws_iam_role.jira_webhook_role.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      },
+      {
+        Effect = "Allow"
+        Action = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query"]
+        Resource = [
+          module.data.business_data_table_arn,
+          "${module.data.business_data_table_arn}/index/*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = [
+          aws_secretsmanager_secret.slack_admin_access_token.arn,
+        ]
+      }
+    ]
+  })
+}
+
+# ---------- Jira Webhook API Gateway integration (reuses existing slack_bot.tf API) ----------
+resource "aws_apigatewayv2_integration" "jira_webhook" {
+  api_id                 = module.api.api_id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.jira_webhook.invoke_arn
+  integration_method     = "POST"
+}
+
+resource "aws_apigatewayv2_route" "jira_webhook" {
+  api_id    = module.api.api_id
+  route_key = "POST /jira/webhook"
+  target    = "integrations/${aws_apigatewayv2_integration.jira_webhook.id}"
+}
+
+resource "aws_lambda_permission" "jira_webhook_apigw" {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.jira_webhook.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "arn:aws:execute-api:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${module.api.api_id}/*/*/jira/webhook"
+}
+
+output "jira_webhook_url" {
+  value = "${module.api.api_url}/jira/webhook"
 }

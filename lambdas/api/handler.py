@@ -42,6 +42,11 @@ PROJECT_DECISIONS_RE = re.compile(r"^/v1/projects/([^/]+)/decisions/?$")
 PROJECT_DETAIL_RE = re.compile(r"^/v1/projects/([^/]+)/?$")
 
 ISSUE_DETAIL_RE = re.compile(r"^/v1/issues/([^/]+)/?$")
+
+# Create routes
+CREATE_TEAM_RE = re.compile(r"^/v1/teams/?$")
+CREATE_USER_RE = re.compile(r"^/v1/users/?$")
+CREATE_PROJECT_RE = re.compile(r"^/v1/projects/?$")
 DECISION_DETAIL_RE = re.compile(r"^/v1/decisions/([^/]+)/?$")
 ME_NOTIFICATION_READ_RE = re.compile(r"^/v1/me/notifications/([^/]+)/read/?$")
 
@@ -221,6 +226,12 @@ def lambda_handler(event, context):
             return handle_list_decisions(event, request_ctx, m.group(1))
         elif (m := PROJECT_DETAIL_RE.match(path)) and method == "GET":
             return handle_get_project(event, request_ctx, m.group(1))
+        elif path == "/v1/projects" and method == "POST":
+            return handle_create_project(event, request_ctx)
+        elif path == "/v1/teams" and method == "POST":
+            return handle_create_team(event, request_ctx)
+        elif path == "/v1/users" and method == "POST":
+            return handle_create_user(event, request_ctx)
         elif path == "/v1/admin/auth/jira/login" and method == "GET":
             return handle_admin_login(event, request_ctx, "jira")
         elif path == "/v1/admin/auth/jira/callback" and method == "GET":
@@ -275,6 +286,49 @@ def handle_me(event, request_ctx):
 def handle_list_projects(event, request_ctx):
     items = _client(request_ctx).list_projects()
     return build_response(200, [_project_view(p) for p in items])
+
+
+# ---------- Create Project ----------
+def handle_create_project(event, request_ctx):
+    body = parse_body(event)
+    name = (body.get("name") or "").strip()
+    if not name:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu tên dự án")
+
+    project_id = body.get("project_id") or f"proj-{uuid.uuid4().hex[:8]}"
+    manager_id = body.get("manager_id", "")
+    manager_name = body.get("manager_name", "")
+
+    # If manager_id provided but no name, look up the user profile
+    if manager_id and not manager_name:
+        user = _client(request_ctx).get_user_profile(manager_id)
+        if user:
+            manager_name = user.get("name", "")
+
+    project = {
+        "project_id": project_id,
+        "name": name,
+        "program_name": body.get("program_name", ""),
+        "description": body.get("description", ""),
+        "status": "active",
+        "health": "green",
+        "manager": {"user_id": manager_id, "display_name": manager_name} if manager_id else None,
+        "jira_url": body.get("jira_url", ""),
+        "members": body.get("members", []),
+        "next_milestone": "",
+        "overdue_task_count": 0,
+        "high_risk_count": 0,
+        "progress": 0,
+        "team_name": body.get("team_name", ""),
+        "start_date": body.get("start_date") or datetime.now(timezone.utc).date().isoformat(),
+        "end_date": body.get("end_date", ""),
+        "tags": body.get("tags", []),
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+    _client(request_ctx).put_project(project)
+    _record_activity(request_ctx, "created", f"Dự án {name}")
+    return build_response(201, _project_view(project))
 
 
 def handle_get_project(event, request_ctx, project_id):
@@ -565,6 +619,8 @@ def _project_view(p: dict) -> dict:
         "status": p.get("status", "active"),
         "health": p.get("health", "unknown"),
         "manager": p.get("manager", {"user_id": p.get("owner", ""), "display_name": p.get("owner", "")}),
+        "jira_url": p.get("jira_url", ""),
+        "members": p.get("members", []),
         "next_milestone": p.get("next_milestone"),
         "overdue_task_count": p.get("overdue_task_count", 0),
         "high_risk_count": p.get("high_risk_count", 0),
@@ -716,6 +772,28 @@ def _team_view(t: dict) -> dict:
     }
 
 
+# ---------- Create Team ----------
+def handle_create_team(event, request_ctx):
+    body = parse_body(event)
+    name = (body.get("name") or "").strip()
+    if not name:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu tên nhóm")
+    team_id = body.get("team_id") or f"team-{uuid.uuid4().hex[:8]}"
+    team = {
+        "team_id": team_id,
+        "name": name,
+        "mission": body.get("mission", ""),
+        "program_names": body.get("program_names", []),
+        "members": body.get("members", []),
+        "status": body.get("status", "active"),
+        "last_report_at": "",
+        "created_at": _now(),
+    }
+    _client(request_ctx).put_team(team)
+    _record_activity(request_ctx, "created", f"Nhóm {name}")
+    return build_response(201, _team_view(team))
+
+
 # ---------- User profiles (members / admin users) ----------
 def handle_list_users(event, request_ctx):
     qs = event.get("queryStringParameters") or {}
@@ -758,6 +836,43 @@ def _user_profile_view(u: dict) -> dict:
         "end_date": u.get("end_date"),
         "manager_id": u.get("manager_id"),
     }
+
+
+# ---------- Create User ----------
+def handle_create_user(event, request_ctx):
+    body = parse_body(event)
+    name = (body.get("name") or "").strip()
+    email = (body.get("email") or "").strip()
+    if not name or not email:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu tên hoặc email")
+
+    user_id = body.get("user_id") or f"user-{uuid.uuid4().hex[:8]}"
+    role = body.get("role", "staff")
+    role_labels = {
+        "leadership": "Ban lãnh đạo",
+        "coordinator": "Điều phối viên",
+        "team_lead": "Trưởng nhóm",
+        "staff": "Nhân viên",
+        "volunteer": "Tình nguyện viên",
+        "admin": "Quản trị viên",
+    }
+    profile = {
+        "user_id": user_id,
+        "name": name,
+        "email": email,
+        "role": role,
+        "role_label": body.get("role_label") or role_labels.get(role, "Nhân viên"),
+        "team_name": body.get("team_name", ""),
+        "program_names": body.get("program_names", []),
+        "kind": body.get("kind", "staff"),
+        "status": "active",
+        "start_date": body.get("start_date") or datetime.now(timezone.utc).date().isoformat(),
+        "end_date": body.get("end_date"),
+        "manager_id": body.get("manager_id"),
+    }
+    _client(request_ctx).put_user_profile(profile)
+    _record_activity(request_ctx, "created", f"Tài khoản {name}")
+    return build_response(201, _user_profile_view(profile))
 
 
 # ---------- Weekly updates (per user) ----------

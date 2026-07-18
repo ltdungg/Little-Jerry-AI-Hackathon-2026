@@ -1,5 +1,15 @@
 import * as api from '../lib/api';
-import type { Team } from '../types';
+import type { CreateTeamPayload, Team } from '../types';
+
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 function mapTeam(t: any): Team {
   return {
@@ -8,10 +18,10 @@ function mapTeam(t: any): Team {
     mission: t.mission || '',
     programNames: t.program_names || [],
     members: (t.members || []).map((m: any) => ({
-      id: m.user_id,
+      id: m.user_id || m.id,
       name: m.name,
-      initials: m.initials,
-      roleLabel: m.role_label,
+      initials: m.initials || initialsOf(m.name || ''),
+      roleLabel: m.role_label || m.roleLabel || '',
     })),
     status: t.status,
     lastReportAt: t.last_report_at || '',
@@ -29,4 +39,19 @@ export async function getTeam(id: string): Promise<Team | undefined> {
   } catch {
     return undefined;
   }
+}
+
+export async function createTeam(payload: CreateTeamPayload): Promise<Team> {
+  const raw = await api.createTeam({
+    name: payload.name,
+    mission: payload.mission,
+    program_names: payload.programNames,
+    members: payload.members.map((m) => ({
+      user_id: m.id,
+      name: m.name,
+      initials: m.initials,
+      role_label: m.roleLabel,
+    })),
+  });
+  return mapTeam(raw);
 }
