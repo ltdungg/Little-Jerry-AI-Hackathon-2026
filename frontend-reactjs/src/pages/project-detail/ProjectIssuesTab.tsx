@@ -1,19 +1,20 @@
 import { useMemo, useState } from 'react';
-import { Icon } from '../components/common/Icon';
-import { PageHeader } from '../components/common/PageHeader';
-import { Pill, type PillTone } from '../components/common/Pill';
-import { Select } from '../components/common/Select';
-import { Table, type Column } from '../components/common/Table';
-import { useMockList } from '../hooks/useMockList';
+import { useOutletContext } from 'react-router-dom';
+import { Icon } from '../../components/common/Icon';
+import { Pill, type PillTone } from '../../components/common/Pill';
+import { Select } from '../../components/common/Select';
+import { Table, type Column } from '../../components/common/Table';
+import { useMockList } from '../../hooks/useMockList';
 import {
   confirmAiIssue,
   dismissAiIssue,
   issueImpactLabel,
   issueStatusLabel,
   listIssues,
-} from '../services/issues.service';
-import { useAuth } from '../context/useAuth';
-import type { Issue, IssueImpact, IssueStatus } from '../types';
+} from '../../services/issues.service';
+import { useAuth } from '../../context/useAuth';
+import type { ProjectDetailContext } from '../ProjectDetailPage';
+import type { Issue, IssueImpact, IssueStatus } from '../../types';
 
 type Tab = 'list' | 'ai_suggested';
 
@@ -41,12 +42,13 @@ const IMPACT_OPTIONS: { value: IssueImpact | 'all'; label: string }[] = [
   { value: 'critical', label: 'Nghiêm trọng' },
 ];
 
-export function IssuesPage() {
+export function ProjectIssuesTab() {
+  const { project } = useOutletContext<ProjectDetailContext>();
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('list');
   const [status, setStatus] = useState<IssueStatus | 'all'>('all');
   const [impact, setImpact] = useState<IssueImpact | 'all'>('all');
-  const { items, setItems, loading } = useMockList(() => listIssues(), []);
+  const { items, setItems, loading } = useMockList(() => listIssues({ programId: project.id }), [project.id]);
 
   const manualIssues = useMemo(() => {
     let result = items.filter((i) => i.source === 'manual');
@@ -74,12 +76,7 @@ export function IssuesPage() {
   const columns: Column<Issue>[] = [
     {
       header: 'Vấn đề',
-      render: (issue) => (
-        <div>
-          <p className="font-medium text-slate-800">{issue.title}</p>
-          <p className="text-xs text-slate-400">{issue.programName}</p>
-        </div>
-      ),
+      render: (issue) => <p className="font-medium text-slate-800">{issue.title}</p>,
     },
     {
       header: 'Mức ảnh hưởng',
@@ -100,13 +97,8 @@ export function IssuesPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader
-        title="Khó khăn"
-        subtitle="Ghi nhận, theo dõi và giải quyết khó khăn của tổ chức — phát hiện sớm thay vì chờ đến khi quá hạn."
-      />
-
-      <div className="mt-5 flex items-center gap-1 rounded-lg bg-slate-100 p-1 w-fit">
+    <div>
+      <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1 w-fit">
         <TabButton active={tab === 'list'} onClick={() => setTab('list')}>
           Danh sách khó khăn
         </TabButton>
@@ -138,18 +130,13 @@ export function IssuesPage() {
           ) : (
             aiIssues.map((issue) => (
               <div key={issue.id} className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Pill tone="violet" icon="Sparkles">
-                        AI đề xuất
-                      </Pill>
-                      <Pill tone={IMPACT_TONE[issue.impact]}>{issueImpactLabel(issue.impact)}</Pill>
-                    </div>
-                    <p className="mt-1.5 font-medium text-slate-800">{issue.title}</p>
-                    <p className="text-xs text-slate-400">{issue.programName}</p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Pill tone="violet" icon="Sparkles">
+                    AI đề xuất
+                  </Pill>
+                  <Pill tone={IMPACT_TONE[issue.impact]}>{issueImpactLabel(issue.impact)}</Pill>
                 </div>
+                <p className="mt-1.5 font-medium text-slate-800">{issue.title}</p>
 
                 {issue.aiEvidence && (
                   <div className="mt-3 rounded-lg border border-violet-100 bg-white p-3">

@@ -1,9 +1,10 @@
-import { Icon } from '../components/common/Icon';
-import { PageHeader } from '../components/common/PageHeader';
-import { Pill } from '../components/common/Pill';
-import { useMockList } from '../hooks/useMockList';
-import { handoffStatusLabel, listHandoffs, updateHandoffStatus } from '../services/handoff.service';
-import type { Handoff, HandoffStatus } from '../types';
+import { useOutletContext } from 'react-router-dom';
+import { Icon } from '../../components/common/Icon';
+import { Pill } from '../../components/common/Pill';
+import { useMockList } from '../../hooks/useMockList';
+import { handoffStatusLabel, listHandoffs, updateHandoffStatus } from '../../services/handoff.service';
+import type { ProjectDetailContext } from '../ProjectDetailPage';
+import type { Handoff, HandoffStatus } from '../../types';
 
 const STEPS: HandoffStatus[] = ['draft', 'team_lead_review', 'receiver_confirm', 'complete'];
 const NEXT_STEP: Record<HandoffStatus, HandoffStatus | null> = {
@@ -19,8 +20,9 @@ const NEXT_ACTION_LABEL: Record<HandoffStatus, string> = {
   complete: '',
 };
 
-export function HandoffPage() {
-  const { items, setItems, loading } = useMockList(() => listHandoffs(), []);
+export function ProjectHandoffTab() {
+  const { project } = useOutletContext<ProjectDetailContext>();
+  const { items, setItems, loading } = useMockList(() => listHandoffs({ programName: project.name }), [project.name]);
 
   async function handleAdvance(handoff: Handoff) {
     const next = NEXT_STEP[handoff.status];
@@ -30,15 +32,13 @@ export function HandoffPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader title="Bàn giao" subtitle="Tạo nội dung bàn giao khi thành viên rời chương trình — không mất bối cảnh công việc." />
-
-      <div className="mt-6 flex flex-col gap-4">
+    <div className="max-w-3xl">
+      <div className="flex flex-col gap-4">
         {loading ? (
           <p className="text-sm text-slate-400">Đang tải...</p>
         ) : items.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-400">
-            Không có nội dung bàn giao nào đang chờ xử lý.
+            Không có nội dung bàn giao nào đang chờ xử lý cho dự án này.
           </p>
         ) : (
           items.map((handoff) => (
@@ -49,9 +49,7 @@ export function HandoffPage() {
                 </p>
                 <Pill tone={handoff.status === 'complete' ? 'emerald' : 'amber'}>{handoffStatusLabel(handoff.status)}</Pill>
               </div>
-              <p className="mt-0.5 text-xs text-slate-400">
-                {handoff.teamName} · {handoff.programName}
-              </p>
+              <p className="mt-0.5 text-xs text-slate-400">{handoff.teamName}</p>
 
               <Stepper current={handoff.status} />
 
@@ -90,9 +88,7 @@ function Stepper({ current }: { current: HandoffStatus }) {
     <div className="mt-4 flex items-center gap-1.5">
       {STEPS.map((step, index) => (
         <div key={step} className="flex flex-1 items-center gap-1.5">
-          <div
-            className={`h-1.5 flex-1 rounded-full ${index <= currentIndex ? 'bg-brand-500' : 'bg-slate-100'}`}
-          />
+          <div className={`h-1.5 flex-1 rounded-full ${index <= currentIndex ? 'bg-brand-500' : 'bg-slate-100'}`} />
         </div>
       ))}
     </div>

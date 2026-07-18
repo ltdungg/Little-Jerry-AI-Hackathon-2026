@@ -370,3 +370,59 @@ export async function deleteSavedAnswer(savedId: string) {
 export async function getLeadershipSummary() {
   return apiFetch<any>('/v1/reports/leadership-summary');
 }
+
+// ── Project reports (daily/weekly AI-generated, editable, PDF export) ──
+export async function getProjectReports(projectId: string, params?: { category?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set('category', params.category);
+  const query = qs.toString();
+  return apiFetch<any[]>(`/v1/projects/${projectId}/reports${query ? `?${query}` : ''}`);
+}
+
+export async function getAllReports(params?: { category?: string; project_id?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set('category', params.category);
+  if (params?.project_id) qs.set('project_id', params.project_id);
+  const query = qs.toString();
+  return apiFetch<any[]>(`/v1/reports${query ? `?${query}` : ''}`);
+}
+
+export async function createReport(projectId: string, reportType: string) {
+  return apiFetch<any>(`/v1/projects/${projectId}/reports`, {
+    method: 'POST',
+    body: JSON.stringify({ report_type: reportType }),
+  });
+}
+
+export async function getReport(reportId: string) {
+  return apiFetch<any>(`/v1/reports/${reportId}`);
+}
+
+export async function updateReport(reportId: string, content: string) {
+  return apiFetch<any>(`/v1/reports/${reportId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function exportReportPdf(reportId: string) {
+  return apiFetch<{ report_id: string; pdf_s3_uri: string; download_url: string; expires_in: number }>(
+    `/v1/reports/${reportId}/export-pdf`,
+    { method: 'POST' },
+  );
+}
+
+// ── Daily updates (cập nhật tiến độ task hằng ngày, theo dự án) ──
+export async function getDailyUpdates(projectId: string, date?: string) {
+  const qs = new URLSearchParams();
+  if (date) qs.set('date', date);
+  const query = qs.toString();
+  return apiFetch<any[]>(`/v1/projects/${projectId}/daily-updates${query ? `?${query}` : ''}`);
+}
+
+export async function submitDailyUpdate(projectId: string, data: { user_name?: string; date?: string; task_updates: Record<string, unknown>[] }) {
+  return apiFetch<any>(`/v1/projects/${projectId}/daily-updates`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
