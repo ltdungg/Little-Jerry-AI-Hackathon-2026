@@ -46,7 +46,7 @@ def _create_mcp_tool_wrapper(target_name: str, tool_name: str, spec: ToolSpec) -
                     result = await session.call_tool(tool_name, arguments=kwargs)
                     # Convert CallToolResult back to a string/JSON response
                     if result.content:
-                        return "\\n".join(
+                        return "\n".join(
                             c.text if c.type == "text" else str(c)
                             for c in result.content
                         )
