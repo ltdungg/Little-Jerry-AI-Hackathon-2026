@@ -56,14 +56,14 @@ export function Topbar({ onMenuClick }: { onMenuClick: () => void }) {
             onClick={() => setMenuOpen((v) => !v)}
             className="flex items-center gap-2 rounded-lg py-1.5 pl-1.5 pr-2 hover:bg-slate-100"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
               {user?.initials}
             </div>
-            <div className="hidden text-left leading-tight md:block">
-              <p className="text-sm font-medium text-slate-800">{user?.name}</p>
-              <p className="text-xs text-slate-400">{user?.roleLabel}</p>
+            <div className="hidden max-w-[120px] text-left leading-tight md:block">
+              <p className="truncate text-sm font-medium text-slate-800">{user?.name}</p>
+              <p className="truncate text-xs text-slate-400">{user?.roleLabel}</p>
             </div>
-            <Icon name="ChevronDown" size={14} className="hidden text-slate-400 md:block" />
+            <Icon name="ChevronDown" size={14} className="hidden shrink-0 text-slate-400 md:block" />
           </button>
 
           {menuOpen && (
