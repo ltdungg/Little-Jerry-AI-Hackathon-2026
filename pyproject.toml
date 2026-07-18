@@ -14,6 +14,7 @@ dependencies = [
     "uvicorn",
     "fastapi",
     "aiohttp",
+    "langgraph>=1.2.9",
 ]
 requires-python = ">=3.12"
 

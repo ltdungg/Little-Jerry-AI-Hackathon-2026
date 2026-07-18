@@ -1,7 +1,7 @@
 project_name = "npo-ai"
 environment  = "dev"
 aws_region   = "ap-southeast-2"
-image_tag    = "5226928"
+image_tag    = "242f8bf"
 
 embedding_model_id = "amazon.titan-embed-text-v2:0"
 
