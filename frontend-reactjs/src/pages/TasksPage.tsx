@@ -5,7 +5,7 @@ import { Select } from '../components/common/Select';
 import { Table, type Column } from '../components/common/Table';
 import { useMockList } from '../hooks/useMockList';
 import { listTasks, taskPriorityLabel, taskStatusLabel } from '../services/tasks.service';
-import { PROJECTS } from '../lib/mockData';
+import { listProjects } from '../services/projects.service';
 import type { Task, TaskPriority, TaskStatus } from '../types';
 
 type QuickFilter = 'all' | 'overdue' | 'unassigned' | 'no_due_date' | 'blocked';
@@ -35,6 +35,7 @@ export function TasksPage() {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const [programId, setProgramId] = useState('all');
   const { items, loading } = useMockList(() => listTasks(), []);
+  const { items: projects } = useMockList(() => listProjects(), []);
 
   const filtered = useMemo(() => {
     let result = items;
@@ -129,7 +130,7 @@ export function TasksPage() {
         <Select
           value={programId}
           onChange={setProgramId}
-          options={[{ value: 'all', label: 'Tất cả chương trình' }, ...PROJECTS.map((p) => ({ value: p.id, label: p.name }))]}
+          options={[{ value: 'all', label: 'Tất cả chương trình' }, ...projects.map((p) => ({ value: p.id, label: p.name }))]}
           className="ml-auto"
         />
       </div>

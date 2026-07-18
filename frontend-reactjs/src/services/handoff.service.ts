@@ -1,64 +1,66 @@
-import { delay } from './mockClient';
+import * as api from '../lib/api';
 import type { Handoff, HandoffStatus, OffboardingRecord } from '../types';
 
-let handoffs: Handoff[] = [
-  {
-    id: 'handoff-1',
-    fromName: 'James Carter',
-    toName: 'Linh Phạm',
-    teamName: 'Education',
-    programName: 'Rural Education',
-    currentResponsibilities: 'Điều phối tình nguyện viên tại 3 điểm trường khu vực Bắc.',
-    inProgressWork: 'Đang hoàn tất báo cáo khảo sát nhu cầu học sinh học kỳ 2.',
-    pendingDecisions: 'Chưa chốt phương án hỗ trợ học bổng cho học sinh khó khăn.',
-    unresolvedIssues: 'Thiếu tình nguyện viên hỗ trợ dạy kèm buổi tối.',
-    keyContacts: 'Cô Hạnh — hiệu trưởng điểm trường số 2 (0987xxxxxx).',
-    relatedDocs: 'Báo cáo khảo sát nhu cầu học sinh (bản nháp).',
-    risks: 'Nếu không có người tiếp nhận kịp thời, lịch dạy kèm buổi tối có thể bị gián đoạn.',
-    nextSteps: 'Bàn giao trực tiếp lịch dạy kèm cho người tiếp nhận trước ngày kết thúc.',
-    status: 'receiver_confirm',
-  },
-];
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
-let offboardingRecords: OffboardingRecord[] = [
-  {
-    id: 'off-1',
-    name: 'James Carter',
-    initials: 'JC',
-    teamName: 'Education',
-    accessEndsAt: '31 Th7, 2026',
-    accessToRevoke: ['Kho tài liệu Education', 'Slack #proj-rural-edu'],
-    ownedDocuments: ['Báo cáo khảo sát nhu cầu học sinh (bản nháp)'],
-    handoffComplete: false,
-  },
-  {
-    id: 'off-2',
-    name: 'Hana Ito',
-    initials: 'HI',
-    teamName: 'Tech for Good',
-    accessEndsAt: '5 Th7, 2026',
-    accessToRevoke: ['Kho tài liệu Tech for Good'],
-    ownedDocuments: [],
-    handoffComplete: true,
-  },
-];
+function mapHandoff(h: any): Handoff {
+  return {
+    id: h.handoff_id,
+    fromName: h.from_name || '',
+    toName: h.to_name ?? null,
+    teamName: h.team_name || '',
+    programName: h.program_name || '',
+    currentResponsibilities: h.current_responsibilities || '',
+    inProgressWork: h.in_progress_work || '',
+    pendingDecisions: h.pending_decisions || '',
+    unresolvedIssues: h.unresolved_issues || '',
+    keyContacts: h.key_contacts || '',
+    relatedDocs: h.related_docs || '',
+    risks: h.risks || '',
+    nextSteps: h.next_steps || '',
+    status: h.status,
+  };
+}
+
+function mapOffboarding(o: any): OffboardingRecord {
+  return {
+    id: o.offboarding_id,
+    name: o.name || '',
+    initials: initialsOf(o.name || ''),
+    teamName: o.team_name || '',
+    accessEndsAt: o.access_ends_at || '',
+    accessToRevoke: o.access_to_revoke || [],
+    ownedDocuments: o.owned_documents || [],
+    handoffComplete: o.handoff_complete || false,
+  };
+}
 
 export async function listHandoffs(): Promise<Handoff[]> {
-  return delay([...handoffs]);
+  const raw = await api.getHandoffs();
+  return raw.map(mapHandoff);
 }
 
 export async function updateHandoffStatus(id: string, status: HandoffStatus): Promise<Handoff> {
-  handoffs = handoffs.map((h) => (h.id === id ? { ...h, status } : h));
-  return delay(handoffs.find((h) => h.id === id)!);
+  const raw = await api.updateHandoff(id, status);
+  return mapHandoff(raw);
 }
 
 export async function listOffboardingRecords(): Promise<OffboardingRecord[]> {
-  return delay([...offboardingRecords]);
+  const raw = await api.getOffboardingRecords();
+  return raw.map(mapOffboarding);
 }
 
 export async function confirmHandoffComplete(id: string): Promise<OffboardingRecord> {
-  offboardingRecords = offboardingRecords.map((r) => (r.id === id ? { ...r, handoffComplete: true } : r));
-  return delay(offboardingRecords.find((r) => r.id === id)!);
+  const raw = await api.confirmOffboardingHandoff(id);
+  return mapOffboarding(raw);
 }
 
 export function handoffStatusLabel(status: HandoffStatus): string {

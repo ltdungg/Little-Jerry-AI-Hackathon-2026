@@ -1,48 +1,22 @@
-import { delay } from './mockClient';
+import * as api from '../lib/api';
 import type { PermissionAction, Role, RolePermissionRow } from '../types';
 
-let rolePermissions: RolePermissionRow[] = [
-  {
-    role: 'leadership',
-    roleLabel: 'Ban lãnh đạo',
-    permissions: { view: true, create: false, edit: false, approve: true, export: true, share: true },
-  },
-  {
-    role: 'coordinator',
-    roleLabel: 'Người điều phối hoạt động',
-    permissions: { view: true, create: true, edit: true, approve: false, export: true, share: true },
-  },
-  {
-    role: 'team_lead',
-    roleLabel: 'Trưởng nhóm / trưởng dự án',
-    permissions: { view: true, create: true, edit: true, approve: true, export: true, share: true },
-  },
-  {
-    role: 'staff',
-    roleLabel: 'Nhân viên',
-    permissions: { view: true, create: true, edit: true, approve: false, export: false, share: false },
-  },
-  {
-    role: 'volunteer',
-    roleLabel: 'Tình nguyện viên',
-    permissions: { view: true, create: false, edit: false, approve: false, export: false, share: false },
-  },
-  {
-    role: 'admin',
-    roleLabel: 'Người quản trị hệ thống',
-    permissions: { view: true, create: true, edit: true, approve: true, export: true, share: true },
-  },
-];
+function mapRow(r: any): RolePermissionRow {
+  return {
+    role: r.role,
+    roleLabel: r.role_label || '',
+    permissions: r.permissions,
+  };
+}
 
 export async function listRolePermissions(): Promise<RolePermissionRow[]> {
-  return delay([...rolePermissions]);
+  const raw = await api.getRolePermissions();
+  return raw.map(mapRow);
 }
 
 export async function togglePermission(role: Role, action: PermissionAction): Promise<RolePermissionRow> {
-  rolePermissions = rolePermissions.map((r) =>
-    r.role === role ? { ...r, permissions: { ...r.permissions, [action]: !r.permissions[action] } } : r,
-  );
-  return delay(rolePermissions.find((r) => r.role === role)!);
+  const raw = await api.toggleRolePermission(role, action);
+  return mapRow(raw);
 }
 
 export const PERMISSION_ACTIONS: { value: PermissionAction; label: string }[] = [
