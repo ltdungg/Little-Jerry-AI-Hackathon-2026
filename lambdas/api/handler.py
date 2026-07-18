@@ -346,7 +346,10 @@ def handle_admin_login(event, request_ctx, provider):
 
     project_name = os.environ.get("PROJECT_NAME", "npo-ai")
     env = os.environ.get("ENVIRONMENT", "dev")
-    client_id = _get_secret(f"{project_name}-{env}-{provider}-client-id")
+    client_id_secret = f"{project_name}-{env}-{provider}-client-id"
+    client_id = _get_secret(client_id_secret)
+    if not client_id:
+        return build_error_response(500, "CONFIG_ERROR", f"Missing OAuth client id secret: {client_id_secret}")
     
     # URL callback to the same API
     headers = event.get("headers", {})
