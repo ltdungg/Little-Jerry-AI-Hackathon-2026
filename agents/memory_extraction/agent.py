@@ -88,7 +88,6 @@ def create_memory_extraction_agent(session_id: str = "default") -> Agent:
             })
 
         try:
-            import asyncio
             store = BedrockAgentCoreMemoryStore(
                 memory_id=MEMORY_ID,
                 namespace=session_id,
@@ -100,12 +99,13 @@ def create_memory_extraction_agent(session_id: str = "default") -> Agent:
                 f"Metadata: {json.dumps(meta, ensure_ascii=False)}"
             )
 
-            loop = asyncio.new_event_loop()
-            loop.run_until_complete(store.add(
+            # This tool runs inside the agent's event loop; the AgentCore client
+            # is blocking, so call the synchronous write directly instead of
+            # nesting a new event loop.
+            store.add_record(
                 content=enriched_content,
                 metadata={"type": entry_type, "session_id": session_id, **meta},
-            ))
-            loop.close()
+            )
 
             return json.dumps({
                 "status": "stored",

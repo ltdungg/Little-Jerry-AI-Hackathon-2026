@@ -10,13 +10,35 @@ variable "tags" {
 }
 
 # ── AgentCore Memory: persistent conversation memory ──
-# Stores conversation history that agents can search and add to.
-# Scoped per tenant via namespace in the API layer.
+# Short-term events (raw turns) are written via CreateEvent. The extraction
+# strategies below asynchronously distil those events into long-term memory
+# records under deterministic namespaces, which agents then retrieve.
+# The namespace templates MUST match agents/common/memory/bedrock_agentcore_store.py.
 resource "awscc_bedrockagentcore_memory" "conversation" {
   name        = "${replace("${var.project_name}-${var.environment}", "-", "_")}_conversation_memory"
   description = "Conversation memory for ${var.project_name} ${var.environment} agents"
 
   event_expiry_duration = var.event_expiry_days
+
+  # Role AgentCore assumes to run extraction (invokes a foundation model).
+  memory_execution_role_arn = aws_iam_role.memory.arn
+
+  memory_strategies = [
+    {
+      # Extracts durable semantic facts from conversation events.
+      semantic_memory_strategy = {
+        name       = "conversation_semantic"
+        namespaces = ["conversation/semantic/{actorId}"]
+      }
+    },
+    {
+      # Rolling summary of each session for cheaper long-context recall.
+      summary_memory_strategy = {
+        name       = "conversation_summary"
+        namespaces = ["conversation/summary/{actorId}/{sessionId}"]
+      }
+    },
+  ]
 
   tags = var.tags
 }
@@ -60,6 +82,14 @@ resource "aws_iam_role_policy" "memory" {
           "bedrock-agentcore:StartMemoryExtractionJob",
           "bedrock-agentcore:ListMemoryExtractionJobs",
         ]
+        Resource = "*"
+      },
+      {
+        # Extraction strategies invoke a foundation model to distil events
+        # into long-term memory records.
+        Sid      = "InvokeModelForExtraction"
+        Effect   = "Allow"
+        Action   = ["bedrock:InvokeModel"]
         Resource = "*"
       }
     ]

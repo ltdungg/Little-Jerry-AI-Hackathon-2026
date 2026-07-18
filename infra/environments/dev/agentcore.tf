@@ -154,6 +154,13 @@ resource "aws_iam_role_policy" "agent_execution" {
         Sid      = "MemoryOperations"
         Effect   = "Allow"
         Action   = [
+          # Short-term events feed the extraction pipeline.
+          "bedrock-agentcore:CreateEvent",
+          "bedrock-agentcore:ListEvents",
+          "bedrock-agentcore:GetEvent",
+          "bedrock-agentcore:ListSessions",
+          "bedrock-agentcore:ListActors",
+          # Long-term records.
           "bedrock-agentcore:BatchCreateMemoryRecords",
           "bedrock-agentcore:RetrieveMemoryRecords",
           "bedrock-agentcore:ListMemoryRecords",

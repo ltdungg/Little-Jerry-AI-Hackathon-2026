@@ -110,9 +110,13 @@ class OrchestratorAgent:
         memory_manager = None
         if self._memory_id and session_id:
             try:
+                user_id = request.constraints.user_id if request.constraints else ""
                 store = BedrockAgentCoreMemoryStore(
                     memory_id=self._memory_id,
-                    namespace=session_id,
+                    # Actor = user so extracted memory persists across sessions;
+                    # session scopes the raw event stream / rolling summary.
+                    actor_id=user_id or tenant_id,
+                    session_id=session_id,
                 )
                 memory_manager = MemoryManager(
                     stores=[store],
