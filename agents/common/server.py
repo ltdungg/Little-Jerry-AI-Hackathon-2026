@@ -18,6 +18,9 @@ AGENT_MODULE_MAP = {
     "communication": "agents.communication.agent",
     "memory_extraction": "agents.memory_extraction.agent",
     "risk_analysis": "agents.risk_analysis.agent",
+    "alert_manager": "agents.alert_manager.agent",
+    "decision_tracker": "agents.decision_tracker.agent",
+    "intent_router": "agents.intent_router.agent",
 }
 
 # Cache the loaded agent handler
@@ -44,6 +47,9 @@ def _load_agent():
         "communication": "CommunicationAgent",
         "memory_extraction": "MemoryExtractionAgent",
         "risk_analysis": "RiskAnalysisAgent",
+        "alert_manager": "AlertManagerAgent",
+        "decision_tracker": "DecisionTrackerAgent",
+        "intent_router": "IntentRouterAgent",
     }[AGENT_NAME]
 
     agent_class = getattr(module, agent_class_name)
