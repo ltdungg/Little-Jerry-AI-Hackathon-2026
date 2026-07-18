@@ -5,10 +5,12 @@ from strands import Agent, tool
 
 from agents.common.contracts.agent import AgentTaskRequest, AgentTaskResult, AgentMetrics, Fact, TaskStatus
 from agents.common.model.provider import get_strands_model
+from agents.common.clients.mcp_client import fetch_mcp_tools_for_target
 
 
-def create_communication_agent(slack_client: Any = None) -> Agent:
+def create_communication_agent(slack_client: Any = None, mcp_tools: list = None) -> Agent:
     """Create a Strands Agent for communication/drafting."""
+    mcp_tools = mcp_tools or []
 
     @tool
     def draft_message(channel: str, topic: str, tone: str = "professional") -> str:
@@ -32,7 +34,7 @@ def create_communication_agent(slack_client: Any = None) -> Agent:
     return Agent(
         name="communication",
         model=model,
-        tools=[draft_message, send_notification],
+        tools=[draft_message, send_notification] + mcp_tools,
         system_prompt=(
             "Bạn là trợ lý liên lạc của một tổ chức phi lợi nhuận (NPO) tại Việt Nam.\n"
             "LUÔN trả lời bằng tiếng Việt, thân thiện, chuyên nghiệp.\n"
@@ -52,7 +54,8 @@ class CommunicationAgent:
     async def handle(self, request: AgentTaskRequest) -> AgentTaskResult:
         start = time.time()
         try:
-            agent = create_communication_agent(slack_client=self._slack_client)
+            mcp_tools = await fetch_mcp_tools_for_target("slack")
+            agent = create_communication_agent(slack_client=self._slack_client, mcp_tools=mcp_tools)
             prompt = (
                 f"Yêu cầu từ người dùng: {request.instructions}\n"
                 f"Ngữ cảnh: {request.inputs}"

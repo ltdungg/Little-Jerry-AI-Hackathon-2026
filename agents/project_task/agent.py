@@ -8,6 +8,7 @@ from strands import Agent, tool
 from agents.common.contracts.agent import AgentTaskRequest, AgentTaskResult, AgentMetrics, Fact, TaskStatus
 from agents.common.clients.dynamodb_client import BusinessDataClient
 from agents.common.model.provider import get_strands_model
+from agents.common.clients.mcp_client import fetch_mcp_tools_for_target
 
 
 def _status_vn(s: str) -> str:
@@ -43,9 +44,10 @@ def _format_task_readable(t: dict, idx: int) -> str:
     )
 
 
-def create_project_task_agent(tenant_id: str = "aiv", project_id: str | None = None) -> Agent:
+def create_project_task_agent(tenant_id: str = "aiv", project_id: str | None = None, mcp_tools: list = None) -> Agent:
     """Create a Strands Agent for project task management."""
     client = BusinessDataClient(tenant_id=tenant_id)
+    mcp_tools = mcp_tools or []
 
     @tool
     def list_project_tasks() -> str:
@@ -95,7 +97,7 @@ def create_project_task_agent(tenant_id: str = "aiv", project_id: str | None = N
     return Agent(
         name="project_task",
         model=model,
-        tools=[list_project_tasks, list_overdue_tasks, create_task, update_task],
+        tools=[list_project_tasks, list_overdue_tasks, create_task, update_task] + mcp_tools,
         system_prompt=(
             "Bạn là trợ lý quản lý task dự án của một tổ chức phi lợi nhuận (NPO) tại Việt Nam.\n"
             "LUÔN trả lời bằng tiếng Việt, rõ ràng, có cấu trúc.\n"
@@ -120,7 +122,8 @@ class ProjectTaskAgent:
         project_id = project_ids[0] if project_ids else None
 
         try:
-            agent = create_project_task_agent(tenant_id=tenant_id, project_id=project_id)
+            mcp_tools = await fetch_mcp_tools_for_target("jira")
+            agent = create_project_task_agent(tenant_id=tenant_id, project_id=project_id, mcp_tools=mcp_tools)
 
             # Build a context-rich prompt for the Strands agent
             prompt = (
