@@ -31,13 +31,15 @@ resource "aws_lambda_function" "api_lambda" {
       PROJECT_NAME             = var.project_name
       ENVIRONMENT              = var.environment
       ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
+      # Web authentication (frontend login via Cognito)
       COGNITO_USER_POOL_ID     = module.auth.user_pool_id
-      # AgentCore Gateway config for Jira MCP
-      GATEWAY_MCP_URL       = module.gateway.gateway_url
-      GATEWAY_CLIENT_ID     = module.gateway.cognito_client_id
-      GATEWAY_CLIENT_SECRET = module.gateway.cognito_client_secret
-      GATEWAY_USER_POOL_ID  = module.gateway.cognito_user_pool_id
-      GATEWAY_SCOPE         = module.gateway.gateway_scope
+      COGNITO_CLIENT_ID        = module.auth.client_id
+      # Gateway MCP authentication (for Jira/Slack via AgentCore Gateway)
+      GATEWAY_MCP_URL            = module.gateway.gateway_url
+      GATEWAY_COGNITO_CLIENT_ID     = module.gateway.cognito_client_id
+      GATEWAY_COGNITO_CLIENT_SECRET = module.gateway.cognito_client_secret
+      GATEWAY_COGNITO_USER_POOL_ID  = module.gateway.cognito_user_pool_id
+      GATEWAY_COGNITO_SCOPE         = module.gateway.gateway_scope
     }
   }
   depends_on = [module.observability]

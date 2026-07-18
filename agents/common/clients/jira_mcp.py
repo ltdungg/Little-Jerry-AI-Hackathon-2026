@@ -37,9 +37,9 @@ def _get_gateway_jwt_token() -> str:
     if _token_cache["token"] and now < _token_cache["expires_at"] - 300:
         return _token_cache["token"]
 
-    client_id = os.environ.get("GATEWAY_CLIENT_ID", "")
-    client_secret = os.environ.get("GATEWAY_CLIENT_SECRET", "")
-    user_pool_id = os.environ.get("GATEWAY_USER_POOL_ID", "")
+    client_id = os.environ.get("GATEWAY_COGNITO_CLIENT_ID", "")
+    client_secret = os.environ.get("GATEWAY_COGNITO_CLIENT_SECRET", "")
+    user_pool_id = os.environ.get("GATEWAY_COGNITO_USER_POOL_ID", "")
     username = os.environ.get("GATEWAY_USERNAME", "")
     password = os.environ.get("GATEWAY_PASSWORD", "")
     region = os.environ.get("AWS_REGION", "ap-southeast-2")
@@ -97,7 +97,7 @@ def _get_gateway_jwt_token() -> str:
         "grant_type": "client_credentials",
         "client_id": client_id,
         "client_secret": client_secret,
-        "scope": os.environ.get("GATEWAY_SCOPE", "gateway-quick-start-776830/genesis-gateway:invoke"),
+        "scope": os.environ.get("GATEWAY_COGNITO_SCOPE", "gateway-quick-start-776830/genesis-gateway:invoke"),
     }
 
     try:

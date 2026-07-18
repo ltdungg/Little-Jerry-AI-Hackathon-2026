@@ -17,11 +17,13 @@ module "agentcore" {
   knowledge_base_id   = module.bedrock_kb.knowledge_base_id
   artifact_bucket_name = module.storage.artifact_bucket_name
   gateway_env_vars = {
-    GATEWAY_MCP_URL       = module.gateway.gateway_url
-    GATEWAY_CLIENT_ID     = module.gateway.cognito_client_id
-    GATEWAY_CLIENT_SECRET = module.gateway.cognito_client_secret
-    GATEWAY_USER_POOL_ID  = module.gateway.cognito_user_pool_id
-    GATEWAY_SCOPE         = module.gateway.gateway_scope
+    # Gateway MCP authentication (for Jira/Slack/Confluence via AgentCore Gateway)
+    GATEWAY_MCP_URL            = module.gateway.gateway_url
+    GATEWAY_COGNITO_CLIENT_ID     = module.gateway.cognito_client_id
+    GATEWAY_COGNITO_CLIENT_SECRET = module.gateway.cognito_client_secret
+    GATEWAY_COGNITO_USER_POOL_ID  = module.gateway.cognito_user_pool_id
+    GATEWAY_COGNITO_SCOPE         = module.gateway.gateway_scope
+    GATEWAY_COGNITO_TOKEN_URL     = "https://${module.gateway.cognito_domain}.auth.${var.aws_region}.amazoncognito.com/oauth2/token"
   }
 }
 

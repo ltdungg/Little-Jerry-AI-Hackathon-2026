@@ -40,9 +40,8 @@ class BedrockAgentCoreMemoryStore(MemoryStore):
                 "memoryId": self._memory_id,
                 "namespace": self._namespace,
                 "maxResults": 10,
+                "searchCriteria": {"searchQuery": query or "latest conversation"},
             }
-            if query:
-                params["searchCriteria"] = {"searchQuery": query}
 
             response = self._client.retrieve_memory_records(**params)
             entries = []
@@ -110,7 +109,10 @@ class BedrockAgentCoreMemoryStore(MemoryStore):
                 if text.strip():
                     records.append({
                         "content": {"text": f"[{role}] {text}"},
-                        "metadata": {"role": role, "namespace": self._namespace},
+                        "metadata": {
+                            "role": {"stringValue": role},
+                            "namespace": {"stringValue": self._namespace},
+                        },
                     })
 
             if records:

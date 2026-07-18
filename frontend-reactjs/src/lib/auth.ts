@@ -10,8 +10,9 @@ let configured = false;
 
 function configureAuth() {
   if (configured) return;
-  const userPoolId = import.meta.env.VITE_USER_POOL_ID;
-  const userPoolClientId = import.meta.env.VITE_USER_POOL_CLIENT_ID;
+  // Web authentication pool (for frontend login)
+  const userPoolId = import.meta.env.VITE_WEB_COGNITO_POOL_ID;
+  const userPoolClientId = import.meta.env.VITE_WEB_COGNITO_CLIENT_ID;
   if (userPoolId && userPoolClientId) {
     Amplify.configure({
       Auth: {

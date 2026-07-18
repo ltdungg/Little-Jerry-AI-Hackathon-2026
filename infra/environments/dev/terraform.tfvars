@@ -41,8 +41,4 @@ resource_tags = {
   ManagedBy   = "terraform"
 }
 
-# Gateway Cognito Auth Variables
-gateway_client_id     = "2bl3opkk1kgn6rfbms96fqbnii"
-gateway_client_secret = ""
-gateway_user_pool_id  = "ap-southeast-2_cMA6hPF3F"
 github_access_token = "dummy_token_to_pass_validation"
