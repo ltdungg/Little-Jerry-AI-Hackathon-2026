@@ -367,7 +367,11 @@ def handle_admin_login(event, request_ctx, provider):
 def handle_admin_callback(event, request_ctx, provider):
     import urllib.request
     import urllib.parse
-    
+    from agents.common.contracts.context import UserRole
+
+    if request_ctx.user_role not in (UserRole.leader, UserRole.project_manager):
+        return build_error_response(403, "FORBIDDEN", "Admin OAuth endpoints require leader/project_manager role")
+
     qs = event.get("queryStringParameters") or {}
     code = qs.get("code")
     if not code:
