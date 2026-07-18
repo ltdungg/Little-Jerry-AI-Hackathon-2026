@@ -339,6 +339,11 @@ def _update_secret(name: str, value: str):
 
 def handle_admin_login(event, request_ctx, provider):
     import urllib.parse
+    from agents.common.contracts.context import UserRole
+
+    if request_ctx.user_role not in (UserRole.leader, UserRole.project_manager):
+        return build_error_response(403, "FORBIDDEN", "Admin OAuth endpoints require leader/project_manager role")
+
     project_name = os.environ.get("PROJECT_NAME", "npo-ai")
     env = os.environ.get("ENVIRONMENT", "dev")
     client_id = _get_secret(f"{project_name}-{env}-{provider}-client-id")
