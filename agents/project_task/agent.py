@@ -43,59 +43,18 @@ def _format_task_readable(t: dict, idx: int) -> str:
     )
 
 
-def create_project_task_agent(tenant_id: str = "aiv", project_id: str | None = None) -> Agent:
-    """Create a Strands Agent for project task management."""
-    client = BusinessDataClient(tenant_id=tenant_id)
-
-    @tool
-    def list_project_tasks() -> str:
-        """Liệt kê tất cả task của dự án hiện tại. Trả về danh sách task với tiêu đề, trạng thái, người phụ trách, hạn chót."""
-        tasks = client.list_tasks(project_id) if project_id else client.list_overdue_tasks()
-        if not tasks:
-            return "Không có task nào."
-        lines = [_format_task_readable(t, i) for i, t in enumerate(tasks[:20])]
-        return "\n\n".join(lines)
-
-    @tool
-    def list_overdue_tasks() -> str:
-        """Liệt kê các task đã quá hạn. Trả về danh sách task chưa hoàn thành."""
-        tasks = client.list_overdue_tasks()
-        if not tasks:
-            return "Không có task quá hạn nào."
-        lines = [_format_task_readable(t, i) for i, t in enumerate(tasks[:20])]
-        return "\n\n".join(lines)
-
-    @tool
-    def create_task(title: str, status: str = "todo", due_date: str = "", assignee_user_id: str = "", priority: str = "medium") -> str:
-        """Tạo task mới cho dự án. Luôn cần xác nhận trước khi thực thi (dry_run)."""
-        if not project_id:
-            return "Lỗi: Cần chỉ định project_id để tạo task."
-        task_id = str(uuid.uuid4())
-        preview = {
-            "task_id": task_id, "title": title, "status": status,
-            "due_date": due_date or None, "assignee_user_id": assignee_user_id or None,
-            "priority": priority,
-        }
-        return json.dumps({"action": "confirm_task_create", "preview": preview, "message": f"Đề xuất tạo task '{title}'. Xác nhận để áp dụng."}, ensure_ascii=False)
-
-    @tool
-    def update_task(task_id: str, title: str = "", status: str = "", due_date: str = "", assignee_user_id: str = "", priority: str = "") -> str:
-        """Cập nhật task hiện có. Luôn cần xác nhận trước khi thực thi."""
-        if not project_id:
-            return "Lỗi: Cần chỉ định project_id để cập nhật task."
-        fields = {}
-        if title: fields["title"] = title
-        if status: fields["status"] = status
-        if due_date: fields["due_date"] = due_date
-        if assignee_user_id: fields["assignee_user_id"] = assignee_user_id
-        if priority: fields["priority"] = priority
-        return json.dumps({"action": "confirm_task_update", "task_id": task_id, "updates": fields, "message": f"Đề xuất cập nhật task {task_id}. Xác nhận để áp dụng."}, ensure_ascii=False)
+async def create_project_task_agent(tenant_id: str = "aiv", project_id: str | None = None) -> Agent:
+    """Create a Strands Agent for project task management using Jira MCP Gateway."""
+    from agents.common.clients.mcp_client import fetch_mcp_tools_for_target
+    
+    # Fetch tools from Jira MCP Gateway
+    mcp_tools = await fetch_mcp_tools_for_target("jira")
 
     model = get_strands_model()
     return Agent(
         name="project_task",
         model=model,
-        tools=[list_project_tasks, list_overdue_tasks, create_task, update_task],
+        tools=mcp_tools,
         system_prompt=(
             "Bạn là trợ lý quản lý task dự án của một tổ chức phi lợi nhuận (NPO) tại Việt Nam.\n"
             "LUÔN trả lời bằng tiếng Việt, rõ ràng, có cấu trúc.\n"
@@ -120,7 +79,7 @@ class ProjectTaskAgent:
         project_id = project_ids[0] if project_ids else None
 
         try:
-            agent = create_project_task_agent(tenant_id=tenant_id, project_id=project_id)
+            agent = await create_project_task_agent(tenant_id=tenant_id, project_id=project_id)
 
             # Build a context-rich prompt for the Strands agent
             prompt = (

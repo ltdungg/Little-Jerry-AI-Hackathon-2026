@@ -58,6 +58,14 @@ def lambda_handler(event, context):
             return handle_list_milestones(event, request_ctx, m.group(1))
         elif (m := PROJECT_DETAIL_RE.match(path)) and method == "GET":
             return handle_get_project(event, request_ctx, m.group(1))
+        elif path == "/v1/admin/auth/jira/login" and method == "GET":
+            return handle_admin_login(event, request_ctx, "jira")
+        elif path == "/v1/admin/auth/jira/callback" and method == "GET":
+            return handle_admin_callback(event, request_ctx, "jira")
+        elif path == "/v1/admin/auth/slack/login" and method == "GET":
+            return handle_admin_login(event, request_ctx, "slack")
+        elif path == "/v1/admin/auth/slack/callback" and method == "GET":
+            return handle_admin_callback(event, request_ctx, "slack")
 
         return build_error_response(404, "NOT_FOUND", "Endpoint not found")
     except Exception as e:
@@ -309,3 +317,89 @@ def handle_cancel_workflow(event, request_ctx):
 
 def handle_get_report(event, request_ctx):
     return build_response(200, {"report_id": "rep-123", "data": "..."})
+
+# ---------- Admin OAuth Flow ----------
+def _get_secret(name: str) -> str:
+    sm = boto3.client("secretsmanager", region_name=REGION)
+    try:
+        return sm.get_secret_value(SecretId=name).get("SecretString", "")
+    except Exception as e:
+        logger.error("get_secret_failed", name=name, error=str(e))
+        return ""
+
+def _update_secret(name: str, value: str):
+    sm = boto3.client("secretsmanager", region_name=REGION)
+    sm.put_secret_value(SecretId=name, SecretString=value)
+
+def handle_admin_login(event, request_ctx, provider):
+    import urllib.parse
+    project_name = os.environ.get("PROJECT_NAME", "npo-ai")
+    env = os.environ.get("ENVIRONMENT", "dev")
+    client_id = _get_secret(f"{project_name}-{env}-{provider}-client-id")
+    
+    # URL callback to the same API
+    headers = event.get("headers", {})
+    host = headers.get("host", "localhost")
+    protocol = headers.get("x-forwarded-proto", "https")
+    redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
+    
+    if provider == "jira":
+        url = f"https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id={client_id}&scope=offline_access read:jira-work write:jira-work&redirect_uri={urllib.parse.quote(redirect_uri)}&state=admin&response_type=code&prompt=consent"
+    else: # slack
+        url = f"https://slack.com/oauth/v2/authorize?client_id={client_id}&scope=chat:write,channels:read,groups:read&redirect_uri={urllib.parse.quote(redirect_uri)}&state=admin"
+        
+    return build_response(302, "", headers={"Location": url})
+
+def handle_admin_callback(event, request_ctx, provider):
+    import urllib.request
+    import urllib.parse
+    
+    qs = event.get("queryStringParameters") or {}
+    code = qs.get("code")
+    if not code:
+        return build_error_response(400, "BAD_REQUEST", "Missing authorization code")
+        
+    project_name = os.environ.get("PROJECT_NAME", "npo-ai")
+    env = os.environ.get("ENVIRONMENT", "dev")
+    client_id = _get_secret(f"{project_name}-{env}-{provider}-client-id")
+    client_secret = _get_secret(f"{project_name}-{env}-{provider}-client-secret")
+    
+    headers = event.get("headers", {})
+    host = headers.get("host", "localhost")
+    protocol = headers.get("x-forwarded-proto", "https")
+    redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
+    
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri
+    }
+    encoded_data = urllib.parse.urlencode(data).encode("utf-8")
+    
+    token_url = "https://auth.atlassian.com/oauth/token" if provider == "jira" else "https://slack.com/api/oauth.v2.access"
+    
+    try:
+        req = urllib.request.Request(token_url, data=encoded_data)
+        req.add_header("Content-Type", "application/x-www-form-urlencoded")
+        
+        with urllib.request.urlopen(req) as response:
+            resp_body = json.loads(response.read().decode("utf-8"))
+            
+            # Extract access_token (and bot token for Slack)
+            access_token = resp_body.get("access_token")
+            if provider == "slack" and not access_token:
+                # Slack uses 'authed_user' access_token or just the bot 'access_token'
+                pass
+                
+            if access_token:
+                _update_secret(f"{project_name}-{env}-{provider}-admin-access-token", access_token)
+                return build_response(200, {"status": "success", "message": f"Successfully authenticated {provider} for admin!"})
+            else:
+                return build_error_response(500, "TOKEN_ERROR", f"Failed to extract access token: {json.dumps(resp_body)}")
+                
+    except Exception as e:
+        logger.error("oauth_exchange_failed", provider=provider, error=str(e))
+        return build_error_response(500, "EXCHANGE_FAILED", str(e))
+

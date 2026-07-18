@@ -7,32 +7,18 @@ from agents.common.contracts.agent import AgentTaskRequest, AgentTaskResult, Age
 from agents.common.model.provider import get_strands_model
 
 
-def create_communication_agent(slack_client: Any = None) -> Agent:
-    """Create a Strands Agent for communication/drafting."""
-
-    @tool
-    def draft_message(channel: str, topic: str, tone: str = "professional") -> str:
-        """Soạn tin nhắn Slack/email cho kênh và chủ đề được chỉ định. Trả về bản nháp."""
-        return (
-            f"Bản nháp tin nhắn cho kênh '{channel}' về '{topic}' (giọng {tone}):\n\n"
-            f"Xin chào mọi người,\n\n"
-            f"Liên quan đến {topic}: vui lòng xem chi tiết bên dưới.\n\n"
-            f"Trân trọng."
-        )
-
-    @tool
-    def send_notification(channel: str, message: str) -> str:
-        """Gửi thông báo đến kênh được chỉ định. Cần xác nhận trước khi gửi."""
-        return (
-            f"Đề xuất gửi tin nhắn đến kênh '{channel}':\n{message}\n\n"
-            f"Cần xác nhận trước khi gửi."
-        )
+async def create_communication_agent(slack_client: Any = None) -> Agent:
+    """Create a Strands Agent for communication/drafting using Slack MCP Gateway."""
+    from agents.common.clients.mcp_client import fetch_mcp_tools_for_target
+    
+    # Fetch tools from Slack MCP Gateway
+    mcp_tools = await fetch_mcp_tools_for_target("slack")
 
     model = get_strands_model()
     return Agent(
         name="communication",
         model=model,
-        tools=[draft_message, send_notification],
+        tools=mcp_tools,
         system_prompt=(
             "Bạn là trợ lý liên lạc của một tổ chức phi lợi nhuận (NPO) tại Việt Nam.\n"
             "LUÔN trả lời bằng tiếng Việt, thân thiện, chuyên nghiệp.\n"
@@ -52,7 +38,7 @@ class CommunicationAgent:
     async def handle(self, request: AgentTaskRequest) -> AgentTaskResult:
         start = time.time()
         try:
-            agent = create_communication_agent(slack_client=self._slack_client)
+            agent = await create_communication_agent(slack_client=self._slack_client)
             prompt = (
                 f"Yêu cầu từ người dùng: {request.instructions}\n"
                 f"Ngữ cảnh: {request.inputs}"

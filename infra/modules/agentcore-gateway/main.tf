@@ -6,7 +6,13 @@ resource "aws_cloudformation_stack" "gateway" {
         Type = "AWS::BedrockAgentCore::Gateway"
         Properties = {
           GatewayName = "${var.project_name}-${var.environment}-gateway"
-          Targets     = [for name, arn in var.lambda_target_arns : { Name = name, TargetArn = arn }]
+          Targets     = [for name, cfg in var.http_targets : merge(
+            { 
+              Name        = name, 
+              EndpointUrl = cfg.endpoint_url
+            },
+            cfg.secret_arn != null ? { SecretArn = cfg.secret_arn } : {}
+          )]
         }
       }
     }
