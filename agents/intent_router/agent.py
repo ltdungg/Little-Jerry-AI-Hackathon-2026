@@ -47,38 +47,41 @@ class RouterState(TypedDict):
     confidence: float
 
 
+async def llm_classify(query: str, provider) -> Intent:
+    """LLM-based intent classification."""
+    prompt = f"""Phân loại ý định của người dùng thành MỘT trong các nhóm sau:
+
+- jira_query: Hỏi về task, project, issue, sprint, backlog, assignee, tiến độ trong Jira
+- jira_action: Tạo/sửa/xóa task trong Jira
+- slack_action: Đọc/gửi tin nhắn Slack
+- risk_check: Phân tích rủi ro, cảnh báo, blocker
+- report_gen: Tạo báo cáo daily/weekly
+- knowledge_search: Tìm tài liệu, quy trình, chính sách
+- greeting: Chào hỏi đơn giản (xin chào, cảm ơn)
+- unknown: Không xác định được
+
+Câu hỏi: "{query}"
+
+Trả về DUY NHẤT một JSON: {{"intent": "tên_intent"}}"""
+    try:
+        response = await provider.generate(prompt=prompt, temperature=0.0)
+        text = response.text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+        parsed = json.loads(text)
+        intent_str = parsed.get("intent", Intent.UNKNOWN.value)
+        return Intent(intent_str) if intent_str in [i.value for i in Intent] else Intent.UNKNOWN
+    except Exception as e:
+        logger.error("llm_classify_failed", error=str(e))
+        return Intent.UNKNOWN
+
+
 def keyword_classify(query: str) -> str:
-    """Fast keyword-based classification."""
+    """Fast keyword fallback for obvious cases only."""
     q = query.lower().strip()
-
-    greeting_words = ["xin chào", "chào", "hello", "hi", "hey", "cảm ơn", "thank", "ok"]
-    if any(w in q for w in greeting_words) and len(q.split()) < 10:
+    greeting_words = ["xin chào", "chào", "hello", "hey"]
+    if any(w in q for w in greeting_words) and len(q.split()) < 6:
         return Intent.GREETING.value
-
-    jira_action = ["tạo task", "create task", "cập nhật task", "update task", "chuyển trạng thái"]
-    if any(w in q for w in jira_action):
-        return Intent.JIRA_ACTION.value
-
-    jira_kw = ["task", "nhiệm vụ", "jira", "issue", "sprint", "backlog", "assignee", "todo", "done"]
-    if any(w in q for w in jira_kw):
-        return Intent.JIRA_QUERY.value
-
-    slack_kw = ["slack", "channel", "tin nhắn", "message", "chat", "gửi tin"]
-    if any(w in q for w in slack_kw):
-        return Intent.SLACK_ACTION.value
-
-    risk_kw = ["rủi ro", "risk", "cảnh báo", "alert", "blocker", "milestone"]
-    if any(w in q for w in risk_kw):
-        return Intent.RISK_CHECK.value
-
-    report_kw = ["báo cáo", "report", "daily", "weekly", "tổng hợp", "summary"]
-    if any(w in q for w in report_kw):
-        return Intent.REPORT_GEN.value
-
-    knowledge_kw = ["tìm kiếm", "search", "tài liệu", "document", "quy trình", "policy"]
-    if any(w in q for w in knowledge_kw):
-        return Intent.KNOWLEDGE_SEARCH.value
-
     return Intent.UNKNOWN.value
 
 

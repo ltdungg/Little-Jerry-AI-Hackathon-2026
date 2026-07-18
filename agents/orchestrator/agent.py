@@ -53,11 +53,10 @@ class OrchestratorAgent:
         """Classify intent and route to appropriate agent."""
         logger.info("intent_router_node", user_request=state["user_request"][:100])
 
-        # Call the intent router's classify logic directly (bypass pydantic validation)
-        from agents.intent_router.agent import keyword_classify
+        # Use LLM to classify intent (more accurate than keyword matching)
+        from agents.intent_router.agent import llm_classify
         query = state["user_request"]
-        intent_str = keyword_classify(query)
-        intent = Intent(intent_str) if intent_str in [i.value for i in Intent] else Intent.UNKNOWN
+        intent = await llm_classify(query, self._provider)
         agent_name = INTENT_TO_AGENT.get(intent, "orchestrator")
         logger.info("intent_classified", intent=intent.value, target_agent=agent_name)
 
