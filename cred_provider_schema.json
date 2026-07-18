@@ -1,0 +1,43 @@
+{
+  "oneOf": [
+    {
+      "type": "object",
+      "title": "OauthCredentialProvider",
+      "properties": {
+        "OauthCredentialProvider": {
+          "$ref": "#/definitions/OAuthCredentialProvider"
+        }
+      },
+      "required": [
+        "OauthCredentialProvider"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "title": "ApiKeyCredentialProvider",
+      "properties": {
+        "ApiKeyCredentialProvider": {
+          "$ref": "#/definitions/ApiKeyCredentialProvider"
+        }
+      },
+      "required": [
+        "ApiKeyCredentialProvider"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "title": "IamCredentialProvider",
+      "properties": {
+        "IamCredentialProvider": {
+          "$ref": "#/definitions/IamCredentialProvider"
+        }
+      },
+      "required": [
+        "IamCredentialProvider"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

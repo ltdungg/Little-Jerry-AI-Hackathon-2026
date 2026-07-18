@@ -5,7 +5,7 @@
 resource "aws_cloudcontrolapi_resource" "jira_target" {
   type_name = "AWS::BedrockAgentCore::GatewayTarget"
   desired_state = jsonencode({
-    GatewayIdentifier = awscc_bedrockagentcore_gateway.main.gateway_identifier
+    GatewayIdentifier = "npo-ai-dev-gateway-v4-d53tw35jzc"
     Name              = "jira"
     TargetConfiguration = {
       Mcp = {
@@ -19,10 +19,12 @@ resource "aws_cloudcontrolapi_resource" "jira_target" {
     CredentialProviderConfigurations = [
       {
         CredentialProviderType = "API_KEY"
-        ApiKeyCredentialProviderConfiguration = {
-          ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-vera"
-          CredentialPrefix   = "Basic"
-          CredentialLocation = "HEADER"
+        CredentialProvider = {
+          ApiKeyCredentialProvider = {
+            ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-vera"
+            CredentialPrefix   = "Basic"
+            CredentialLocation = "HEADER"
+          }
         }
       }
     ]
@@ -36,7 +38,7 @@ resource "aws_cloudcontrolapi_resource" "jira_target" {
 resource "aws_cloudcontrolapi_resource" "confluence_target" {
   type_name = "AWS::BedrockAgentCore::GatewayTarget"
   desired_state = jsonencode({
-    GatewayIdentifier = awscc_bedrockagentcore_gateway.main.gateway_identifier
+    GatewayIdentifier = "npo-ai-dev-gateway-v4-d53tw35jzc"
     Name              = "confluence"
     TargetConfiguration = {
       Mcp = {
@@ -50,10 +52,12 @@ resource "aws_cloudcontrolapi_resource" "confluence_target" {
     CredentialProviderConfigurations = [
       {
         CredentialProviderType = "API_KEY"
-        ApiKeyCredentialProviderConfiguration = {
-          ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-vera"
-          CredentialPrefix   = "Basic"
-          CredentialLocation = "HEADER"
+        CredentialProvider = {
+          ApiKeyCredentialProvider = {
+            ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-vera"
+            CredentialPrefix   = "Basic"
+            CredentialLocation = "HEADER"
+          }
         }
       }
     ]
