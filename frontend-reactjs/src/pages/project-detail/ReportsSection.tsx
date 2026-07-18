@@ -1,19 +1,9 @@
 import { useState } from 'react';
-<<<<<<<< HEAD:frontend-reactjs/src/pages/ProjectReportPage.tsx
-import { Link, useParams } from 'react-router-dom';
-import { Icon } from '../components/common/Icon';
-import { PageHeader } from '../components/common/PageHeader';
-import { Pill } from '../components/common/Pill';
-import { StatCard } from '../components/common/StatCard';
-import { useMockList } from '../hooks/useMockList';
-import { useMockResource } from '../hooks/useMockResource';
-========
 import { Icon } from '../../components/common/Icon';
 import { Pill } from '../../components/common/Pill';
 import { StatCard } from '../../components/common/StatCard';
 import { useMockList } from '../../hooks/useMockList';
 import { useMockResource } from '../../hooks/useMockResource';
->>>>>>>> 628969b (feat: redesign navigation, project detail, handoff management & admin):frontend-reactjs/src/pages/project-detail/ReportsSection.tsx
 import {
   exportReportPdf,
   generateReports,
@@ -21,77 +11,36 @@ import {
   reportStatusLabel,
   reportTypeLabel,
   updateReportContent,
-<<<<<<<< HEAD:frontend-reactjs/src/pages/ProjectReportPage.tsx
-} from '../services/projectReports.service';
-import { approveTeamReport, getTeamReport, publishTeamReport, sendReminders } from '../services/updates.service';
-import { listTeams } from '../services/teams.service';
-import { getProject } from '../services/projects.service';
-import type { ProjectReport, Team, TeamWeeklyReport } from '../types';
-
-export function ProjectReportPage() {
-  const { projectId } = useParams();
-  const { data: project, loading: loadingProject } = useMockResource(() => getProject(projectId ?? ''), [projectId]);
-
-  if (loadingProject) {
-    return <p className="p-10 text-center text-sm text-slate-400">Đang tải...</p>;
-  }
-
-  if (!project) {
-    return (
-      <div className="flex h-full items-center justify-center p-10 text-center">
-        <div>
-          <p className="text-lg font-semibold text-slate-900">Không tìm thấy dự án</p>
-          <Link to="/reports/weekly" className="mt-2 inline-block text-sm text-brand-600 hover:underline">
-            Quay lại Báo cáo
-          </Link>
-        </div>
-      </div>
-    );
-  }
-========
 } from '../../services/projectReports.service';
 import { approveTeamReport, getTeamReport, publishTeamReport, sendReminders } from '../../services/updates.service';
 import { listTeams } from '../../services/teams.service';
-import type { Project, ProjectReport, ProjectReportType, Team, TeamWeeklyReport } from '../../types';
->>>>>>>> 628969b (feat: redesign navigation, project detail, handoff management & admin):frontend-reactjs/src/pages/project-detail/ReportsSection.tsx
+import type { Project, ProjectReport, Team, TeamWeeklyReport } from '../../types';
 
 export function ReportsSection({ project }: { project: Project }) {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-      <Link to="/reports/weekly" className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
-        <Icon name="ArrowLeft" size={15} />
-        Báo cáo
-      </Link>
-
-      <PageHeader title={project.name} subtitle={project.program} />
-
-      <div className="mt-5 flex flex-col gap-6">
-        <GeneratedReportsSection projectId={project.id} projectName={project.name} />
-        <TeamDashboardSection projectName={project.name} />
-      </div>
+    <div className="flex flex-col gap-6">
+      <GeneratedReportsSection projectId={project.id} projectName={project.name} />
+      <TeamDashboardSection projectName={project.name} />
     </div>
   );
 }
 
-<<<<<<<< HEAD:frontend-reactjs/src/pages/ProjectReportPage.tsx
-// ---------------------------------------------------------------------------
-// Báo cáo tự động (AgentCore) — chỉ còn báo cáo tuần
-// ---------------------------------------------------------------------------
-
-========
->>>>>>>> 628969b (feat: redesign navigation, project detail, handoff management & admin):frontend-reactjs/src/pages/project-detail/ReportsSection.tsx
 function GeneratedReportsSection({ projectId, projectName }: { projectId: string; projectName: string }) {
   const { items: reports, setItems: setReports, loading } = useMockList(() => listProjectReports(projectId), [projectId]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = reports.find((r) => r.id === selectedId) ?? null;
+  const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<ProjectReport['reportType'][]>(['daily_status']);
   const [generating, setGenerating] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
 
   async function handleGenerate() {
+    if (selectedTypes.length === 0) return;
     setGenerating(true);
     try {
-      const created = await generateReports(projectId, ['weekly_status']);
+      const created = await generateReports(projectId, selectedTypes);
       setReports((prev) => [...created, ...prev]);
+      setShowGenerateModal(false);
       if (created[0]) setSelectedId(created[0].id);
     } finally {
       setGenerating(false);
@@ -123,15 +72,16 @@ function GeneratedReportsSection({ projectId, projectName }: { projectId: string
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-800">Báo cáo tự động</p>
-          <p className="mt-1 text-xs text-slate-400">Lịch tự động: 18:00 Chủ nhật hằng tuần.</p>
+          <p className="mt-1 text-xs text-slate-400">
+            Lịch tự động: 18:00 hằng ngày và 18:00 Chủ nhật hằng tuần.
+          </p>
         </div>
         <button
           type="button"
-          onClick={handleGenerate}
-          disabled={generating}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+          onClick={() => setShowGenerateModal(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
-          {generating ? <Icon name="Loader2" size={14} className="animate-spin" /> : <Icon name="Sparkles" size={14} />}
+          <Icon name="Sparkles" size={14} />
           Xuất báo cáo
         </button>
       </div>
@@ -140,7 +90,7 @@ function GeneratedReportsSection({ projectId, projectName }: { projectId: string
         <p className="mt-4 text-sm text-slate-400">Đang tải...</p>
       ) : reports.length === 0 ? (
         <p className="mt-4 rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-400">
-          Chưa có báo cáo nào. Bấm "Xuất báo cáo" để tạo báo cáo tuần đầu tiên.
+          Chưa có báo cáo nào. Bấm "Xuất báo cáo" để tạo báo cáo đầu tiên.
         </p>
       ) : (
         <div className="mt-4 overflow-x-auto rounded-lg border border-slate-100">
@@ -186,6 +136,48 @@ function GeneratedReportsSection({ projectId, projectName }: { projectId: string
           onSave={handleSave}
           onExportPdf={handleExportPdf}
         />
+      )}
+
+      {showGenerateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-lg">
+            <p className="text-sm font-semibold text-slate-800">Xuất báo cáo</p>
+            <div className="mt-3 flex flex-col gap-2">
+              {(['daily_status', 'weekly_status'] as ProjectReport['reportType'][]).map((type) => (
+                <label key={type} className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={selectedTypes.includes(type)}
+                    onChange={(e) =>
+                      setSelectedTypes((prev) =>
+                        e.target.checked ? [...prev, type] : prev.filter((t) => t !== type),
+                      )
+                    }
+                  />
+                  {reportTypeLabel(type)}
+                </label>
+              ))}
+            </div>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowGenerateModal(false)}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Huỷ
+              </button>
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generating || selectedTypes.length === 0}
+                className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+              >
+                {generating && <Icon name="Loader2" size={14} className="animate-spin" />}
+                Tạo báo cáo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
