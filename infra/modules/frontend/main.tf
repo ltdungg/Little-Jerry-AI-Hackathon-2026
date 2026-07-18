@@ -32,10 +32,11 @@ variable "user_pool_client_id" {
 
 locals {
   frontend_env = {
-    VITE_API_URL             = var.api_url
-    VITE_AWS_REGION          = var.aws_region
-    VITE_USER_POOL_ID        = var.user_pool_id
-    VITE_USER_POOL_CLIENT_ID = var.user_pool_client_id
+    VITE_API_URL                   = var.api_url
+    VITE_AWS_REGION                = var.aws_region
+    # Web authentication pool (for frontend login)
+    VITE_WEB_COGNITO_POOL_ID       = var.user_pool_id
+    VITE_WEB_COGNITO_CLIENT_ID     = var.user_pool_client_id
     # Required for monorepo: Amplify must know the app root directory.
     # TODO: rename frontend-reactjs → frontend then change this back to "frontend"
     AMPLIFY_MONOREPO_APP_ROOT = "frontend-reactjs"
