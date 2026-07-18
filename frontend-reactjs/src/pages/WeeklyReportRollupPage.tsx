@@ -52,8 +52,8 @@ export function WeeklyReportRollupPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <PageHeader
-        title="Báo cáo hằng tuần"
-        subtitle="Tổng hợp trạng thái báo cáo tuần của tất cả dự án. Bấm vào một dự án để mở tab 'Xuất báo cáo' và xem/sửa/xuất PDF."
+        title="Báo cáo"
+        subtitle="Tổng hợp trạng thái báo cáo tuần của tất cả dự án. Bấm vào một dự án để xem/sửa/xuất PDF và quản lý bảng thông tin nhóm."
       />
 
       <div className="mt-6">
@@ -64,7 +64,7 @@ export function WeeklyReportRollupPage() {
             columns={columns}
             rows={rows}
             rowKey={(row) => row.project.id}
-            onRowClick={(row) => navigate(`/projects/${row.project.id}/reports`)}
+            onRowClick={(row) => navigate(`/reports/weekly/${row.project.id}`)}
             emptyIcon="FileText"
             emptyTitle="Chưa có dự án nào"
           />

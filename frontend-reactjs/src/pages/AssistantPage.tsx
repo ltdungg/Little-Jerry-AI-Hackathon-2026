@@ -14,12 +14,6 @@ const SOURCE_ICON: Record<SourceType, string> = {
   Docs: 'FileText',
 };
 
-const SOURCE_FILTERS: { value: 'all' | SourceType; label: string }[] = [
-  { value: 'all', label: 'All sources' },
-  { value: 'SharePoint', label: 'SharePoint' },
-  { value: 'Slack', label: 'Slack' },
-];
-
 const STARTER_PROMPTS = [
   'What are the latest risks identified in this project?',
   'Tóm tắt tiến độ chương trình trong tuần này.',
@@ -29,7 +23,6 @@ const STARTER_PROMPTS = [
 export function AssistantPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<'all' | SourceType>('all');
   const [isThinking, setIsThinking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -94,17 +87,8 @@ export function AssistantPage() {
     <div className="flex h-full min-h-0 bg-slate-50/50 relative">
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
-          <button
-            type="button"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Icon name="FolderKanban" size={14} className="text-brand-500" />
-            NPO AI Platform
-            <Icon name="ChevronDown" size={14} className="text-slate-400" />
-          </button>
-          
-          <div className="ml-2 flex items-center gap-1">
-            <button 
+          <div className="flex items-center gap-1">
+            <button
               type="button"
               onClick={() => setShowHistory(true)}
               className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600 transition"
@@ -112,7 +96,7 @@ export function AssistantPage() {
             >
               <Icon name="History" size={16} />
             </button>
-            <button 
+            <button
               type="button"
               onClick={() => setShowSaved(true)}
               className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600 transition"
@@ -120,23 +104,6 @@ export function AssistantPage() {
             >
               <Icon name="Bookmark" size={16} />
             </button>
-          </div>
-
-          <div className="ml-auto flex items-center gap-1 rounded-lg bg-slate-100 p-1">
-            {SOURCE_FILTERS.map((s) => (
-              <button
-                key={s.value}
-                type="button"
-                onClick={() => setSourceFilter(s.value)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                  sourceFilter === s.value
-                    ? 'bg-white text-brand-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
           </div>
         </div>
 
@@ -147,9 +114,23 @@ export function AssistantPage() {
             ))}
 
             {messages.length === 0 && !isThinking && (
-              <p className="text-center text-sm text-slate-400">
-                Đặt câu hỏi cho trợ lý AIV để nhận câu trả lời có dẫn nguồn từ tài liệu tổ chức.
-              </p>
+              <div className="mt-6 flex flex-col items-center gap-4 text-center">
+                <p className="text-sm text-slate-400">
+                  Đặt câu hỏi cho trợ lý AIV để nhận câu trả lời có dẫn nguồn từ tài liệu tổ chức.
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {STARTER_PROMPTS.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => sendQuestion(q)}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {isThinking && (
@@ -163,21 +144,6 @@ export function AssistantPage() {
 
         <div className="border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
           <div className="mx-auto max-w-2xl">
-            {messages.length === 0 && (
-              <div className="mb-3 flex flex-wrap gap-2">
-                {STARTER_PROMPTS.map((q) => (
-                  <button
-                    key={q}
-                    type="button"
-                    onClick={() => sendQuestion(q)}
-                    className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            )}
-
             <form
               onSubmit={(e) => {
                 e.preventDefault();

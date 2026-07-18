@@ -31,26 +31,32 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Điều phối công việc',
+    label: 'Công việc',
     icon: 'Workflow',
     items: [
       {
-        label: 'Công việc',
+        label: 'Báo cáo',
+        path: '/reports/weekly',
+        icon: 'FileText',
+        blurb: 'Xem nhanh trạng thái báo cáo tuần của tất cả dự án — bấm vào một dự án để tạo/sửa/xuất PDF và quản lý bảng thông tin nhóm.',
+        features: [
+          'Tổng hợp trạng thái báo cáo tuần mới nhất của mọi dự án',
+          'Tạo, chỉnh sửa và xuất PDF ngay trên trang báo cáo của từng dự án',
+        ],
+      },
+      {
+        label: 'Dự án',
         path: '/projects',
         icon: 'FolderKanban',
-        blurb: 'Danh sách dự án của bạn — bấm vào một dự án để xem nhiệm vụ, khó khăn, cập nhật hằng ngày, xuất báo cáo, bàn giao và cuộc họp của riêng dự án đó.',
+        blurb: 'Danh sách dự án của bạn — bấm vào một dự án để xem nhiệm vụ, khó khăn, cập nhật hằng ngày, quyết định, bàn giao và cuộc họp của riêng dự án đó.',
         features: [],
       },
       {
-        label: 'Quyết định',
-        path: '/decisions',
-        icon: 'Gavel',
-        blurb: 'Kho lưu trữ quyết định cùng lý do, phương án và người phê duyệt.',
-        features: [
-          'Trí tuệ nhân tạo đề xuất quyết định, con người xác nhận trước khi chính thức',
-          'Lọc theo nhóm, chương trình, người phê duyệt, thời gian',
-          'Theo dõi quyết định đã được thay thế bởi quyết định mới',
-        ],
+        label: 'Bàn giao',
+        path: '/handoff',
+        icon: 'ArrowLeftRight',
+        blurb: 'Những gì bạn được bàn giao và những gì bạn đã bàn giao cho người khác, xuyên suốt mọi dự án.',
+        features: [],
       },
     ],
   },
@@ -66,16 +72,6 @@ export const NAV_GROUPS: NavGroup[] = [
         features: [
           'Thành viên, vai trò và chương trình của từng nhóm',
           'Tình trạng hoạt động và báo cáo gần nhất của nhóm',
-        ],
-      },
-      {
-        label: 'Danh sách thành viên',
-        path: '/members',
-        icon: 'Contact',
-        blurb: 'Toàn bộ nhân viên và tình nguyện viên trong tổ chức.',
-        features: [
-          'Vai trò, nhóm và chương trình được gán',
-          'Thời hạn tham gia đối với tình nguyện viên',
         ],
       },
       {
@@ -97,29 +93,6 @@ export const NAV_GROUPS: NavGroup[] = [
           'Xem theo cây phân cấp từ cấp cao xuống thấp',
           'Bấm vào một node để thu gọn/mở rộng nhánh dưới quyền',
         ],
-      },
-    ],
-  },
-  {
-    label: 'Báo cáo',
-    icon: 'BarChart3',
-    items: [
-      {
-        label: 'Báo cáo hằng tuần',
-        path: '/reports/weekly',
-        icon: 'FileText',
-        blurb: 'Xem nhanh trạng thái báo cáo tuần của tất cả dự án — bấm vào một dự án để mở đúng nơi tạo/sửa/xuất PDF.',
-        features: [
-          'Tổng hợp trạng thái báo cáo tuần mới nhất của mọi dự án',
-          'Việc tạo, chỉnh sửa và xuất PDF thực hiện trong tab "Xuất báo cáo" của từng dự án',
-        ],
-      },
-      {
-        label: 'Báo cáo đã xuất',
-        path: '/reports/exported',
-        icon: 'Download',
-        blurb: 'Kho báo cáo đã được xuất ra dưới dạng tài liệu.',
-        features: ['Tải lại báo cáo các tuần hoặc tháng trước dưới dạng tài liệu'],
       },
     ],
   },
