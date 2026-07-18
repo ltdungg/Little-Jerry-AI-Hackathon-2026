@@ -24,15 +24,15 @@ github_branch  = "main"
 # Amazon Nova via APAC cross-region inference profile (cheap, no Anthropic form,
 # on-demand not supported for direct model IDs in ap-southeast-2).
 agent_configs = {
-  orchestrator    = { model_id = "amazon.nova-lite-v1:0" }
-  knowledge       = { model_id = "amazon.nova-lite-v1:0" }
-  project_task    = { model_id = "amazon.nova-lite-v1:0" }
-  reporting       = { model_id = "amazon.nova-lite-v1:0" }
-  communication   = { model_id = "amazon.nova-lite-v1:0" }
-  risk_analysis   = { model_id = "amazon.nova-lite-v1:0" }
-  alert_manager   = { model_id = "amazon.nova-lite-v1:0" }
-  decision_tracker = { model_id = "amazon.nova-lite-v1:0" }
-  memory_extraction = { model_id = "amazon.nova-lite-v1:0" }
+  orchestrator    = { model_id = "amazon.nova-pro-v1:0" }
+  knowledge       = { model_id = "amazon.nova-pro-v1:0" }
+  project_task    = { model_id = "amazon.nova-pro-v1:0" }
+  reporting       = { model_id = "amazon.nova-pro-v1:0" }
+  communication   = { model_id = "amazon.nova-pro-v1:0" }
+  risk_analysis   = { model_id = "amazon.nova-pro-v1:0" }
+  alert_manager   = { model_id = "amazon.nova-pro-v1:0" }
+  decision_tracker = { model_id = "amazon.nova-pro-v1:0" }
+  memory_extraction = { model_id = "amazon.nova-pro-v1:0" }
 }
 
 resource_tags = {
