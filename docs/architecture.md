@@ -6,15 +6,21 @@ NPO AI Platform là hệ thống trợ lý AI đa tác vụ cho tổ chức phi 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          USER (Browser / Mobile)                       │
+│                          USER (Browser)                                 │
 │                               │                                        │
 │                               ▼                                        │
-│                     ┌──────────────────┐                               │
-│                     │   AWS Amplify     │  ← Frontend hosting          │
-│                     │   (Web Client)    │                               │
-│                     └────────┬─────────┘                               │
-│                              │ JWT Token                               │
-│                              ▼                                         │
+│                ┌──────────────────────────┐                            │
+│                │   Next.js 14 Web App      │  ← Frontend SPA            │
+│                │   (React SPA, CSR)        │                            │
+│                └───────────┬──────────────┘                            │
+│                            │                                            │
+│                            ▼                                            │
+│                ┌──────────────────────────┐                            │
+│                │      AWS Amplify          │  ← Auth SDK + hosting     │
+│                │   (Auth, API Client)      │                            │
+│                └───────────┬──────────────┘                            │
+│                            │ JWT Token (id_token)                      │
+│                            ▼                                         │
 │                     ┌──────────────────┐                               │
 │                     │  AWS Cognito      │  ← Xác thực & phân quyền    │
 │                     │  (User Pool)      │                               │
@@ -611,7 +617,87 @@ CloudWatch Dashboard widgets:
 
 ---
 
-## 16. Message Flow Examples
+## 16. Frontend Architecture
+
+### Vai trò
+Giao diện web SPA (Single Page Application) sử dụng **Next.js 14 App Router** với client-side rendering, là điểm tương tác duy nhất của người dùng với hệ thống.
+
+### Cấu trúc Route
+
+```
+/login                                       → Cognito login form
+/dashboard                                   → Redirect đến project list
+/dashboard/projects                          → Danh sách projects (KPI cards)
+/dashboard/projects/[projectId]              → Project overview (tabs: overview, tasks, risks, knowledge)
+/dashboard/projects/[projectId]/tasks        → Task list + create/edit form
+/dashboard/projects/[projectId]/risks        → Risk list
+/dashboard/projects/[projectId]/knowledge    → Knowledge Q&A assistant
+/dashboard/my-tasks                          → Tasks assigned to current user
+/dashboard/settings/profile                  → User profile
+```
+
+### Authentication Flow
+```
+1. User truy cập /login → LoginForm component
+2. Nhập email + password → aws-amplify signIn()
+3. Cognito trả về id_token, access_token, refresh_token
+4. AuthContext lưu session → redirect /dashboard
+5. API client tự động gắn id_token vào header Authorization
+6. ProtectedRoute component kiểm tra session → redirect /login nếu hết hạn
+7. Refresh token tự động khi cần (aws-amplify handle)
+```
+
+### State Management
+
+| Layer | Công nghệ | Mục đích |
+|-------|-----------|----------|
+| Server state | TanStack Query | API data, cache, background refetch, optimistic updates |
+| App state | React Context (AuthContext, ProjectContext) | User session, selected project |
+| Form state | react-hook-form + zod | Form validation, submission |
+
+### Component Hierarchy
+
+```
+<RootLayout>
+  <Providers>              ← QueryClientProvider + AuthProvider + ProjectProvider + Toaster
+    <AppShell>             ← Protected, Sidebar + Header
+      <Sidebar>            ← Navigation menu, project selector
+      <Header>             ← Breadcrumb, user menu
+      <PageContent>        ← Route-specific content
+
+        <!-- WF-01: Knowledge Q&A -->
+        <AssistantComposer>   ← Query input + send
+        <AssistantAnswer>     ← Streaming answer + citations
+          <CitationChips>     ← Clickable citation chips
+        <EvidenceDrawer>      ← Slide-over with full evidence
+        <WorkflowProgress>    ← Workflow loading state
+
+        <!-- WF-02: Project management -->
+        <KpiCards>            ← Summary metrics (tasks, risks, milestones)
+        <ProjectOverview>    ← Details + tabs
+        <TaskTable>          ← Sortable/filterable task list
+        <RiskTable>          ← Risk list by severity
+
+        <!-- WF-03: Task operations -->
+        <TaskForm>            ← Create/edit task (react-hook-form + zod)
+        <ActionPreviewModal>  ← Dry-run preview + confirm button
+
+        <!-- Shared -->
+        <EmptyState>          ← No data placeholder
+        <ErrorState>          ← Error boundary display
+        <LoadingSkeleton>     ← Skeleton loader
+        <ProjectContextSelector> ← Current project dropdown
+```
+
+### API Integration (lib/api.ts)
+- Tất cả API calls đi qua một module `api.ts` duy nhất
+- Tự động gắn Authorization header từ AuthContext
+- Error handling tập trung (401 → redirect login, 5xx → toast + retry)
+- Response types từ `types.ts` (định nghĩa TypeScript interfaces)
+
+---
+
+## 17. Message Flow Examples
 
 ### UC-01: Câu hỏi tri thức
 ```

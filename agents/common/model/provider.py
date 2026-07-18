@@ -97,3 +97,19 @@ def get_provider(provider_type: str | None = None) -> ModelProvider:
     if provider_type == "mock":
         return MockProvider()
     return BedrockProvider()
+
+
+def get_strands_model(model_id: str = "", temperature: float = 0.3, max_tokens: int = 2048):
+    """Create a Strands BedrockModel for use with Strands Agent."""
+    from strands.models.bedrock import BedrockModel
+
+    resolved = DEFAULT_MODEL_ID if (model_id or "") in _PLACEHOLDER_MODEL_IDS else model_id
+    region = os.getenv("AWS_REGION", "ap-southeast-2")
+    return BedrockModel(
+        region_name=region,
+        model_config={
+            "model_id": resolved,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        },
+    )

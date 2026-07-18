@@ -5,7 +5,7 @@ module "agentcore" {
   environment  = var.environment
   agent_configs = {
     for name, cfg in var.agent_configs : name => {
-      ecr_image_uri      = "${module.ecr.repository_urls["agents"]}:${var.image_tag}"
+      ecr_image_uri      = data.aws_ecr_image.agents_latest.image_uri
       execution_role_arn = aws_iam_role.agent_execution[name].arn
       model_id           = cfg.model_id
     }

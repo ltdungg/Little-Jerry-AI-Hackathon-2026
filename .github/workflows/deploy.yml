@@ -1,0 +1,97 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag (default: git SHA)'
+        required: false
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-2.amazonaws.com
+
+jobs:
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: |
+          TAG="${{ inputs.image_tag || github.sha }}"
+          echo "image_tag=${TAG:0:8}" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push API image
+        run: |
+          docker build -t $ECR_REGISTRY/npo-ai/api:${{ steps.meta.outputs.image_tag }} \
+                        -t $ECR_REGISTRY/npo-ai/api:latest \
+                        -f lambdas/Dockerfile .
+          docker push $ECR_REGISTRY/npo-ai/api --all-tags
+
+      - name: Build & push Agents image
+        run: |
+          docker build -t $ECR_REGISTRY/npo-ai/agents:${{ steps.meta.outputs.image_tag }} \
+                        -t $ECR_REGISTRY/npo-ai/agents:latest \
+                        -f agents/Dockerfile .
+          docker push $ECR_REGISTRY/npo-ai/agents --all-tags
+
+      - name: Build & push Ingestion image
+        run: |
+          docker build -t $ECR_REGISTRY/npo-ai/ingestion:${{ steps.meta.outputs.image_tag }} \
+                        -t $ECR_REGISTRY/npo-ai/ingestion:latest \
+                        -f lambdas/Dockerfile .
+          docker push $ECR_REGISTRY/npo-ai/ingestion --all-tags
+
+  deploy:
+    name: Terraform Deploy
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Init
+        working-directory: infra/environments/dev
+        run: terraform init
+
+      - name: Update image tag
+        working-directory: infra/environments/dev
+        run: |
+          sed -i "s/^image_tag = .*/image_tag = \"${{ needs.build-and-push.outputs.image_tag }}\"/" terraform.tfvars
+
+      - name: Terraform Plan
+        working-directory: infra/environments/dev
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: infra/environments/dev
+        run: terraform apply -auto-approve tfplan

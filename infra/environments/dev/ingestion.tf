@@ -11,7 +11,7 @@ module "ingestion" {
 resource "aws_lambda_function" "sharepoint_sync" {
   function_name = "${var.project_name}-${var.environment}-sync-sharepoint"
   package_type  = "Image"
-  image_uri     = "${module.ecr.repository_urls["ingestion"]}:${var.image_tag}"
+  image_uri     = data.aws_ecr_image.ingestion_latest.image_uri
   architectures = ["arm64"]
   role          = aws_iam_role.ingestion_lambda_role.arn
   memory_size   = 256
@@ -32,7 +32,7 @@ resource "aws_lambda_function" "sharepoint_sync" {
 resource "aws_lambda_function" "slack_sync" {
   function_name = "${var.project_name}-${var.environment}-sync-slack"
   package_type  = "Image"
-  image_uri     = "${module.ecr.repository_urls["ingestion"]}:${var.image_tag}"
+  image_uri     = data.aws_ecr_image.ingestion_latest.image_uri
   architectures = ["arm64"]
   role          = aws_iam_role.ingestion_lambda_role.arn
   memory_size   = 256

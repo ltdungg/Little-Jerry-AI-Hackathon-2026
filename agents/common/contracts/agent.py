@@ -10,6 +10,7 @@ class TaskIntent(str, Enum):
     task_write = "task_write"
     report_generation = "report_generation"
     communication = "communication"
+    general_chat = "general_chat"
     workflow_orchestration = "workflow_orchestration"
     unknown = "unknown"
 

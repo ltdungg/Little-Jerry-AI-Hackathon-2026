@@ -1,4 +1,4 @@
-.PHONY: bootstrap test build-images push-images terraform-init terraform-plan terraform-apply smoke-test lint fmt clean
+.PHONY: bootstrap test build-images push-images terraform-init terraform-plan terraform-apply smoke-test lint fmt clean deploy deploy-latest
 
 ENV ?= dev
 IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
@@ -88,6 +88,23 @@ lint:
 
 fmt:
 	uv run ruff format .
+
+# ── Full deploy (build + push + terraform) ──
+deploy: build-images push-images terraform-init
+	@echo "Deploying to $(ENV) with tag $(IMAGE_TAG)..."
+	cd infra/environments/$(ENV) && \
+		sed -i "s/^image_tag = .*/image_tag = \"$(IMAGE_TAG)\"/" terraform.tfvars && \
+		terraform plan -var="image_tag=$(IMAGE_TAG)" -out=tfplan && \
+		terraform apply -auto-approve tfplan
+	@echo "Deploy complete."
+
+# ── Deploy with latest tag (no tag change) ──
+deploy-latest: build-images push-images terraform-init
+	@echo "Deploying latest to $(ENV)..."
+	cd infra/environments/$(ENV) && \
+		terraform plan -var="image_tag=latest" -out=tfplan && \
+		terraform apply -auto-approve tfplan
+	@echo "Deploy complete."
 
 # ── Clean ──
 clean:

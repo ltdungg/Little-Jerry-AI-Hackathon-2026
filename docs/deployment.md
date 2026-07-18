@@ -27,6 +27,10 @@ uv --version  # >= 0.1.0 (package manager)
 cd npo-ai-platform
 uv sync
 
+# Frontend dependencies
+cd frontend
+npm install
+
 # Verify tools
 make lint
 make test
@@ -209,6 +213,32 @@ curl -sf ${API_URL}/v1/chat \
   -d '{"message": "What projects are active?"}' | python3 -m json.tool
 ```
 
+### Step 7: Build & Deploy Frontend
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cat > .env.local << 'EOF'
+NEXT_PUBLIC_API_URL=https://<api-gateway-url>/v1
+NEXT_PUBLIC_USER_POOL_ID=<cognito-user-pool-id>
+NEXT_PUBLIC_USER_POOL_CLIENT_ID=<cognito-user-pool-client-id>
+NEXT_PUBLIC_REGION=ap-southeast-2
+EOF
+
+# Build production bundle
+npm run build
+
+# Start production server
+npm run start
+# → http://localhost:3000
+
+# Deploy to hosting (example: S3 + CloudFront)
+# aws s3 sync out/ s3://<bucket-name>/
+```
+
 ---
 
 ## Environment Variables Reference
@@ -229,6 +259,14 @@ MODEL_PROVIDER=bedrock                       # bedrock | mock
 AGENT_NAME=orchestrator                      # Agent identifier
 AWS_REGION=ap-southeast-2
 GATEWAY_ENDPOINT=https://<gateway-id>.bedrock-agentcore.amazonaws.com
+```
+
+### Frontend (Next.js)
+```env
+NEXT_PUBLIC_API_URL=https://<api-gateway-url>/v1   # API Gateway URL (with /v1 prefix)
+NEXT_PUBLIC_USER_POOL_ID=<pool-id>                  # Cognito User Pool ID
+NEXT_PUBLIC_USER_POOL_CLIENT_ID=<client-id>         # Cognito User Pool Client ID
+NEXT_PUBLIC_REGION=ap-southeast-2                   # AWS region
 ```
 
 ### Ingestion Lambdas

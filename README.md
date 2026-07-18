@@ -5,12 +5,12 @@ Hệ thống trợ lý AI đa tác vụ cho tổ chức phi lợi nhuận (NPO).
 ## Tổng quan
 
 ```
-User → Cognito Auth → API Gateway → API Lambda → Orchestrator Agent
-                                                      ├── Knowledge Agent
-                                                      ├── Project & Task Agent
-                                                      ├── Reporting Agent
-                                                      └── Communication Agent
-                                                          └── AgentCore Gateway → Lambda Tools
+User → Next.js 14 Web App → Cognito Auth → API Gateway → API Lambda → Orchestrator Agent
+                                                                       ├── Knowledge Agent
+                                                                       ├── Project & Task Agent
+                                                                       ├── Reporting Agent
+                                                                       └── Communication Agent
+                                                                           └── AgentCore Gateway → Lambda Tools
 ```
 
 ## Tính năng chính
@@ -25,7 +25,7 @@ User → Cognito Auth → API Gateway → API Lambda → Orchestrator Agent
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | AWS Amplify (static/SSR) |
+| Frontend | Next.js 14 + React 18 + TypeScript + Tailwind CSS + shadcn/ui + TanStack Query |
 | Auth | AWS Cognito |
 | API | API Gateway HTTP API + Lambda (container) |
 | Agents | Amazon Bedrock AgentCore Runtime |
@@ -61,6 +61,12 @@ User → Cognito Auth → API Gateway → API Lambda → Orchestrator Agent
 ├── fixtures/                  # Sample NPO data (projects, tasks, docs)
 ├── tests/                     # Unit, contract, integration, evaluation, smoke
 ├── scripts/                   # Build, push, seed, smoke-test scripts
+├── frontend/                  # Next.js 14 web application
+│   ├── app/                   # App Router pages (login, dashboard, projects, tasks, risks, knowledge)
+│   ├── components/            # Reusable UI & feature components (shell, auth, chat, projects, tasks, shared)
+│   ├── lib/                   # API client, auth config, types, utilities
+│   ├── hooks/                 # TanStack Query hooks (useProjects, useTasks, useRisks, useChat, useTaskMutation)
+│   └── context/               # AuthContext, ProjectContext (React Context)
 ├── docs/                      # Architecture, deployment, security, API docs
 └── Makefile                   # Build automation
 ```
@@ -84,6 +90,16 @@ make local-up
 # Kiểm tra health
 curl http://localhost:8080/health
 ```
+
+### Frontend Development
+```bash
+cd frontend
+npm install          # Cài dependencies
+npm run dev          # Khởi động dev server → http://localhost:3000
+npm run build        # Build production bundle
+```
+
+Biến môi trường frontend: xem [docs/deployment.md](docs/deployment.md)
 
 ### Deploy lên nhà cung cấp dịch vụ AI
 ```bash
@@ -122,6 +138,27 @@ Chi tiết từng bước: [docs/deployment.md](docs/deployment.md)
 
 Chi tiết: [docs/api.md](docs/api.md)
 
+## Frontend
+
+Web application được xây dựng bằng **Next.js 14 App Router** với client-side rendering, phục vụ người dùng NPO qua 4 workflow chính.
+
+| Workflow | Route | Chức năng |
+|----------|-------|-----------|
+| WF-00 | /login, /dashboard | Cognito login + project context selector |
+| WF-01 | /dashboard/projects/[id]/knowledge | Knowledge Q&A với citations + evidence drawer |
+| WF-02 | /dashboard/projects/[id] | Project overview, tasks, risks, milestones |
+| WF-03 | /dashboard/projects/[id]/tasks | Task create/update với dry-run preview + confirm |
+
+### Công nghệ
+- **Next.js 14** — App Router, server components (layout), client components (pages)
+- **React 18** — functional components, hooks
+- **TypeScript** — type-safe API client, shared types
+- **Tailwind CSS** — utility-first styling
+- **shadcn/ui** — component library (button, card, dialog, form, table, tabs, toast, ...)
+- **TanStack Query** — server state management, cache, refetch
+- **aws-amplify** — Cognito auth integration
+- **react-hook-form + zod** — form validation
+
 ## Tài liệu
 
 - [Kiến trúc](docs/architecture.md) - Mỗi service hoạt động như thế nào
@@ -129,6 +166,8 @@ Chi tiết: [docs/api.md](docs/api.md)
 - [API](docs/api.md) - Tham chiếu API đầy đủ
 - [Bảo mật](docs/security.md) - Auth, encryption, audit
 - [Vận hành](docs/operations.md) - Monitoring, scaling, troubleshooting
+- [Data Model](data-model.md) - DynamoDB keys, entities, access patterns
+- [Mock Data](fixtures/) - Sample NPO data (projects, tasks, documents)
 
 ## Agents
 

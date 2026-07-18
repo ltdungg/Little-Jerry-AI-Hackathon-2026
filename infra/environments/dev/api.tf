@@ -15,7 +15,7 @@ module "api" {
 resource "aws_lambda_function" "api_lambda" {
   function_name = "${var.project_name}-${var.environment}-api"
   package_type  = "Image"
-  image_uri     = "${module.ecr.repository_urls["api"]}:${var.image_tag}"
+  image_uri     = data.aws_ecr_image.api_latest.image_uri
   architectures = ["arm64"]
   role          = aws_iam_role.api_lambda_role.arn
   memory_size   = 512
