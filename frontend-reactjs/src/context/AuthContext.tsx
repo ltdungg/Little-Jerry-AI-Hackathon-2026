@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { signIn as amplifySignIn, signOut as amplifySignOut } from '../lib/auth';
+import { signIn as amplifySignIn, signOut as amplifySignOut, getIdToken } from '../lib/auth';
 import { getMe } from '../lib/api';
 import { AuthContext, type AuthContextValue } from './auth-context';
 import type { AppUser } from '../types';
@@ -20,30 +20,38 @@ function mapUserProfile(profile: any): AppUser {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
+  // Whether Cognito itself considers the session valid — the source of truth
+  // for "is this person logged in". Kept separate from `user` (the richer
+  // /v1/me profile) so a transient failure of that profile fetch can't bounce
+  // an otherwise-authenticated person back to the login page.
+  const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  async function loadProfile() {
+    try {
+      const profile = await getMe();
+      setUser(mapUserProfile(profile));
+    } catch {
+      setUser(null);
+    }
+  }
 
   useEffect(() => {
     (async () => {
-      try {
-        const profile = await getMe();
-        setUser(mapUserProfile(profile));
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
+      const token = await getIdToken();
+      if (token) {
+        setAuthenticated(true);
+        await loadProfile();
       }
+      setLoading(false);
     })();
   }, []);
 
   const signIn = useCallback(async (username: string, password: string): Promise<boolean> => {
     const ok = await amplifySignIn(username, password);
     if (ok) {
-      try {
-        const profile = await getMe();
-        setUser(mapUserProfile(profile));
-      } catch {
-        setUser(null);
-      }
+      setAuthenticated(true);
+      await loadProfile();
     }
     return ok;
   }, []);
@@ -51,17 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await amplifySignOut();
     setUser(null);
+    setAuthenticated(false);
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      isAuthenticated: !!user,
+      isAuthenticated: authenticated,
       loading,
       signIn,
       signOut,
     }),
-    [user, loading, signIn, signOut],
+    [user, authenticated, loading, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
