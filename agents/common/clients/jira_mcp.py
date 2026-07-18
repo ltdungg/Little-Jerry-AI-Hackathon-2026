@@ -91,8 +91,14 @@ def _get_gateway_jwt_token() -> str:
             logger.warning("user_password_auth_failed", error=str(e))
 
     # Fallback: try client_credentials
-    cognito_domain = os.environ.get("GATEWAY_COGNITO_DOMAIN", "my-domain-uq2ys3ho")
-    token_url = f"https://{cognito_domain}.auth.{region}.amazoncognito.com/oauth2/token"
+    token_url = os.environ.get("GATEWAY_COGNITO_TOKEN_URL", "")
+    if not token_url:
+        cognito_domain = os.environ.get("GATEWAY_COGNITO_DOMAIN", "")
+        if cognito_domain:
+            token_url = f"https://{cognito_domain}.auth.{region}.amazoncognito.com/oauth2/token"
+        else:
+            logger.error("gateway_token_url_missing")
+            return ""
     data = {
         "grant_type": "client_credentials",
         "client_id": client_id,
