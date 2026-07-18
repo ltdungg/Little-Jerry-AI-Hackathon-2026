@@ -375,6 +375,10 @@ export async function renameChatSession(sessionId: string, title: string) {
   return apiFetch<any>(`/v1/me/chat-sessions/${sessionId}`, { method: 'PATCH', body: JSON.stringify({ title }) });
 }
 
+export async function getChatSessionMessages(sessionId: string) {
+  return apiFetch<any[]>(`/v1/me/chat-sessions/${sessionId}/messages`);
+}
+
 export async function getSavedAnswers() {
   return apiFetch<any[]>('/v1/me/saved-answers');
 }

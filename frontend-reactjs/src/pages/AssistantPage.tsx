@@ -3,8 +3,8 @@ import { Icon } from '../components/common/Icon';
 import { Pill } from '../components/common/Pill';
 import { EmptyState } from '../components/common/EmptyState';
 import { useMockList } from '../hooks/useMockList';
-import { sendChatMessage, listChatSessions, listSavedAnswers, removeSavedAnswer } from '../services/chat.service';
-import type { ChatMessage, SourceType, SavedAnswer } from '../types';
+import { sendChatMessage, listChatSessions, listChatSessionMessages, listSavedAnswers, removeSavedAnswer } from '../services/chat.service';
+import type { ChatMessage, ChatSession, SourceType, SavedAnswer } from '../types';
 import ReactMarkdown from 'react-markdown';
 
 const SOURCE_ICON: Record<SourceType, string> = {
@@ -26,10 +26,11 @@ export function AssistantPage() {
   const [isThinking, setIsThinking] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
+  const [loadingSession, setLoadingSession] = useState(false);
   const inputId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const nextMessageId = useRef(1);
-  const sessionId = useRef(crypto.randomUUID());
+  const sessionId = useRef<string>(crypto.randomUUID());
 
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant');
   const activeCitations = lastAssistantMessage?.citations ?? [];
@@ -80,6 +81,19 @@ export function AssistantPage() {
     } finally {
       setIsThinking(false);
       scrollToBottom();
+    }
+  }
+
+  async function handleSelectSession(session: ChatSession) {
+    setLoadingSession(true);
+    try {
+      const history = await listChatSessionMessages(session.id);
+      setMessages(history);
+      sessionId.current = session.id;
+      setShowHistory(false);
+      scrollToBottom();
+    } finally {
+      setLoadingSession(false);
     }
   }
 
@@ -218,7 +232,7 @@ export function AssistantPage() {
 
       {showHistory && (
         <Modal title="Lịch sử trao đổi" onClose={() => setShowHistory(false)}>
-          <ChatHistorySection />
+          <ChatHistorySection onSelect={handleSelectSession} loadingSession={loadingSession} />
         </Modal>
       )}
 
@@ -305,7 +319,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-function ChatHistorySection() {
+function ChatHistorySection({
+  onSelect,
+  loadingSession,
+}: {
+  onSelect: (session: ChatSession) => void;
+  loadingSession: boolean;
+}) {
   const { items, loading } = useMockList(() => listChatSessions(), []);
 
   return (
@@ -317,9 +337,12 @@ function ChatHistorySection() {
           <EmptyState icon="History" title="Chưa có cuộc trao đổi nào" />
         ) : (
           items.map((session) => (
-            <div
+            <button
               key={session.id}
-              className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
+              type="button"
+              disabled={loadingSession}
+              onClick={() => onSelect(session)}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-brand-200 hover:shadow-sm disabled:opacity-60"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
@@ -331,7 +354,7 @@ function ChatHistorySection() {
                 </div>
               </div>
               <span className="text-xs text-slate-400">{session.lastMessageAt}</span>
-            </div>
+            </button>
           ))
         )}
       </div>
