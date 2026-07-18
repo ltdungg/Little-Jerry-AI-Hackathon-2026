@@ -28,9 +28,15 @@ function configureAuth() {
 export async function signIn(username: string, password: string): Promise<boolean> {
   try {
     configureAuth();
-    await amplifySignIn({ username, password });
-    return true;
-  } catch {
+    const result = await amplifySignIn({ username, password });
+    return result.isSignedIn;
+  } catch (err) {
+    // Amplify throws this when a valid session already exists (e.g. the user
+    // resubmits the form after a first sign-in whose post-login profile fetch
+    // failed) — that's a real, already-authenticated session, not a failure.
+    if (err instanceof Error && err.name === 'UserAlreadyAuthenticatedException') {
+      return true;
+    }
     return false;
   }
 }
