@@ -4,8 +4,9 @@ import type { AppUser } from '../types';
 export interface AuthContextValue {
   user: AppUser | null;
   isAuthenticated: boolean;
-  signIn: () => void;
-  signOut: () => void;
+  loading: boolean;
+  signIn: (username: string, password: string) => Promise<boolean>;
+  signOut: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
