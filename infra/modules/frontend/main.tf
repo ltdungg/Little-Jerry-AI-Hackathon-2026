@@ -37,6 +37,12 @@ locals {
     NEXT_PUBLIC_AWS_REGION          = var.aws_region
     NEXT_PUBLIC_USER_POOL_ID        = var.user_pool_id
     NEXT_PUBLIC_USER_POOL_CLIENT_ID = var.user_pool_client_id
+    # Required for monorepo apps created outside the Amplify console (e.g. via
+    # Terraform/CloudFormation). The console sets this automatically when you
+    # pick "my app is a monorepo", but IaC-created apps must set it explicitly
+    # or Amplify's Next.js SSR adapter never runs and deploy-manifest.json is
+    # never generated.
+    AMPLIFY_MONOREPO_APP_ROOT = "frontend"
   }
 }
 
@@ -46,36 +52,36 @@ resource "aws_amplify_app" "frontend" {
   repository   = "https://github.com/${var.github_owner}/${var.github_repo}"
   access_token = var.github_access_token
   description  = "NPO AI Platform Frontend"
-  # App uses Next.js static export (output: 'export'), so classic static hosting.
-  platform = "WEB"
+  # App has dynamic routes (app/dashboard/projects/[projectId]/...) that require
+  # a server, so it uses Amplify's Next.js SSR compute hosting.
+  platform = "WEB_COMPUTE"
 
   environment_variables = local.frontend_env
 
+  # Monorepo build spec: app lives under frontend/ (appRoot), and for a Next.js
+  # SSR (WEB_COMPUTE) app the artifacts baseDirectory must be ".next" relative
+  # to appRoot. The "artifacts" key is mandatory - Amplify does not auto-fill
+  # it for hand-written monorepo build specs.
   build_spec = <<-EOT
 version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - cd frontend
-        - npm install
-    build:
-      commands:
-        - npm run build
-  artifacts:
-    baseDirectory: frontend/out
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - frontend/node_modules/**/*
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm install
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
   EOT
-
-  custom_rule {
-    source = "/<*>"
-    target = "/index.html"
-    status = "404-200"
-  }
 
   tags = {
     Project     = var.project_name
