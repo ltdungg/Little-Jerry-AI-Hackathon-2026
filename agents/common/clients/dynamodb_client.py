@@ -556,6 +556,23 @@ class BusinessDataClient:
     def update_chat_session(self, user_id: str, session_id: str, updates: dict[str, Any]) -> None:
         self._update_item(f"TENANT#{self.tenant_id}#USER#{user_id}", f"SESSION#{session_id}", updates)
 
+    def list_chat_messages(self, user_id: str, session_id: str) -> list[dict[str, Any]]:
+        # Distinct "MSG#" prefix (not "SESSION#...") so this query never overlaps
+        # with list_chat_sessions' "SESSION#" scan; SK embeds created_at so
+        # ascending order (default) already yields oldest-to-newest.
+        resp = self.table.query(
+            KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#USER#{user_id}") & Key("SK").begins_with(f"MSG#{session_id}#"),
+        )
+        return resp.get("Items", [])
+
+    def put_chat_message(self, user_id: str, session_id: str, message: dict[str, Any]) -> None:
+        item = {
+            **message,
+            "PK": f"TENANT#{self.tenant_id}#USER#{user_id}",
+            "SK": f"MSG#{session_id}#{message['created_at']}#{message['message_id']}",
+        }
+        self.table.put_item(Item=item)
+
     def list_saved_answers(self, user_id: str) -> list[dict[str, Any]]:
         resp = self.table.query(
             KeyConditionExpression=Key("PK").eq(f"TENANT#{self.tenant_id}#USER#{user_id}") & Key("SK").begins_with("SAVED#"),

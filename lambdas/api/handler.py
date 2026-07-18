@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import unicodedata
 import uuid
 import asyncio
 import boto3
@@ -78,6 +79,7 @@ OFFBOARDING_CONFIRM_RE = re.compile(r"^/v1/offboarding/([^/]+)/confirm-handoff-c
 
 ME_SAVED_ANSWER_DETAIL_RE = re.compile(r"^/v1/me/saved-answers/([^/]+)/?$")
 ME_CHAT_SESSION_DETAIL_RE = re.compile(r"^/v1/me/chat-sessions/([^/]+)/?$")
+ME_CHAT_SESSION_MESSAGES_RE = re.compile(r"^/v1/me/chat-sessions/([^/]+)/messages/?$")
 
 ONBOARDING_CHECKLIST_TOGGLE_RE = re.compile(r"^/v1/onboarding/checklist/([^/]+)/toggle/?$")
 
@@ -200,6 +202,8 @@ def lambda_handler(event, context):
             return handle_toggle_onboarding_checklist(event, request_ctx, m.group(1))
         elif path == "/v1/me/chat-sessions" and method == "GET":
             return handle_list_chat_sessions(event, request_ctx)
+        elif (m := ME_CHAT_SESSION_MESSAGES_RE.match(path)) and method == "GET":
+            return handle_list_chat_session_messages(event, request_ctx, m.group(1))
         elif (m := ME_CHAT_SESSION_DETAIL_RE.match(path)) and method == "PATCH":
             return handle_rename_chat_session(event, request_ctx, m.group(1))
         elif path == "/v1/me/saved-answers" and method == "GET":
@@ -1217,7 +1221,19 @@ def _onboarding_view(content: dict | None, checklist: list) -> dict:
 # ---------- Chat sessions + saved answers ----------
 def handle_list_chat_sessions(event, request_ctx):
     items = _client(request_ctx).list_chat_sessions(request_ctx.user_id)
+    # SK order ("SESSION#<session_id>") has no chronological meaning (session_id
+    # is a random uuid), so sort explicitly by last_message_at (ISO 8601 UTC,
+    # sortable as plain strings) to show the most recent conversation first.
+    items = sorted(items, key=lambda s: s.get("last_message_at", ""), reverse=True)
     return build_response(200, [_chat_session_view(s) for s in items])
+
+
+def handle_list_chat_session_messages(event, request_ctx, session_id):
+    client = _client(request_ctx)
+    if not client.get_chat_session(request_ctx.user_id, session_id):
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy phiên trò chuyện")
+    items = client.list_chat_messages(request_ctx.user_id, session_id)
+    return build_response(200, [_chat_message_view(m) for m in items])
 
 
 def handle_rename_chat_session(event, request_ctx, session_id):
@@ -1270,6 +1286,16 @@ def _chat_session_view(s: dict) -> dict:
     }
 
 
+def _chat_message_view(m: dict) -> dict:
+    return {
+        "message_id": m.get("message_id"),
+        "role": m.get("role", "user"),
+        "content": m.get("content", ""),
+        "citations": m.get("citations", []),
+        "created_at": m.get("created_at", ""),
+    }
+
+
 def _saved_answer_view(s: dict) -> dict:
     return {
         "saved_id": s.get("saved_id"),
@@ -1281,21 +1307,39 @@ def _saved_answer_view(s: dict) -> dict:
     }
 
 
-def _upsert_chat_session(request_ctx, session_id: str, message: str) -> None:
+def _session_title_from_message(message: str) -> str:
+    # NFC-normalize first: Vietnamese text can arrive NFD (base letter + combining
+    # accent as separate code points); slicing by raw code point count could then
+    # cut between a letter and its accent, rendering as a stray/broken diacritic.
+    text = unicodedata.normalize("NFC", message).strip()
+    if len(text) <= 60:
+        return text
+    cut = text.rfind(" ", 0, 60)
+    return (text[:cut] if cut > 20 else text[:60]).rstrip() + "…"
+
+
+def _upsert_chat_session(request_ctx, session_id: str, message: str, answer: str, citations: list) -> None:
     client = _client(request_ctx)
     existing = client.get_chat_session(request_ctx.user_id, session_id)
+    now = _now()
     if existing:
         client.update_chat_session(request_ctx.user_id, session_id, {
             "message_count": existing.get("message_count", 0) + 1,
-            "last_message_at": _now(),
+            "last_message_at": now,
         })
     else:
         client.put_chat_session(request_ctx.user_id, {
             "session_id": session_id,
-            "title": message[:60],
+            "title": _session_title_from_message(message),
             "message_count": 1,
-            "last_message_at": _now(),
+            "last_message_at": now,
         })
+    client.put_chat_message(request_ctx.user_id, session_id, {
+        "message_id": str(uuid.uuid4()), "role": "user", "content": message, "citations": [], "created_at": now,
+    })
+    client.put_chat_message(request_ctx.user_id, session_id, {
+        "message_id": str(uuid.uuid4()), "role": "assistant", "content": answer, "citations": citations, "created_at": now,
+    })
 
 
 # ---------- Leadership summary (aggregate) ----------
@@ -1386,11 +1430,15 @@ def handle_chat(event, request_ctx):
         )
         raw = resp["response"].read()
         result = json.loads(raw.decode("utf-8"))
+        response_view = _chat_response_view(workflow_id, result)
         try:
-            _upsert_chat_session(request_ctx, conversation_session_id, message)
+            _upsert_chat_session(
+                request_ctx, conversation_session_id, message,
+                response_view["answer"], response_view["citations"],
+            )
         except Exception as e:
             logger.error("chat_session_upsert_failed", error=str(e))
-        return build_response(200, _chat_response_view(workflow_id, result))
+        return build_response(200, response_view)
     except Exception as e:
         logger.error("orchestrator_invoke_failed", error=str(e), workflow_id=workflow_id)
         return build_error_response(502, "AGENT_ERROR", "Không kết nối được tới agent điều phối")

@@ -1,5 +1,5 @@
 import * as api from '../lib/api';
-import type { ChatSession, Citation, SavedAnswer, SourceType } from '../types';
+import type { ChatMessage, ChatSession, Citation, SavedAnswer, SourceType } from '../types';
 
 const SOURCE_SYSTEM_MAP: Record<string, SourceType> = {
   sharepoint: 'SharePoint',
@@ -61,11 +61,30 @@ function mapSavedAnswer(s: any): SavedAnswer {
 
 export async function listChatSessions(): Promise<ChatSession[]> {
   const raw = await api.getChatSessions();
-  return raw.map(mapSession);
+  // Backend already sorts by last_message_at desc; re-sort here too so the
+  // list stays correct even if that ever changes upstream.
+  return raw.map(mapSession).sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
 }
 
 export async function renameChatSession(id: string, title: string): Promise<ChatSession> {
   return mapSession(await api.renameChatSession(id, title));
+}
+
+function mapStoredMessage(m: any): ChatMessage {
+  const citations = (m.citations || []).map(mapCitation);
+  return {
+    id: m.message_id,
+    role: m.role,
+    content: m.content || '',
+    synthesizedFrom: m.role === 'assistant' && citations.length > 0 ? citations.length : undefined,
+    sources: citations.length > 0 ? Array.from(new Set(citations.map((c: Citation) => c.source))) : undefined,
+    citations,
+  };
+}
+
+export async function listChatSessionMessages(sessionId: string): Promise<ChatMessage[]> {
+  const raw = await api.getChatSessionMessages(sessionId);
+  return raw.map(mapStoredMessage);
 }
 
 export async function listSavedAnswers(): Promise<SavedAnswer[]> {
