@@ -358,10 +358,25 @@ def handle_admin_login(event, request_ctx, provider):
     redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
     
     if provider == "jira":
-        url = f"https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id={client_id}&scope=offline_access read:jira-work write:jira-work&redirect_uri={urllib.parse.quote(redirect_uri)}&state=admin&response_type=code&prompt=consent"
-    else: # slack
-        url = f"https://slack.com/oauth/v2/authorize?client_id={client_id}&scope=chat:write,channels:read,groups:read&redirect_uri={urllib.parse.quote(redirect_uri)}&state=admin"
-        
+        params = {
+            "audience": "api.atlassian.com",
+            "client_id": client_id,
+            "scope": "offline_access read:jira-work write:jira-work",
+            "redirect_uri": redirect_uri,
+            "state": "admin",
+            "response_type": "code",
+            "prompt": "consent",
+        }
+        url = "https://auth.atlassian.com/authorize?" + urllib.parse.urlencode(params)
+    else:  # slack
+        params = {
+            "client_id": client_id,
+            "scope": "chat:write,channels:read,groups:read",
+            "redirect_uri": redirect_uri,
+            "state": "admin",
+        }
+        url = "https://slack.com/oauth/v2/authorize?" + urllib.parse.urlencode(params)
+
     return build_response(302, "", headers={"Location": url})
 
 def handle_admin_callback(event, request_ctx, provider):
