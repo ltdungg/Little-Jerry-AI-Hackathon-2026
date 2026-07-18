@@ -16,12 +16,11 @@ import { HomeDashboardPage } from './pages/HomeDashboardPage';
 import { DecisionsPage } from './pages/DecisionsPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
-import { TeamReportPage } from './pages/TeamReportPage';
 import { WeeklyReportRollupPage } from './pages/WeeklyReportRollupPage';
 import { ActivityLogPage } from './pages/ActivityLogPage';
 import { OffboardingPage } from './pages/OffboardingPage';
 import { MembersPage } from './pages/MembersPage';
-import { LeadershipDashboardPage } from './pages/LeadershipDashboardPage';
+import { OrgChartPage } from './pages/OrgChartPage';
 import { DecisionArchivePage } from './pages/DecisionArchivePage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
 import { RolesAdminPage } from './pages/RolesAdminPage';
@@ -35,12 +34,11 @@ const BUILT_ROUTES = new Set([
   '/decisions',
   '/teams',
   '/knowledge',
-  '/reports/team',
   '/reports/weekly',
   '/admin/activity-log',
   '/offboarding',
   '/members',
-  '/reports/leadership',
+  '/org-chart',
   '/knowledge/decisions',
   '/admin/users',
   '/admin/roles',
@@ -72,12 +70,11 @@ function App() {
             <Route path="/decisions" element={<DecisionsPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/knowledge" element={<DocumentsPage />} />
-            <Route path="/reports/team" element={<TeamReportPage />} />
             <Route path="/reports/weekly" element={<WeeklyReportRollupPage />} />
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/offboarding" element={<OffboardingPage />} />
             <Route path="/members" element={<MembersPage />} />
-            <Route path="/reports/leadership" element={<LeadershipDashboardPage />} />
+            <Route path="/org-chart" element={<OrgChartPage />} />
             <Route path="/knowledge/decisions" element={<DecisionArchivePage />} />
             <Route path="/admin/users" element={<UsersAdminPage />} />
             <Route path="/admin/roles" element={<RolesAdminPage />} />

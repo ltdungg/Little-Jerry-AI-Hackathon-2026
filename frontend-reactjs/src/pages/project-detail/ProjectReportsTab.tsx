@@ -305,9 +305,7 @@ function TeamDashboardSection({ projectName }: { projectName: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-800">Bảng thông tin nhóm — {team.name}</p>
-          <p className="mt-0.5 text-xs text-slate-400">
-            Nhóm phụ trách dự án này. Xem toàn cảnh nhóm (mọi dự án) tại "Bảng thông tin của nhóm".
-          </p>
+          <p className="mt-0.5 text-xs text-slate-400">Nhóm phụ trách dự án này.</p>
         </div>
         <Pill tone={report.status === 'published' ? 'emerald' : report.status === 'approved' ? 'blue' : 'slate'}>
           {report.status === 'published' ? 'Đã công bố' : report.status === 'approved' ? 'Đã duyệt' : 'Bản nháp'}

@@ -6,8 +6,16 @@ import { useAuth } from '../../context/useAuth';
 import { Icon } from '../common/Icon';
 
 export function AppShell() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <Icon name="Loader2" size={24} className="animate-spin text-brand-500" />
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
