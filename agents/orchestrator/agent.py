@@ -90,16 +90,33 @@ Tenant ID: {state['tenant_id']}
 {state.get('missing_info', '')}
 
 [CÁC TOOL CÓ SẴN (WORKERS)]
-1. source="slack":
-   - action="read_slack_chat": params={{"channel_id": "{state.get('inputs', dict()).get('channel_id', 'C012345')}", "limit": Số_lượng}} - Đọc tin nhắn Slack trong channel hiện tại.
-   - action="send_slack_message": params={{"channel_id": "{state.get('inputs', dict()).get('channel_id', 'C012345')}", "text": "Nội dung"}} - Gửi tin nhắn Slack.
-2. source="jira":
-   - action="list_project_tasks": params={{"project_key": "Mã dự án (VD: WD, WD, PROJ)", "status_filter": "todo/in_progress/done"}} - Lấy danh sách task.
-   - action="list_overdue_tasks": params={{"project_key": "Mã dự án"}} - Lấy task trễ hạn.
-3. source="knowledge":
-   - action="search_organizational_knowledge": params={{"query": "Câu hỏi tìm kiếm"}} - Tìm tài liệu/quy trình/chính sách.
-   
-Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ với định dạng:
+
+1. source="jira" (qua MCP Gateway - dữ liệu thực từ Jira):
+   - action="list_project_tasks": params={{"project_key": "Mã dự án Jira (VD: PROJ, WD)", "status_filter": "todo/in_progress/done"}} - Lấy danh sách task từ Jira.
+   - action="list_overdue_tasks": params={{"project_key": "Mã dự án Jira"}} - Lấy task trễ hạn từ Jira.
+   - action="search_issues": params={{"jql": "JQL query"}} - Tìm kiếm issues bằng JQL.
+   - action="get_all_boards": params={{} } - Lấy danh sách tất cả boards.
+   - action="any_jira_action": params={{"tool_name": "Tên MCP tool", ...params}} - Gọi bất kỳ Jira MCP tool nào.
+
+2. source="slack" (qua Slack API - dữ liệu thực từ Slack):
+   - action="read_slack_chat": params={{"channel_id": "ID kênh", "limit": 30}} - Đọc tin nhắn Slack.
+   - action="send_slack_message": params={{"channel_id": "ID kênh", "text": "Nội dung"}} - Gửi tin nhắn Slack.
+
+3. source="knowledge" (qua Bedrock Knowledge Base - tài liệu thực):
+   - action="search_organizational_knowledge": params={{"query": "Câu hỏi tìm kiếm"}} - Tìm tri thức tổ chức.
+   - action="search_documents": params={{"query": "Từ khóa", "top_k": 5}} - Tìm tài liệu chi tiết.
+
+4. source="dynamodb" (dữ liệu nội bộ từ DynamoDB):
+   - action="list_projects": params={{} } - Liệt kê tất cả projects.
+   - action="list_tasks": params={{"project_id": "ID dự án"}} - Liệt kê tasks.
+
+[HƯỚNG DẪN QUAN TRỌNG]
+- Khi người dùng hỏi về Jira/task/project: BẮT BUỘC phải dùng source="jira" để lấy dữ liệu thật.
+- Khi người dùng hỏi về tài liệu/quy trình: Dùng source="knowledge".
+- Khi người dùng hỏi về Slack: Dùng source="slack".
+- KHÔNG BAO GIỜ trả về tasks rỗng [] khi người dùng hỏi về dữ liệu. Luôn tạo ít nhất 1 task để lấy dữ liệu thực.
+
+Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ:
 {{
   "tasks": [
     {{
@@ -109,7 +126,7 @@ Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ với định dạng:
     }}
   ]
 }}
-Nếu không cần tìm thêm dữ liệu (ví dụ chào hỏi), trả về tasks rỗng [].
+Nếu là chào hỏi đơn giản, trả về tasks rỗng [].
 """
         response = await self._provider.generate(prompt=prompt, temperature=0.1)
         text = response.text.strip()
@@ -130,40 +147,33 @@ Nếu không cần tìm thêm dữ liệu (ví dụ chào hỏi), trả về tas
     async def execute_workers_node(self, state: State) -> dict:
         tasks_to_run = state.get("tasks", [])
         if not tasks_to_run:
-            return {"evidences": []}
-
-        # Imports for the tool functions
-        from agents.communication.agent import read_slack_chat, send_slack_message
-        from agents.knowledge.agent import search_organizational_knowledge, search_documents
-        from agents.common.clients.jira_mcp import get_project_tasks, get_overdue_tasks, parse_jira_issue
+            return {"evidences": ["[HỆ THỐNG]: Không có task nào được Planner tạo ra. Không thể trả lời câu hỏi."]}
 
         evidences = []
 
         async def run_tool(task: dict):
-            source = task.get("source")
-            action = task.get("action")
-            params = task.get("params", {})
-            
+            source = task.get("source", "").lower()
+            action = task.get("action", "")
+            params = dict(task.get("params", {}))
+
             # Inject defaults if missing
             if source == "slack" and "channel_id" not in params:
                 params["channel_id"] = state.get("inputs", {}).get("channel_id", "")
             if source == "jira" and "project_key" not in params:
                 params["project_key"] = state.get("project_id", "")
 
-            logger.info("run_tool", source=source, action=action, params=params)
+            logger.info("run_tool_start", source=source, action=action, params=params)
+
             try:
                 res = None
-                if source == "slack":
-                    if action == "read_slack_chat":
-                        res = await asyncio.to_thread(read_slack_chat, **params)
-                    elif action == "send_slack_message":
-                        res = await asyncio.to_thread(send_slack_message, **params)
-                elif source == "knowledge":
-                    if action == "search_organizational_knowledge":
-                        res = await asyncio.to_thread(search_organizational_knowledge, **params)
-                    elif action == "search_documents":
-                        res = await asyncio.to_thread(search_documents, **params)
-                elif source == "jira":
+
+                # ── Jira via MCP Gateway ──
+                if source == "jira":
+                    from agents.common.clients.jira_mcp import (
+                        search_issues, get_project_tasks, get_overdue_tasks,
+                        parse_jira_issue, JIRA_PREFIX,
+                    )
+
                     if action == "list_project_tasks":
                         raw = await get_project_tasks(**params)
                         parsed = [parse_jira_issue(i) for i in raw]
@@ -172,14 +182,61 @@ Nếu không cần tìm thêm dữ liệu (ví dụ chào hỏi), trả về tas
                         raw = await get_overdue_tasks(**params)
                         parsed = [parse_jira_issue(i) for i in raw]
                         res = json.dumps(parsed, ensure_ascii=False, indent=2)
+                    elif action == "search_issues":
+                        jql = params.get("jql", "ORDER BY updated DESC")
+                        raw = await search_issues(jql)
+                        parsed = [parse_jira_issue(i) for i in raw]
+                        res = json.dumps(parsed, ensure_ascii=False, indent=2)
+                    elif action == "get_all_boards":
+                        from agents.common.clients.jira_mcp import get_all_boards
+                        raw = await get_all_boards()
+                        res = json.dumps(raw, ensure_ascii=False, indent=2)
+                    else:
+                        # Generic MCP tool call
+                        from agents.common.clients.jira_mcp import call_jira_tool
+                        result = await call_jira_tool(f"{JIRA_PREFIX}{action}", params)
+                        res = json.dumps(result, ensure_ascii=False, indent=2)
+
+                # ── Slack ──
+                elif source == "slack":
+                    from agents.communication.agent import read_slack_chat, send_slack_message
+                    if action == "read_slack_chat":
+                        res = await asyncio.to_thread(read_slack_chat, **params)
+                    elif action == "send_slack_message":
+                        res = await asyncio.to_thread(send_slack_message, **params)
+
+                # ── Knowledge Base ──
+                elif source == "knowledge":
+                    from agents.knowledge.agent import search_organizational_knowledge, search_documents
+                    if action == "search_organizational_knowledge":
+                        res = await asyncio.to_thread(search_organizational_knowledge, **params)
+                    elif action == "search_documents":
+                        res = await asyncio.to_thread(search_documents, **params)
+
+                # ── DynamoDB (internal data) ──
+                elif source == "dynamodb":
+                    from agents.common.clients.dynamodb_client import BusinessDataClient
+                    client = BusinessDataClient(tenant_id=state.get("tenant_id", "aiv"))
+                    if action == "list_projects":
+                        items = client.list_projects()
+                        res = json.dumps(items, ensure_ascii=False, indent=2)
+                    elif action == "list_tasks":
+                        items = client.list_tasks(params.get("project_id", ""))
+                        res = json.dumps(items, ensure_ascii=False, indent=2)
 
                 if res is not None:
-                    return f"[KẾT QUẢ TỪ {source.upper()} - {action}]:\n{res}"
+                    # Validate that we got real data, not empty/error
+                    if isinstance(res, str) and len(res.strip()) > 0:
+                        logger.info("run_tool_success", source=source, action=action, data_length=len(res))
+                        return f"[DỮ LIỆU THỰC TỪ {source.upper()} - {action}]:\n{res}"
+                    else:
+                        return f"[CẢNH BÁO - {source.upper()}]: Tool trả về dữ liệu rỗng. Không thể trả lời câu hỏi này."
                 else:
-                    return f"[CẢNH BÁO]: Không tìm thấy action {action} cho source {source}"
+                    return f"[LỖI - {source.upper()}]: Action '{action}' không tồn tại cho source '{source}'."
+
             except Exception as e:
-                logger.error("tool_execution_failed", source=source, action=action, error=str(e))
-                return f"[LỖI TỪ {source.upper()} - {action}]: {str(e)}"
+                logger.error("tool_execution_failed", source=source, action=action, error=str(e), exc_info=True)
+                return f"[LỖI KẾT NỐI - {source.upper()}]: Không thể kết nối tới {source}. Lỗi: {str(e)}\nKHÔNG ĐƯỢC bịa đặt dữ liệu. Hãy nói rõ với người dùng rằng hệ thống không thể truy cập {source}."
 
         coros = [run_tool(t) for t in tasks_to_run]
         results = await asyncio.gather(*coros)
@@ -187,32 +244,42 @@ Nếu không cần tìm thêm dữ liệu (ví dụ chào hỏi), trả về tas
 
     async def verifier_node(self, state: State) -> dict:
         evidences = state["evidences"]
-        
+
         # Avoid infinite loops
         if state["retry_count"] >= 2:
             return {"missing_info": ""}
-            
+
         if not evidences:
-            return {"missing_info": ""}
-            
+            return {"missing_info": "Không có dữ liệu nào từ các worker. Cần gọi tool để lấy dữ liệu thực."}
+
         evidence_text = "\n\n".join(evidences)
-        
-        prompt = f"""Bạn là Verifier AI. Đánh giá xem dữ liệu thu thập được có đủ để trả lời câu hỏi của người dùng không.
-        
+
+        # Check for error indicators in evidence
+        has_errors = any("[LỖI" in e or "[CẢNH BÁO" in e for e in evidences)
+        has_real_data = any("[DỮ LIỆU THỰC TỪ" in e for e in evidences)
+
+        prompt = f"""Bạn là Verifier AI. Đánh giá xem dữ liệu thu thập được có đủ và CHÍNH XÁC để trả lời câu hỏi không.
+
 [CÂU HỎI NGƯỜI DÙNG]
 {state['user_request']}
 
-[DỮ LIỆU THU THẬP ĐƯỢC CỦA CÁC WORKERS]
+[DỮ LIỆU THU THẬP ĐƯỢC]
 {evidence_text}
 
-Hãy kiểm tra:
-1. Có bị mâu thuẫn thông tin không?
-2. Có thiếu dữ liệu trầm trọng để trả lời câu hỏi không?
+[HỆ THỐNG PHÁT HIỆN]
+- Có dữ liệu thực: {"Có" if has_real_data else "KHÔNG"}
+- Có lỗi: {"Có" if has_errors else "Không"}
+
+KIỂM TRA:
+1. Dữ liệu có thực sự trả về thông tin liên quan đến câu hỏi không?
+2. Có bị lỗi kết nối hoặc dữ liệu rỗng không?
+3. Nếu có [LỖI] hoặc [CẢNH BÁO], đây là dữ liệu không hợp lệ - cần báo MISSING.
+4. Nếu dữ liệu không liên quan đến câu hỏi, báo MISSING.
 
 Trả về DUY NHẤT chuỗi JSON:
 {{
     "status": "OK" hoặc "MISSING",
-    "missing_info": "Ghi rõ cái gì còn thiếu hoặc mâu thuẫn để Planner tìm lại. Bỏ trống nếu status là OK."
+    "missing_info": "Mô tả chính xác cái gì còn thiếu. Bỏ trống nếu status là OK."
 }}
 """
         response = await self._provider.generate(prompt=prompt, temperature=0.1)
@@ -221,7 +288,7 @@ Trả về DUY NHẤT chuỗi JSON:
             text = text[7:-3].strip()
         elif text.startswith("```"):
             text = text[3:-3].strip()
-            
+
         try:
             parsed = json.loads(text)
             status = parsed.get("status", "OK")
@@ -230,6 +297,11 @@ Trả về DUY NHẤT chuỗi JSON:
             status = "OK"
             missing_info = ""
 
+        # Force MISSING if we have errors and no real data
+        if has_errors and not has_real_data:
+            status = "MISSING"
+            missing_info = "Tất cả các tool đều trả về lỗi. Không có dữ liệu thực để trả lời."
+
         if status == "MISSING":
             return {"missing_info": missing_info, "retry_count": state["retry_count"] + 1}
         else:
@@ -237,9 +309,19 @@ Trả về DUY NHẤT chuỗi JSON:
 
     async def synthesizer_node(self, state: State) -> dict:
         evidence_text = "\n\n".join(state["evidences"])
-        
+
+        # Check if all evidences are errors
+        has_real_data = any(
+            "[DỮ LIỆU THỰC TỪ" in e
+            for e in state["evidences"]
+        )
+        has_errors = any(
+            "[LỖI" in e or "[CẢNH BÁO" in e
+            for e in state["evidences"]
+        )
+
         prompt = f"""Bạn là Tổng hợp viên (Synthesizer AI). Dựa vào dữ liệu thô từ các Worker, hãy viết câu trả lời cuối cùng cho người dùng.
-        
+
 [LỊCH SỬ CHAT TRƯỚC ĐÓ]
 {state['chat_history']}
 
@@ -249,11 +331,14 @@ Trả về DUY NHẤT chuỗi JSON:
 [DỮ LIỆU TỪ CÁC WORKER]
 {evidence_text}
 
-LUÔN trả lời bằng tiếng Việt, thân thiện, rõ ràng, trình bày dưới dạng Markdown chuyên nghiệp. Dùng Emoji khi phù hợp.
-Tổng hợp các dữ liệu một cách thông minh, giải thích nguyên nhân nếu có.
-Nếu dữ liệu báo lỗi hoặc thiếu, hãy giải thích dựa trên dữ liệu hiện có.
+QUY TẮC BẮT BUỘC:
+1. CHỈ sử dụng dữ liệu thực tế được cung cấp ở trên. TUYỆT ĐỐI KHÔNG bịa đặt số liệu, tên project, tên task, hoặc bất kỳ thông tin nào không có trong dữ liệu.
+2. Nếu dữ liệu có chứa [LỖI] hoặc [CẢNH BÁO], hãy thông báo rõ ràng cho người dùng rằng hệ thống không thể truy cập dữ liệu và gợi ý cách khắc phục.
+3. Nếu dữ liệu rỗng hoặc không có thông tin phù hợp, hãy nói "Không tìm thấy dữ liệu" thay vì bịa đặt.
+4. LUÔN trả lời bằng tiếng Việt, rõ ràng, có cấu trúc.
+5. Trích dẫn nguồn dữ liệu khi có thể (VD: "Theo dữ liệu từ Jira...").
 """
-        response = await self._provider.generate(prompt=prompt, temperature=0.3)
+        response = await self._provider.generate(prompt=prompt, temperature=0.1)
         return {"final_response": response.text}
 
     def _build_graph(self):
