@@ -206,68 +206,6 @@ resource "aws_iam_role_policy" "agent_execution" {
   })
 }
 
-# ---------- Slack Event Receiver Lambda ----------
-resource "aws_lambda_function" "slack_receiver" {
-  function_name = "${var.project_name}-${var.environment}-slack-receiver"
-  package_type  = "Image"
-  image_uri     = data.aws_ecr_image.api_latest.image_uri
-  architectures = ["arm64"]
-  role          = aws_iam_role.slack_receiver_role.arn
-  memory_size   = 256
-  timeout       = 30
-  environment {
-    variables = {
-      ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
-      REGION                  = var.aws_region
-      BUSINESS_TABLE          = module.data.business_data_table_name
-    }
-  }
-  image_config {
-    command = ["lambdas.slack_receiver.handler.lambda_handler"]
-  }
-  depends_on = [module.observability]
-}
-
-resource "aws_iam_role" "slack_receiver_role" {
-  name = "${var.project_name}-${var.environment}-slack-receiver"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy" "slack_receiver" {
-  name = "slack-receiver-policy"
-  role = aws_iam_role.slack_receiver_role.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["bedrock-agentcore:InvokeAgentRuntime"]
-        Resource = "*"
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["secretsmanager:GetSecretValue"]
-        Resource = [
-          aws_secretsmanager_secret.jira_admin_access_token.arn,
-          aws_secretsmanager_secret.slack_admin_access_token.arn,
-        ]
-      }
-    ]
-  })
-}
-
 # ---------- Jira Webhook Receiver Lambda ----------
 resource "aws_lambda_function" "jira_webhook" {
   function_name = "${var.project_name}-${var.environment}-jira-webhook"
@@ -331,66 +269,27 @@ resource "aws_iam_role_policy" "jira_webhook" {
   })
 }
 
-# ---------- API Gateway for Slack & Jira webhooks ----------
-resource "aws_apigatewayv2_api" "webhooks" {
-  name          = "${var.project_name}-${var.environment}-webhooks"
-  protocol_type = "HTTP"
-}
-
-resource "aws_apigatewayv2_stage" "webhooks" {
-  api_id      = aws_apigatewayv2_api.webhooks.id
-  name        = "$default"
-  auto_deploy = true
-}
-
-resource "aws_apigatewayv2_integration" "slack_receiver" {
-  api_id                 = aws_apigatewayv2_api.webhooks.id
-  integration_type       = "AWS_PROXY"
-  integration_uri        = aws_lambda_function.slack_receiver.invoke_arn
-  payload_format_version = "2.0"
-}
-
+# ---------- Jira Webhook API Gateway integration (reuses existing slack_bot.tf API) ----------
 resource "aws_apigatewayv2_integration" "jira_webhook" {
-  api_id                 = aws_apigatewayv2_api.webhooks.id
+  api_id                 = module.api.api_id
   integration_type       = "AWS_PROXY"
   integration_uri        = aws_lambda_function.jira_webhook.invoke_arn
-  payload_format_version = "2.0"
+  integration_method     = "POST"
 }
 
-resource "aws_apigatewayv2_route" "slack" {
-  api_id    = aws_apigatewayv2_api.webhooks.id
-  route_key = "POST /slack"
-  target    = "integrations/${aws_apigatewayv2_integration.slack_receiver.id}"
-}
-
-resource "aws_apigatewayv2_route" "jira" {
-  api_id    = aws_apigatewayv2_api.webhooks.id
-  route_key = "POST /jira"
+resource "aws_apigatewayv2_route" "jira_webhook" {
+  api_id    = module.api.api_id
+  route_key = "POST /jira/webhook"
   target    = "integrations/${aws_apigatewayv2_integration.jira_webhook.id}"
-}
-
-resource "aws_lambda_permission" "slack_receiver_apigw" {
-  action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.slack_receiver.function_name
-  principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.webhooks.execution_arn}/*/*"
 }
 
 resource "aws_lambda_permission" "jira_webhook_apigw" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.jira_webhook.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.webhooks.execution_arn}/*/*"
-}
-
-output "webhook_api_url" {
-  value = aws_apigatewayv2_stage.webhooks.invoke_url
-}
-
-output "slack_webhook_url" {
-  value = "${aws_apigatewayv2_stage.webhooks.invoke_url}/slack"
+  source_arn    = "arn:aws:execute-api:${var.aws_region}:${data.aws_caller_identity.current.account_id}:${module.api.api_id}/*/*/jira/webhook"
 }
 
 output "jira_webhook_url" {
-  value = "${aws_apigatewayv2_stage.webhooks.invoke_url}/jira"
+  value = "${module.api.api_url}/jira/webhook"
 }
