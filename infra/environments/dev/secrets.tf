@@ -23,19 +23,4 @@ resource "aws_secretsmanager_secret" "slack_admin_access_token" {
   name = "${var.project_name}-${var.environment}-slack-admin-access-token"
 }
 
-# ---------- AgentCore Gateway ----------
-module "agentcore_gateway" {
-  source       = "../../modules/agentcore-gateway"
-  project_name = var.project_name
-  environment  = var.environment
-  tags         = var.resource_tags
-  
-  http_targets = {
-    "jira" = {
-      endpoint_url = "https://mcp.atlassian.com/v1/mcp/authv2"
-    },
-    "slack" = {
-      endpoint_url = "https://mcp.slack.com/v1"
-    }
-  }
-}
+
