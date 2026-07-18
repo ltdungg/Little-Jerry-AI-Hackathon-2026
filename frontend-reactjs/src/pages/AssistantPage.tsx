@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { Icon } from '../components/common/Icon';
-import { QA_BANK, SUGGESTED_QUESTIONS } from '../lib/mockData';
+import { sendChatMessage } from '../services/chat.service';
 import type { ChatMessage, SourceType } from '../types';
 
 const SOURCE_ICON: Record<SourceType, string> = {
@@ -16,31 +16,21 @@ const SOURCE_FILTERS: { value: 'all' | SourceType; label: string }[] = [
   { value: 'Slack', label: 'Slack' },
 ];
 
-const INITIAL_QUESTION = SUGGESTED_QUESTIONS[0];
-
-function buildInitialMessages(): ChatMessage[] {
-  const seeded = QA_BANK[INITIAL_QUESTION];
-  return [
-    { id: 'm-1', role: 'user', content: INITIAL_QUESTION },
-    {
-      id: 'm-2',
-      role: 'assistant',
-      content: seeded.content,
-      synthesizedFrom: 4,
-      sources: ['SharePoint', 'Slack'],
-      citations: seeded.citations,
-    },
-  ];
-}
+const STARTER_PROMPTS = [
+  'What are the latest risks identified in this project?',
+  'Tóm tắt tiến độ chương trình trong tuần này.',
+  'Ai đang chịu trách nhiệm chương trình này?',
+];
 
 export function AssistantPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>(buildInitialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | SourceType>('all');
   const [isThinking, setIsThinking] = useState(false);
   const inputId = useId();
   const listRef = useRef<HTMLDivElement>(null);
-  const nextMessageId = useRef(3);
+  const nextMessageId = useRef(1);
+  const sessionId = useRef(crypto.randomUUID());
 
   const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant');
   const activeCitations = lastAssistantMessage?.citations ?? [];
@@ -51,7 +41,7 @@ export function AssistantPage() {
     });
   }
 
-  function sendQuestion(question: string) {
+  async function sendQuestion(question: string) {
     const trimmed = question.trim();
     if (!trimmed || isThinking) return;
 
@@ -65,28 +55,33 @@ export function AssistantPage() {
     setIsThinking(true);
     scrollToBottom();
 
-    window.setTimeout(() => {
-      const known = QA_BANK[trimmed];
-      const assistantMessage: ChatMessage = known
-        ? {
-            id: `a-${nextMessageId.current++}`,
-            role: 'assistant',
-            content: known.content,
-            synthesizedFrom: known.citations.length + 1,
-            sources: Array.from(new Set(known.citations.map((c) => c.source))),
-            citations: known.citations,
-          }
-        : {
-            id: `a-${nextMessageId.current++}`,
-            role: 'assistant',
-            content:
-              'Hệ thống chưa có đủ dữ liệu đã xác nhận để trả lời chính xác câu hỏi này. Bạn có thể thử diễn đạt lại, hoặc gửi yêu cầu tới người phụ trách chương trình liên quan.',
-            citations: [],
-          };
+    try {
+      const answer = await sendChatMessage(trimmed, undefined, sessionId.current);
+      const assistantMessage: ChatMessage = {
+        id: `a-${nextMessageId.current++}`,
+        role: 'assistant',
+        content:
+          answer.content ||
+          'Hệ thống chưa có đủ dữ liệu đã xác nhận để trả lời chính xác câu hỏi này. Bạn có thể thử diễn đạt lại, hoặc gửi yêu cầu tới người phụ trách chương trình liên quan.',
+        synthesizedFrom: answer.citations.length > 0 ? answer.citations.length : undefined,
+        sources: answer.sources,
+        citations: answer.citations,
+      };
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `a-${nextMessageId.current++}`,
+          role: 'assistant',
+          content: 'Không kết nối được tới trợ lý AI. Vui lòng thử lại sau.',
+          citations: [],
+        },
+      ]);
+    } finally {
       setIsThinking(false);
       scrollToBottom();
-    }, 700);
+    }
   }
 
   return (
@@ -132,6 +127,12 @@ export function AssistantPage() {
               <MessageBubble key={message.id} message={message} />
             ))}
 
+            {messages.length === 0 && !isThinking && (
+              <p className="text-center text-sm text-slate-400">
+                Đặt câu hỏi cho trợ lý AIV để nhận câu trả lời có dẫn nguồn từ tài liệu tổ chức.
+              </p>
+            )}
+
             {isThinking && (
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <Icon name="Loader2" size={15} className="animate-spin text-brand-400" />
@@ -143,9 +144,9 @@ export function AssistantPage() {
 
         <div className="border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
           <div className="mx-auto max-w-2xl">
-            {messages.length <= 2 && (
+            {messages.length === 0 && (
               <div className="mb-3 flex flex-wrap gap-2">
-                {SUGGESTED_QUESTIONS.slice(1).map((q) => (
+                {STARTER_PROMPTS.map((q) => (
                   <button
                     key={q}
                     type="button"

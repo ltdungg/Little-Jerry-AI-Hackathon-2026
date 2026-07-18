@@ -1,11 +1,16 @@
 import { Link, useParams } from 'react-router-dom';
 import { Icon } from '../components/common/Icon';
 import { StatusBadge } from '../components/common/StatusBadge';
-import { PROJECTS } from '../lib/mockData';
+import { useMockResource } from '../hooks/useMockResource';
+import { getProject } from '../services/projects.service';
 
 export function ProjectDetailPage() {
   const { id } = useParams();
-  const project = PROJECTS.find((p) => p.id === id);
+  const { data: project, loading } = useMockResource(() => getProject(id ?? ''), [id]);
+
+  if (loading) {
+    return <p className="p-10 text-center text-sm text-slate-400">Đang tải...</p>;
+  }
 
   if (!project) {
     return (
