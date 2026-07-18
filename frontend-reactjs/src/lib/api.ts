@@ -108,3 +108,12 @@ export async function createTaskProposal(projectId: string, data: any) {
     body: JSON.stringify(data),
   });
 }
+
+// ── Admin ──
+export async function createAdminUser(data: { username: string; email: string; password: string }) {
+  return apiFetch<any>('/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+

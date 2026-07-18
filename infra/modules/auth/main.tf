@@ -13,6 +13,10 @@ resource "aws_cognito_user_pool" "pool" {
     name                = "email"
     required            = true
   }
+
+  admin_create_user_config {
+    allow_admin_create_user_only = true
+  }
 }
 
 resource "aws_cognito_user_pool_client" "client" {

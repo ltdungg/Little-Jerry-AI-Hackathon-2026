@@ -36,6 +36,7 @@ locals {
     "GET /v1/projects/{project_id}/risks",
     "GET /v1/projects/{project_id}/milestones",
     "POST /v1/projects/{project_id}/tasks/proposals",
+    "POST /v1/admin/users",
     "GET /health"
   ]
 }
