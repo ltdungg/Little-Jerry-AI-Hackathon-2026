@@ -397,8 +397,8 @@ def handle_admin_callback(event, request_ctx, provider):
     try:
         req = urllib.request.Request(token_url, data=encoded_data)
         req.add_header("Content-Type", "application/x-www-form-urlencoded")
-        
-        with urllib.request.urlopen(req) as response:
+
+        with urllib.request.urlopen(req, timeout=10) as response:
             resp_body = json.loads(response.read().decode("utf-8"))
             
             # Extract access_token (and bot token for Slack)
