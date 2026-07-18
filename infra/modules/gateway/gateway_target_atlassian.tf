@@ -5,7 +5,7 @@
 resource "aws_cloudcontrolapi_resource" "jira_target" {
   type_name = "AWS::BedrockAgentCore::GatewayTarget"
   desired_state = jsonencode({
-    GatewayIdentifier = "npo-ai-dev-gateway-v4-d53tw35jzc"
+    GatewayIdentifier = aws_cloudformation_stack.gateway.outputs["GatewayId"]
     Name              = "jira"
     TargetConfiguration = {
       Mcp = {
@@ -21,7 +21,7 @@ resource "aws_cloudcontrolapi_resource" "jira_target" {
         CredentialProviderType = "API_KEY"
         CredentialProvider = {
           ApiKeyCredentialProvider = {
-            ProviderArn        = "arn:aws:bedrock-agentcore:ap-southeast-2:314567759962:token-vault/default/apikeycredentialprovider/atlassian-jira"
+            ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-jira"
             CredentialPrefix   = "Basic"
             CredentialLocation = "HEADER"
           }
@@ -38,7 +38,7 @@ resource "aws_cloudcontrolapi_resource" "jira_target" {
 resource "aws_cloudcontrolapi_resource" "confluence_target" {
   type_name = "AWS::BedrockAgentCore::GatewayTarget"
   desired_state = jsonencode({
-    GatewayIdentifier = "npo-ai-dev-gateway-v4-d53tw35jzc"
+    GatewayIdentifier = aws_cloudformation_stack.gateway.outputs["GatewayId"]
     Name              = "confluence"
     TargetConfiguration = {
       Mcp = {
@@ -54,7 +54,7 @@ resource "aws_cloudcontrolapi_resource" "confluence_target" {
         CredentialProviderType = "API_KEY"
         CredentialProvider = {
           ApiKeyCredentialProvider = {
-            ProviderArn        = "arn:aws:bedrock-agentcore:ap-southeast-2:314567759962:token-vault/default/apikeycredentialprovider/atlassian-jira"
+            ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-jira"
             CredentialPrefix   = "Basic"
             CredentialLocation = "HEADER"
           }

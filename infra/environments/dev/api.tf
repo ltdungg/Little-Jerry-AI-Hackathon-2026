@@ -111,8 +111,6 @@ resource "aws_iam_role_policy" "api_lambda" {
         Effect   = "Allow"
         Action   = ["secretsmanager:GetSecretValue", "secretsmanager:PutSecretValue"]
         Resource = [
-          aws_secretsmanager_secret.jira_client_id.arn,
-          aws_secretsmanager_secret.jira_client_secret.arn,
           aws_secretsmanager_secret.slack_client_id.arn,
           aws_secretsmanager_secret.slack_client_secret.arn,
           aws_secretsmanager_secret.jira_admin_access_token.arn,
