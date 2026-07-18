@@ -1,0 +1,9 @@
+{
+  "ClientName": "my-client-zvkzuffy",
+  "ExplicitAuthFlows": ["ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"],
+  "AllowedOAuthFlows": ["client_credentials"],
+  "AllowedOAuthScopes": ["gateway-quick-start-776830/genesis-gateway:invoke"],
+  "AllowedOAuthFlowsUserPoolClient": true,
+  "TokenValidityUnits": {"RefreshToken": "days"},
+  "RefreshTokenValidity": 30
+}

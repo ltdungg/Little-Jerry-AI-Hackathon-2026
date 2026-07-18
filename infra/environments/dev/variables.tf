@@ -136,3 +136,36 @@ variable "slack_admin_access_token" {
   sensitive   = true
   description = "Slack Admin Access Token (obtained after OAuth flow)"
 }
+
+# ---------- AgentCore Gateway Config (Jira MCP) ----------
+variable "gateway_mcp_url" {
+  type        = string
+  default     = "https://gateway-quick-start-776830-hycicfzjgi.gateway.bedrock-agentcore.ap-southeast-2.amazonaws.com/mcp"
+  description = "AgentCore Gateway MCP endpoint URL"
+}
+
+variable "gateway_client_id" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Cognito client ID for Gateway JWT auth"
+}
+
+variable "gateway_client_secret" {
+  type        = string
+  default     = ""
+  sensitive   = true
+  description = "Cognito client secret for Gateway JWT auth"
+}
+
+variable "gateway_user_pool_id" {
+  type        = string
+  default     = ""
+  description = "Cognito user pool ID for Gateway JWT auth"
+}
+
+variable "gateway_scope" {
+  type        = string
+  default     = "gateway-quick-start-776830/genesis-gateway:invoke"
+  description = "OAuth scope for Gateway access"
+}

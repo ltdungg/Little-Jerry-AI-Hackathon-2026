@@ -2,11 +2,18 @@ import json
 import os
 import re
 import uuid
+import asyncio
 import boto3
 import structlog
 from datetime import datetime, timezone
 from agents.common.clients.dynamodb_client import BusinessDataClient
 from agents.common.clients.workflow_client import WorkflowStateClient
+from agents.common.clients.jira_mcp import (
+    get_project_tasks as jira_get_project_tasks,
+    search_issues as jira_search_issues,
+    get_overdue_tasks as jira_get_overdue_tasks,
+    parse_jira_issue,
+)
 from lambdas.common.utils import parse_body, build_response, build_error_response, extract_claims, build_request_context
 
 logger = structlog.get_logger()
@@ -256,27 +263,74 @@ def handle_get_project(event, request_ctx, project_id):
 
 
 def handle_list_tasks(event, request_ctx, project_id):
+    """Fetch tasks from Jira MCP (source of truth), fallback to DynamoDB."""
     qs = event.get("queryStringParameters") or {}
-    items = _client(request_ctx).list_tasks(project_id, status_filter=qs.get("status"))
+    status_filter = qs.get("status")
+
+    # Try Jira MCP first
+    try:
+        if qs.get("overdue_only") == "true":
+            raw_issues = asyncio.run(jira_get_overdue_tasks(project_id))
+        else:
+            raw_issues = asyncio.run(jira_get_project_tasks(project_id, status_filter))
+        items = [parse_jira_issue(i) for i in raw_issues]
+        return build_response(200, [_task_view(t) for t in items])
+    except Exception as e:
+        logger.warning("jira_mcp_fallback", project_id=project_id, error=str(e))
+
+    # Fallback to DynamoDB
+    items = _client(request_ctx).list_tasks(project_id, status_filter=status_filter)
     if qs.get("overdue_only") == "true":
         items = _client(request_ctx).list_overdue_tasks(project_id)
     return build_response(200, [_task_view(t) for t in items])
 
 
 def handle_list_all_tasks(event, request_ctx):
+    """Fetch all tasks from Jira MCP, fallback to DynamoDB."""
     qs = event.get("queryStringParameters") or {}
+    status_filter = qs.get("status")
+
+    try:
+        if qs.get("project_id"):
+            raw_issues = asyncio.run(jira_get_project_tasks(qs["project_id"], status_filter))
+        else:
+            jql = "ORDER BY updated DESC"
+            if status_filter:
+                status_map = {"todo": "TODO", "in_progress": "IN PROGRESS", "done": "DONE"}
+                jql = f"status = '{status_map.get(status_filter, status_filter)}' ORDER BY updated DESC"
+            raw_issues = asyncio.run(jira_search_issues(jql))
+        items = [parse_jira_issue(i) for i in raw_issues]
+        return build_response(200, [_task_view(t) for t in items])
+    except Exception as e:
+        logger.warning("jira_mcp_fallback_all", error=str(e))
+
     client = _client(request_ctx)
     items = client.list_tasks(qs["project_id"]) if qs.get("project_id") else client.list_all_tasks()
-    if qs.get("status"):
-        items = [t for t in items if t.get("status") == qs["status"]]
+    if status_filter:
+        items = [t for t in items if t.get("status") == status_filter]
     return build_response(200, [_task_view(t) for t in items])
 
 
 def handle_list_my_tasks(event, request_ctx):
+    """Fetch user's tasks from Jira MCP, fallback to DynamoDB."""
     qs = event.get("queryStringParameters") or {}
+    status_filter = qs.get("status")
+
+    try:
+        jql_parts = [f"assignee = currentUser()"]
+        if status_filter:
+            status_map = {"todo": "TODO", "in_progress": "IN PROGRESS", "done": "DONE"}
+            jql_parts.append(f"status = '{status_map.get(status_filter, status_filter)}'")
+        jql = " AND ".join(jql_parts) + " ORDER BY updated DESC"
+        raw_issues = asyncio.run(jira_search_issues(jql))
+        items = [parse_jira_issue(i) for i in raw_issues]
+        return build_response(200, [_task_view(t) for t in items])
+    except Exception as e:
+        logger.warning("jira_mcp_fallback_my_tasks", error=str(e))
+
     items = _client(request_ctx).list_tasks_by_assignee(request_ctx.user_id)
-    if qs.get("status"):
-        items = [t for t in items if t.get("status") == qs["status"]]
+    if status_filter:
+        items = [t for t in items if t.get("status") == status_filter]
     return build_response(200, [_task_view(t) for t in items])
 
 

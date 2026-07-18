@@ -37,6 +37,12 @@ resource "aws_lambda_function" "tools_lambda" {
       REGION         = var.aws_region
       PROJECT_NAME   = var.project_name
       ENVIRONMENT    = var.environment
+      # AgentCore Gateway config for Jira MCP
+      GATEWAY_MCP_URL       = var.gateway_mcp_url
+      GATEWAY_CLIENT_ID     = var.gateway_client_id
+      GATEWAY_CLIENT_SECRET = var.gateway_client_secret
+      GATEWAY_USER_POOL_ID  = var.gateway_user_pool_id
+      GATEWAY_SCOPE         = var.gateway_scope
     }
   }
   image_config {

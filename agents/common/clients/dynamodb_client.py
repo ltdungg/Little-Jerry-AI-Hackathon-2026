@@ -67,6 +67,22 @@ class BusinessDataClient:
         item = {**task, "PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": f"TASK#{task['task_id']}"}
         self.table.put_item(Item=item)
 
+    # ---------- Aggregated Metrics (Hybrid: computed from Jira, stored here) ----------
+    def put_project_metrics(self, metrics: dict[str, Any]) -> None:
+        """Store aggregated project metrics computed from Jira data."""
+        item = {
+            **metrics,
+            "PK": f"TENANT#{self.tenant_id}#PROJECT#{metrics['project_id']}",
+            "SK": "METRICS",
+        }
+        self.table.put_item(Item=item)
+
+    def get_project_metrics(self, project_id: str) -> dict[str, Any] | None:
+        resp = self.table.get_item(
+            Key={"PK": f"TENANT#{self.tenant_id}#PROJECT#{project_id}", "SK": "METRICS"}
+        )
+        return resp.get("Item")
+
     def update_task(self, project_id: str, task_id: str, updates: dict[str, Any]) -> None:
         expr_names = {f"#{k}": k for k in updates}
         expr_values = {f":{k}": v for k, v in updates.items()}
