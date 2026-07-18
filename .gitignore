@@ -41,6 +41,7 @@ yarn-error.log*
 .env.local
 .env.*.local
 *.pem
+.envrc
 
 # ---- OS / editor ----
 .DS_Store

@@ -23,6 +23,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 0,
     progress: 78,
     team: 'Health & WASH',
+    teamId: 'team-health',
     updatedAt: '2 ngày trước',
   },
   {
@@ -37,6 +38,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 4,
     progress: 54,
     team: 'Education',
+    teamId: 'team-education',
     updatedAt: '5 giờ trước',
   },
   {
@@ -51,6 +53,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 3,
     progress: 31,
     team: 'Tech for Good',
+    teamId: 'team-tech',
     updatedAt: 'Hôm qua',
   },
   {
@@ -65,6 +68,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 1,
     progress: 66,
     team: 'Youth Development',
+    teamId: 'team-youth',
     updatedAt: '3 ngày trước',
   },
   {
@@ -79,6 +83,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 2,
     progress: 47,
     team: 'Health & WASH',
+    teamId: 'team-health',
     updatedAt: '1 ngày trước',
   },
   {
@@ -93,6 +98,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 0,
     progress: 82,
     team: 'Economic Empowerment',
+    teamId: 'team-economic',
     updatedAt: '6 ngày trước',
   },
   {
@@ -107,6 +113,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 3,
     progress: 39,
     team: 'Emergency Response',
+    teamId: 'team-emergency',
     updatedAt: '4 giờ trước',
   },
   {
@@ -121,6 +128,7 @@ export const PROJECTS: Project[] = [
     highRiskCount: 0,
     progress: 71,
     team: 'Education',
+    teamId: 'team-education',
     updatedAt: '2 ngày trước',
   },
 ];

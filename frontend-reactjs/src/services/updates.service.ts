@@ -1,5 +1,7 @@
 import { delay } from './mockClient';
-import type { TeamMemberSubmission, TeamWeeklyReport, WeeklyUpdate } from '../types';
+import { PROJECTS } from '../lib/mockData';
+import { getTeam } from './teams.service';
+import type { Team, TeamMemberSubmission, TeamReportItem, TeamWeeklyReport, WeeklyUpdate } from '../types';
 
 const CURRENT_WEEK = 'Tuần 29, 2026 (13–19 Th7)';
 
@@ -49,11 +51,17 @@ let teamReports: TeamWeeklyReport[] = [
       { userId: 'u-007', userName: 'Linh Phạm', userInitials: 'LP', submitted: false },
     ],
     highlights: [
-      'Hoàn thành tập huấn giáo viên đợt 3',
-      'Khảo sát phụ huynh đạt 92% phản hồi tích cực',
+      { text: 'Hoàn thành tập huấn giáo viên đợt 3', programId: 'proj-teacher-training' },
+      { text: 'Khảo sát phụ huynh đạt 92% phản hồi tích cực', programId: 'proj-rural-edu' },
     ],
-    issues: ['Nhà thầu xây trường chậm tiến độ 3 tuần', 'Thiếu 5 vị trí quản lý công trình'],
-    nextPriorities: ['Chốt hợp đồng nhà thầu', 'Mở rộng tuyển dụng site manager'],
+    issues: [
+      { text: 'Nhà thầu xây trường chậm tiến độ 3 tuần', programId: 'proj-rural-edu' },
+      { text: 'Thiếu 5 vị trí quản lý công trình', programId: 'proj-rural-edu' },
+    ],
+    nextPriorities: [
+      { text: 'Chốt hợp đồng nhà thầu', programId: 'proj-rural-edu' },
+      { text: 'Mở rộng tuyển dụng site manager', programId: 'proj-rural-edu' },
+    ],
     status: 'draft',
   },
   {
@@ -65,9 +73,9 @@ let teamReports: TeamWeeklyReport[] = [
       { userId: 'u-001', userName: 'Sarah Johnson', userInitials: 'SJ', submitted: true },
       { userId: 'u-003', userName: 'Priya Nair', userInitials: 'PN', submitted: true },
     ],
-    highlights: ['Khảo sát nguồn nước 3 xã hoàn tất đúng hạn'],
-    issues: ['Chưa có ngân sách khoan giếng đợt 2'],
-    nextPriorities: ['Trình đề xuất ngân sách lên điều phối'],
+    highlights: [{ text: 'Khảo sát nguồn nước 3 xã hoàn tất đúng hạn', programId: 'proj-clean-water' }],
+    issues: [{ text: 'Chưa có ngân sách khoan giếng đợt 2', programId: 'proj-clean-water' }],
+    nextPriorities: [{ text: 'Trình đề xuất ngân sách lên điều phối', programId: 'proj-clean-water' }],
     status: 'approved',
   },
 ];
@@ -112,4 +120,40 @@ export async function approveTeamReport(id: string): Promise<TeamWeeklyReport> {
 export async function publishTeamReport(id: string): Promise<TeamWeeklyReport> {
   teamReports = teamReports.map((r) => (r.id === id ? { ...r, status: 'published' as const } : r));
   return delay(teamReports.find((r) => r.id === id)!);
+}
+
+export type TeamReportSection = 'highlights' | 'issues' | 'nextPriorities';
+
+/** Bảng thông tin nhóm của đúng nhóm phụ trách 1 dự án — dùng cho tab "Xuất báo cáo" trong Chi tiết dự án. */
+export async function getTeamReportForProject(
+  projectId: string,
+): Promise<{ report: TeamWeeklyReport; team: Team } | undefined> {
+  const project = PROJECTS.find((p) => p.id === projectId);
+  if (!project?.teamId) return undefined;
+  const team = await getTeam(project.teamId);
+  const report = teamReports.find((r) => r.teamId === project.teamId);
+  if (!team || !report) return undefined;
+  return delay({ report, team });
+}
+
+export async function addTeamReportItem(
+  reportId: string,
+  section: TeamReportSection,
+  item: TeamReportItem,
+): Promise<TeamWeeklyReport> {
+  teamReports = teamReports.map((r) =>
+    r.id === reportId ? { ...r, [section]: [...r[section], item] } : r,
+  );
+  return delay(teamReports.find((r) => r.id === reportId)!);
+}
+
+export async function removeTeamReportItem(
+  reportId: string,
+  section: TeamReportSection,
+  index: number,
+): Promise<TeamWeeklyReport> {
+  teamReports = teamReports.map((r) =>
+    r.id === reportId ? { ...r, [section]: r[section].filter((_, i) => i !== index) } : r,
+  );
+  return delay(teamReports.find((r) => r.id === reportId)!);
 }

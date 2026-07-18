@@ -7,6 +7,7 @@ let handoffs: Handoff[] = [
     fromName: 'James Carter',
     toName: 'Linh Phạm',
     teamName: 'Education',
+    programId: 'proj-rural-edu',
     programName: 'Rural Education',
     currentResponsibilities: 'Điều phối tình nguyện viên tại 3 điểm trường khu vực Bắc.',
     inProgressWork: 'Đang hoàn tất báo cáo khảo sát nhu cầu học sinh học kỳ 2.',
@@ -43,8 +44,10 @@ let offboardingRecords: OffboardingRecord[] = [
   },
 ];
 
-export async function listHandoffs(): Promise<Handoff[]> {
-  return delay([...handoffs]);
+export async function listHandoffs(params: { programId?: string } = {}): Promise<Handoff[]> {
+  let result = handoffs;
+  if (params.programId) result = result.filter((h) => h.programId === params.programId);
+  return delay([...result]);
 }
 
 export async function updateHandoffStatus(id: string, status: HandoffStatus): Promise<Handoff> {

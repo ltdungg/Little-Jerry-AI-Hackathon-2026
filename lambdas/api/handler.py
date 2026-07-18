@@ -4,22 +4,46 @@ import re
 import uuid
 import boto3
 import structlog
+from datetime import datetime, timezone
 from agents.common.clients.dynamodb_client import BusinessDataClient
+from agents.common.clients.s3_client import store_report_pdf, presign_s3_uri
 from lambdas.common.utils import parse_body, build_response, build_error_response, extract_claims, build_request_context
+from lambdas.common.pdf_renderer import render_report_pdf
+from shared.report_generators import REPORT_GENERATORS, REPORT_TITLES
 
 logger = structlog.get_logger()
 
 REGION = os.environ.get("REGION", "ap-southeast-2")
 ORCHESTRATOR_RUNTIME_ARN = os.environ.get("ORCHESTRATOR_RUNTIME_ARN", "")
+ARTIFACT_BUCKET = os.environ.get("ARTIFACT_BUCKET", "")
 _agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
 _cognito = boto3.client("cognito-idp", region_name=REGION)
 COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID", "")
 
+VALID_REPORT_TYPES = set(REPORT_GENERATORS.keys())
+VALID_REPORT_CATEGORIES = frozenset({"daily", "weekly", "manual"})
+
 PROJECT_TASKS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/?$")
+PROJECT_TASK_PROPOSALS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/proposals/?$")
+PROJECT_TASK_COMMENTS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/([^/]+)/comments/?$")
+PROJECT_TASK_DETAIL_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/([^/]+)/?$")
 PROJECT_RISKS_RE = re.compile(r"^/v1/projects/([^/]+)/risks/?$")
 PROJECT_MILESTONES_RE = re.compile(r"^/v1/projects/([^/]+)/milestones/?$")
-PROJECT_TASK_PROPOSALS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/proposals/?$")
+PROJECT_ISSUES_RE = re.compile(r"^/v1/projects/([^/]+)/issues/?$")
+PROJECT_REPORTS_RE = re.compile(r"^/v1/projects/([^/]+)/reports/?$")
+PROJECT_DAILY_UPDATES_RE = re.compile(r"^/v1/projects/([^/]+)/daily-updates/?$")
 PROJECT_DETAIL_RE = re.compile(r"^/v1/projects/([^/]+)/?$")
+ISSUE_DETAIL_RE = re.compile(r"^/v1/issues/([^/]+)/?$")
+REPORT_DETAIL_RE = re.compile(r"^/v1/reports/([^/]+)/?$")
+REPORT_EXPORT_PDF_RE = re.compile(r"^/v1/reports/([^/]+)/export-pdf/?$")
+TEAM_DETAIL_RE = re.compile(r"^/v1/teams/([^/]+)/?$")
+TEAM_REPORTS_RE = re.compile(r"^/v1/teams/([^/]+)/reports/?$")
+TEAM_REPORT_REMIND_RE = re.compile(r"^/v1/teams/([^/]+)/reports/([^/]+)/remind/?$")
+TEAM_REPORT_APPROVE_RE = re.compile(r"^/v1/teams/([^/]+)/reports/([^/]+)/approve/?$")
+TEAM_REPORT_PUBLISH_RE = re.compile(r"^/v1/teams/([^/]+)/reports/([^/]+)/publish/?$")
+MEETING_DETAIL_RE = re.compile(r"^/v1/meetings/([^/]+)/?$")
+MEETING_ACTION_ITEM_RE = re.compile(r"^/v1/meetings/([^/]+)/action-items/([^/]+)/(confirm|reject)/?$")
+HANDOFF_DETAIL_RE = re.compile(r"^/v1/handoffs/([^/]+)/?$")
 
 
 def lambda_handler(event, context):
@@ -46,14 +70,77 @@ def lambda_handler(event, context):
             return handle_cancel_workflow(event, request_ctx)
         elif path.startswith("/v1/workflows/") and method == "GET":
             return handle_get_workflow(event, request_ctx)
-        elif path.startswith("/v1/reports/") and method == "GET":
-            return handle_get_report(event, request_ctx)
+
+        # ---------- Reports ----------
+        elif (m := REPORT_EXPORT_PDF_RE.match(path)) and method == "POST":
+            return handle_export_report_pdf(event, request_ctx, m.group(1))
+        elif (m := REPORT_DETAIL_RE.match(path)) and method == "GET":
+            return handle_get_report(event, request_ctx, m.group(1))
+        elif (m := REPORT_DETAIL_RE.match(path)) and method in ("PUT", "PATCH"):
+            return handle_update_report(event, request_ctx, m.group(1))
+        elif path == "/v1/reports" and method == "GET":
+            return handle_list_all_reports(event, request_ctx)
+        elif (m := PROJECT_REPORTS_RE.match(path)) and method == "GET":
+            return handle_list_project_reports(event, request_ctx, m.group(1))
+        elif (m := PROJECT_REPORTS_RE.match(path)) and method == "POST":
+            return handle_create_report(event, request_ctx, m.group(1))
+
+        # ---------- Team reports (Bảng thông tin nhóm) ----------
+        elif (m := TEAM_REPORT_REMIND_RE.match(path)) and method == "POST":
+            return handle_remind_team_report(event, request_ctx, m.group(1), m.group(2))
+        elif (m := TEAM_REPORT_APPROVE_RE.match(path)) and method == "POST":
+            return handle_approve_team_report(event, request_ctx, m.group(1), m.group(2))
+        elif (m := TEAM_REPORT_PUBLISH_RE.match(path)) and method == "POST":
+            return handle_publish_team_report(event, request_ctx, m.group(1), m.group(2))
+        elif (m := TEAM_REPORTS_RE.match(path)) and method == "GET":
+            return handle_list_team_reports(event, request_ctx, m.group(1))
+        elif path == "/v1/team-reports" and method == "GET":
+            return handle_list_all_team_reports(event, request_ctx)
+        elif (m := TEAM_DETAIL_RE.match(path)) and method == "GET":
+            return handle_get_team(event, request_ctx, m.group(1))
+        elif path == "/v1/teams" and method == "GET":
+            return handle_list_teams(event, request_ctx)
+
+        # ---------- Issues (Khó khăn) ----------
+        elif (m := ISSUE_DETAIL_RE.match(path)) and method in ("PUT", "PATCH"):
+            return handle_update_issue(event, request_ctx, m.group(1))
+        elif (m := ISSUE_DETAIL_RE.match(path)) and method == "DELETE":
+            return handle_dismiss_issue(event, request_ctx, m.group(1))
+        elif (m := PROJECT_ISSUES_RE.match(path)) and method == "GET":
+            return handle_list_issues(event, request_ctx, m.group(1))
+        elif path == "/v1/issues" and method == "GET":
+            return handle_list_all_issues(event, request_ctx)
+
+        # ---------- Meetings ----------
+        elif (m := MEETING_ACTION_ITEM_RE.match(path)) and method == "POST":
+            return handle_meeting_action_item(event, request_ctx, m.group(1), m.group(2), m.group(3))
+        elif (m := MEETING_DETAIL_RE.match(path)) and method == "GET":
+            return handle_get_meeting(event, request_ctx, m.group(1))
+        elif path == "/v1/meetings" and method == "GET":
+            return handle_list_meetings(event, request_ctx)
+
+        # ---------- Handoffs ----------
+        elif (m := HANDOFF_DETAIL_RE.match(path)) and method in ("PUT", "PATCH"):
+            return handle_update_handoff(event, request_ctx, m.group(1))
+        elif path == "/v1/handoffs" and method == "GET":
+            return handle_list_handoffs(event, request_ctx)
+
+        # ---------- Daily updates (cập nhật tiến độ task hằng ngày) ----------
+        elif (m := PROJECT_DAILY_UPDATES_RE.match(path)) and method == "POST":
+            return handle_submit_daily_update(event, request_ctx, m.group(1))
+        elif (m := PROJECT_DAILY_UPDATES_RE.match(path)) and method == "GET":
+            return handle_list_daily_updates(event, request_ctx, m.group(1))
+
         elif path == "/v1/projects" and method == "GET":
             return handle_list_projects(event, request_ctx)
         elif (m := PROJECT_TASK_PROPOSALS_RE.match(path)) and method == "POST":
             return handle_create_task_proposal(event, request_ctx, m.group(1))
+        elif (m := PROJECT_TASK_COMMENTS_RE.match(path)) and method == "POST":
+            return handle_add_task_comment(event, request_ctx, m.group(1), m.group(2))
         elif (m := PROJECT_TASKS_RE.match(path)) and method == "GET":
             return handle_list_tasks(event, request_ctx, m.group(1))
+        elif (m := PROJECT_TASK_DETAIL_RE.match(path)) and method in ("PUT", "PATCH"):
+            return handle_update_task(event, request_ctx, m.group(1), m.group(2))
         elif (m := PROJECT_RISKS_RE.match(path)) and method == "GET":
             return handle_list_risks(event, request_ctx, m.group(1))
         elif (m := PROJECT_MILESTONES_RE.match(path)) and method == "GET":
@@ -79,6 +166,25 @@ def lambda_handler(event, context):
 
 def _client(request_ctx) -> BusinessDataClient:
     return BusinessDataClient(tenant_id=request_ctx.tenant_id)
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _record_activity(request_ctx, action: str, target: str, ai_source_used: str | None = None) -> None:
+    """Central audit log helper — call from every handler with a side-effect."""
+    try:
+        _client(request_ctx).put_activity_log({
+            "log_id": str(uuid.uuid4()),
+            "actor_id": request_ctx.user_id,
+            "action": action,
+            "target": target,
+            "ai_source_used": ai_source_used,
+            "created_at": _now(),
+        })
+    except Exception as e:
+        logger.error("activity_log_failed", error=str(e))
 
 
 def handle_me(event, request_ctx):
@@ -112,6 +218,38 @@ def handle_list_tasks(event, request_ctx, project_id):
     return build_response(200, [_task_view(t) for t in items])
 
 
+def handle_update_task(event, request_ctx, project_id, task_id):
+    body = parse_body(event)
+    updates = {k: v for k, v in body.items() if k in ("status", "priority", "assignee_user_id", "due_date", "milestone_id")}
+    if not updates:
+        return build_error_response(400, "BAD_REQUEST", "Không có trường hợp lệ để cập nhật")
+    updates["updated_at"] = _now()
+    client = _client(request_ctx)
+    if not client.get_task(project_id, task_id):
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy nhiệm vụ")
+    client.update_task(project_id, task_id, updates)
+    _record_activity(request_ctx, "edited", f"Nhiệm vụ {task_id}")
+    return build_response(200, _task_view(client.get_task(project_id, task_id)))
+
+
+def handle_add_task_comment(event, request_ctx, project_id, task_id):
+    body = parse_body(event)
+    content = (body.get("content") or "").strip()
+    if not content:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung bình luận")
+    client = _client(request_ctx)
+    if not client.get_task(project_id, task_id):
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy nhiệm vụ")
+    comment = {
+        "comment_id": str(uuid.uuid4()),
+        "author_user_id": request_ctx.user_id,
+        "content": content,
+        "created_at": _now(),
+    }
+    client.add_task_comment(project_id, task_id, comment)
+    return build_response(200, _task_view(client.get_task(project_id, task_id)))
+
+
 def handle_list_risks(event, request_ctx, project_id):
     qs = event.get("queryStringParameters") or {}
     items = _client(request_ctx).list_risks(project_id, severity_filter=qs.get("severity"))
@@ -139,6 +277,431 @@ def handle_create_task_proposal(event, request_ctx, project_id):
     }
     workflow_id = str(uuid.uuid4())
     return build_response(202, {"workflow_id": workflow_id, "status": "waiting_for_user", "preview": preview, "confirmation_token": token})
+
+
+# ---------- Reports (docs/REPORT-EXPORT-SPEC.md) ----------
+def _report_view(r: dict) -> dict:
+    return {
+        "report_id": r.get("report_id"),
+        "project_id": r.get("project_id"),
+        "category": r.get("category", "manual"),
+        "report_type": r.get("report_type", ""),
+        "title": r.get("title", ""),
+        "period_start": r.get("period_start", ""),
+        "period_end": r.get("period_end", ""),
+        "status": r.get("status", "draft"),
+        "content": r.get("content", ""),
+        "pdf_s3_uri": r.get("pdf_s3_uri"),
+        "generated_at": r.get("generated_at", ""),
+        "edited_at": r.get("edited_at"),
+        "exported_at": r.get("exported_at"),
+        "version": r.get("version", 1),
+    }
+
+
+def handle_list_project_reports(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_reports(project_id, category_filter=qs.get("category"))
+    return build_response(200, [_report_view(r) for r in items])
+
+
+def handle_list_all_reports(event, request_ctx):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_all_reports(category_filter=qs.get("category"))
+    if qs.get("project_id"):
+        items = [r for r in items if r.get("project_id") == qs["project_id"]]
+    return build_response(200, [_report_view(r) for r in items])
+
+
+def _create_report_now(request_ctx, project_id: str, report_type: str, category: str) -> dict:
+    client = _client(request_ctx)
+    generator = REPORT_GENERATORS[report_type]
+    content = generator(project_id, client)
+    now = _now()
+    today = now[:10]
+    report = {
+        "report_id": str(uuid.uuid4()),
+        "project_id": project_id,
+        "category": category,
+        "report_type": report_type,
+        "title": f"{REPORT_TITLES.get(report_type, 'Báo cáo')} — {today}",
+        "period_start": today,
+        "period_end": today,
+        "status": "draft",
+        "content": content,
+        "pdf_s3_uri": None,
+        "generated_at": now,
+        "edited_at": None,
+        "exported_at": None,
+        "version": 1,
+        "created_at": now,
+        "created_by": request_ctx.user_id,
+    }
+    client.put_report(project_id, report)
+    return report
+
+
+def handle_create_report(event, request_ctx, project_id):
+    body = parse_body(event)
+    report_type = body.get("report_type", "weekly_status")
+    if report_type not in VALID_REPORT_TYPES:
+        return build_error_response(400, "BAD_REQUEST", f"report_type phải là một trong: {', '.join(sorted(VALID_REPORT_TYPES))}")
+    if not _client(request_ctx).get_project(project_id):
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy dự án")
+
+    report = _create_report_now(request_ctx, project_id, report_type, category="manual")
+    _record_activity(request_ctx, "edited", f"Tạo báo cáo thủ công \"{report['title']}\"")
+    return build_response(201, _report_view(report))
+
+
+def handle_get_report(event, request_ctx, report_id):
+    report = _client(request_ctx).get_report_by_id(report_id)
+    if not report:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo")
+    return build_response(200, _report_view(report))
+
+
+def handle_update_report(event, request_ctx, report_id):
+    body = parse_body(event)
+    content = body.get("content")
+    if content is None:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung (content)")
+
+    client = _client(request_ctx)
+    report = client.get_report_by_id(report_id)
+    if not report:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo")
+
+    client.update_report(report["project_id"], report_id, {
+        "content": content,
+        "status": "edited",
+        "edited_at": _now(),
+        "version": report.get("version", 1) + 1,
+    })
+    _record_activity(request_ctx, "edited", f"Sửa báo cáo \"{report.get('title')}\"")
+    return build_response(200, _report_view(client.get_report_by_id(report_id)))
+
+
+def handle_export_report_pdf(event, request_ctx, report_id):
+    if not ARTIFACT_BUCKET:
+        return build_error_response(500, "CONFIG_ERROR", "ARTIFACT_BUCKET chưa được cấu hình")
+
+    client = _client(request_ctx)
+    report = client.get_report_by_id(report_id)
+    if not report:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo")
+
+    subtitle = f"{report.get('project_id', '')} · {report.get('period_start', '')} → {report.get('period_end', '')}"
+    pdf_bytes = render_report_pdf(
+        title=report.get("title", "Báo cáo"),
+        subtitle=subtitle,
+        content_markdown=report.get("content", ""),
+        edited=report.get("status") in ("edited", "exported") and bool(report.get("edited_at")),
+    )
+
+    pdf_s3_uri = store_report_pdf(ARTIFACT_BUCKET, request_ctx.tenant_id, report["project_id"], report_id, pdf_bytes)
+
+    now = _now()
+    client.update_report(report["project_id"], report_id, {
+        "pdf_s3_uri": pdf_s3_uri,
+        "status": "exported",
+        "exported_at": now,
+    })
+    _record_activity(request_ctx, "exported", f"Báo cáo \"{report.get('title')}\"")
+
+    download_url = presign_s3_uri(pdf_s3_uri, expires_in=900)
+    return build_response(200, {
+        "report_id": report_id,
+        "pdf_s3_uri": pdf_s3_uri,
+        "download_url": download_url,
+        "expires_in": 900,
+    })
+
+
+# ---------- Team reports (Bảng thông tin nhóm) ----------
+def _team_view(t: dict) -> dict:
+    return {
+        "team_id": t.get("team_id"),
+        "name": t.get("name", ""),
+        "mission": t.get("mission", ""),
+        "program_names": t.get("program_names", []),
+        "members": t.get("members", []),
+        "status": t.get("status", "active"),
+        "last_report_at": t.get("last_report_at", ""),
+    }
+
+
+def _team_report_view(r: dict) -> dict:
+    return {
+        "id": r.get("report_id", r.get("week", "")),
+        "team_id": r.get("team_id"),
+        "team_name": r.get("team_name", ""),
+        "week": r.get("week", ""),
+        "member_submissions": r.get("member_submissions", []),
+        "highlights": r.get("highlights", []),
+        "issues": r.get("issues", []),
+        "next_priorities": r.get("next_priorities", []),
+        "status": r.get("status", "draft"),
+    }
+
+
+def handle_list_teams(event, request_ctx):
+    return build_response(200, [_team_view(t) for t in _client(request_ctx).list_teams()])
+
+
+def handle_get_team(event, request_ctx, team_id):
+    team = _client(request_ctx).get_team(team_id)
+    if not team:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy nhóm")
+    return build_response(200, _team_view(team))
+
+
+def handle_list_team_reports(event, request_ctx, team_id):
+    items = _client(request_ctx).list_team_reports(team_id)
+    return build_response(200, [_team_report_view(r) for r in items])
+
+
+def handle_list_all_team_reports(event, request_ctx):
+    items = _client(request_ctx).list_all_team_reports()
+    return build_response(200, [_team_report_view(r) for r in items])
+
+
+def handle_remind_team_report(event, request_ctx, team_id, week):
+    client = _client(request_ctx)
+    reports = client.list_team_reports(team_id)
+    report = next((r for r in reports if r.get("week") == week), None)
+    if not report:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy báo cáo nhóm")
+    not_submitted = [m for m in report.get("member_submissions", []) if not m.get("submitted")]
+    _record_activity(request_ctx, "edited", f"Nhắc nhở {len(not_submitted)} người chưa gửi báo cáo nhóm {team_id}")
+    return build_response(200, {"team_id": team_id, "reminded_user_ids": [m.get("user_id") for m in not_submitted]})
+
+
+def handle_approve_team_report(event, request_ctx, team_id, week):
+    client = _client(request_ctx)
+    client.update_team_report(team_id, week, {"status": "approved"})
+    _record_activity(request_ctx, "approved", f"Báo cáo nhóm {team_id} tuần {week}")
+    reports = client.list_team_reports(team_id)
+    report = next((r for r in reports if r.get("week") == week), None)
+    return build_response(200, _team_report_view(report) if report else {"status": "approved"})
+
+
+def handle_publish_team_report(event, request_ctx, team_id, week):
+    client = _client(request_ctx)
+    client.update_team_report(team_id, week, {"status": "published"})
+    _record_activity(request_ctx, "shared", f"Báo cáo nhóm {team_id} tuần {week}")
+    reports = client.list_team_reports(team_id)
+    report = next((r for r in reports if r.get("week") == week), None)
+    return build_response(200, _team_report_view(report) if report else {"status": "published"})
+
+
+# ---------- Issues (Khó khăn) ----------
+def _issue_view(i: dict) -> dict:
+    return {
+        "issue_id": i.get("issue_id"),
+        "project_id": i.get("project_id"),
+        "title": i.get("title"),
+        "description": i.get("description", ""),
+        "reporter_name": i.get("reporter_name", ""),
+        "owner_id": i.get("owner_id"),
+        "owner_name": i.get("owner_name"),
+        "detected_at": i.get("detected_at", i.get("created_at", "")),
+        "due_date": i.get("due_date"),
+        "impact": i.get("impact", "medium"),
+        "status": i.get("status", "new"),
+        "source": i.get("source", "manual"),
+        "ai_evidence": i.get("ai_evidence"),
+        "resolution_plan": i.get("resolution_plan", ""),
+    }
+
+
+def _find_issue_project(client: BusinessDataClient, issue_id: str) -> str | None:
+    for i in client.list_all_issues():
+        if i.get("issue_id") == issue_id:
+            return i.get("project_id")
+    return None
+
+
+def handle_list_issues(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_issues(project_id, status_filter=qs.get("status"))
+    return build_response(200, [_issue_view(i) for i in items])
+
+
+def handle_list_all_issues(event, request_ctx):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_all_issues()
+    if qs.get("status") and qs["status"] != "all":
+        items = [i for i in items if i.get("status") == qs["status"]]
+    if qs.get("impact") and qs["impact"] != "all":
+        items = [i for i in items if i.get("impact") == qs["impact"]]
+    if qs.get("source") and qs["source"] != "all":
+        items = [i for i in items if i.get("source") == qs["source"]]
+    return build_response(200, [_issue_view(i) for i in items])
+
+
+def handle_update_issue(event, request_ctx, issue_id):
+    body = parse_body(event)
+    client = _client(request_ctx)
+    project_id = _find_issue_project(client, issue_id)
+    if not project_id:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy khó khăn")
+    updates = {k: v for k, v in body.items() if k in ("status", "owner_id", "owner_name", "source", "resolution_plan", "due_date", "impact")}
+    if not updates:
+        return build_error_response(400, "BAD_REQUEST", "Không có trường hợp lệ để cập nhật")
+    client.update_issue(project_id, issue_id, updates)
+    _record_activity(request_ctx, "edited", f"Khó khăn {issue_id}")
+    return build_response(200, _issue_view(client.get_issue(project_id, issue_id)))
+
+
+def handle_dismiss_issue(event, request_ctx, issue_id):
+    client = _client(request_ctx)
+    project_id = _find_issue_project(client, issue_id)
+    if not project_id:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy khó khăn")
+    client.delete_issue(project_id, issue_id)
+    _record_activity(request_ctx, "rejected", f"Khó khăn AI đề xuất {issue_id}")
+    return build_response(200, {"status": "dismissed"})
+
+
+# ---------- Meetings ----------
+def _meeting_view(m: dict) -> dict:
+    return {
+        "meeting_id": m.get("meeting_id"),
+        "title": m.get("title", ""),
+        "date": m.get("date", ""),
+        "duration_minutes": m.get("duration_minutes", 0),
+        "participants": m.get("participants", []),
+        "team_id": m.get("team_id"),
+        "project_id": m.get("project_id"),
+        "summary": m.get("summary", ""),
+        "key_topics": m.get("key_topics", []),
+        "proposed_decisions": m.get("proposed_decisions", []),
+        "action_items": m.get("action_items", []),
+        "open_questions": m.get("open_questions", []),
+    }
+
+
+def handle_list_meetings(event, request_ctx):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_meetings()
+    if qs.get("project_id"):
+        items = [m for m in items if m.get("project_id") == qs["project_id"]]
+    return build_response(200, [_meeting_view(m) for m in items])
+
+
+def handle_get_meeting(event, request_ctx, meeting_id):
+    meeting = _client(request_ctx).get_meeting(meeting_id)
+    if not meeting:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy cuộc họp")
+    return build_response(200, _meeting_view(meeting))
+
+
+def handle_meeting_action_item(event, request_ctx, meeting_id, action_item_id, action):
+    body = parse_body(event)
+    client = _client(request_ctx)
+    meeting = client.get_meeting(meeting_id)
+    if not meeting:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy cuộc họp")
+
+    new_status = "confirmed" if action == "confirm" else "rejected"
+    action_items = meeting.get("action_items", [])
+    for a in action_items:
+        if a.get("id") == action_item_id:
+            a["status"] = new_status
+            if action == "confirm":
+                a["owner"] = body.get("owner") or a.get("owner")
+    client.update_meeting(meeting_id, {"action_items": action_items})
+    _record_activity(request_ctx, "edited" if action == "confirm" else "rejected", f"Việc cần làm sau họp {meeting_id}")
+    return build_response(200, _meeting_view(client.get_meeting(meeting_id)))
+
+
+# ---------- Handoffs (Bàn giao) ----------
+def _handoff_view(h: dict) -> dict:
+    return {
+        "handoff_id": h.get("handoff_id"),
+        "from_name": h.get("from_name", ""),
+        "to_name": h.get("to_name"),
+        "team_name": h.get("team_name", ""),
+        "project_id": h.get("project_id"),
+        "current_responsibilities": h.get("current_responsibilities", ""),
+        "in_progress_work": h.get("in_progress_work", ""),
+        "pending_decisions": h.get("pending_decisions", ""),
+        "unresolved_issues": h.get("unresolved_issues", ""),
+        "key_contacts": h.get("key_contacts", ""),
+        "related_docs": h.get("related_docs", ""),
+        "risks": h.get("risks", ""),
+        "next_steps": h.get("next_steps", ""),
+        "status": h.get("status", "draft"),
+    }
+
+
+def handle_list_handoffs(event, request_ctx):
+    qs = event.get("queryStringParameters") or {}
+    items = _client(request_ctx).list_handoffs()
+    if qs.get("project_id"):
+        items = [h for h in items if h.get("project_id") == qs["project_id"]]
+    return build_response(200, [_handoff_view(h) for h in items])
+
+
+def handle_update_handoff(event, request_ctx, handoff_id):
+    body = parse_body(event)
+    status = body.get("status")
+    if status not in ("draft", "team_lead_review", "receiver_confirm", "complete"):
+        return build_error_response(400, "BAD_REQUEST", "status không hợp lệ")
+    client = _client(request_ctx)
+    client.update_handoff(handoff_id, {"status": status})
+    _record_activity(request_ctx, "edited", f"Bàn giao {handoff_id}")
+    items = [h for h in client.list_handoffs() if h.get("handoff_id") == handoff_id]
+    return build_response(200, _handoff_view(items[0]) if items else {"status": status})
+
+
+# ---------- Daily updates (cập nhật tiến độ task hằng ngày, theo dự án) ----------
+def _daily_update_view(u: dict) -> dict:
+    return {
+        "id": f"{u.get('date', '')}#{u.get('user_id', '')}",
+        "user_id": u.get("user_id"),
+        "user_name": u.get("user_name", ""),
+        "date": u.get("date", ""),
+        "project_id": u.get("project_id"),
+        "task_updates": u.get("task_updates", []),
+        "status": u.get("status", "submitted"),
+    }
+
+
+def handle_list_daily_updates(event, request_ctx, project_id):
+    qs = event.get("queryStringParameters") or {}
+    date = qs.get("date") or datetime.now(timezone.utc).date().isoformat()
+    items = _client(request_ctx).list_daily_updates(project_id, date=date)
+    return build_response(200, [_daily_update_view(u) for u in items])
+
+
+def handle_submit_daily_update(event, request_ctx, project_id):
+    body = parse_body(event)
+    task_updates = body.get("task_updates")
+    if not task_updates:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu task_updates")
+    date = body.get("date") or datetime.now(timezone.utc).date().isoformat()
+
+    client = _client(request_ctx)
+    update = {
+        "user_id": request_ctx.user_id,
+        "user_name": body.get("user_name", request_ctx.user_id),
+        "date": date,
+        "project_id": project_id,
+        "task_updates": task_updates,
+        "status": "submitted",
+    }
+    client.put_daily_update(project_id, update)
+
+    for tu in task_updates:
+        task_id = tu.get("task_id")
+        status_after = tu.get("status_after")
+        if task_id and status_after and client.get_task(project_id, task_id):
+            client.update_task(project_id, task_id, {"status": status_after, "updated_at": _now()})
+
+    _record_activity(request_ctx, "edited", f"Cập nhật hằng ngày {date} — dự án {project_id}")
+    return build_response(201, _daily_update_view(update))
 
 
 # ---------- View mappers: DynamoDB item -> frontend shape ----------
@@ -321,9 +884,6 @@ def handle_confirm_workflow(event, request_ctx):
 def handle_cancel_workflow(event, request_ctx):
     return build_response(200, {"status": "cancelled"})
 
-def handle_get_report(event, request_ctx):
-    return build_response(200, {"report_id": "rep-123", "data": "..."})
-
 # ---------- Admin OAuth Flow ----------
 def _get_secret(name: str) -> str:
     sm = boto3.client("secretsmanager", region_name=REGION)
@@ -350,13 +910,13 @@ def handle_admin_login(event, request_ctx, provider):
     client_id = _get_secret(client_id_secret)
     if not client_id:
         return build_error_response(500, "CONFIG_ERROR", f"Missing OAuth client id secret: {client_id_secret}")
-    
+
     # URL callback to the same API
     headers = event.get("headers", {})
     host = headers.get("host", "localhost")
     protocol = headers.get("x-forwarded-proto", "https")
     redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
-    
+
     if provider == "jira":
         params = {
             "audience": "api.atlassian.com",
@@ -391,7 +951,7 @@ def handle_admin_callback(event, request_ctx, provider):
     code = qs.get("code")
     if not code:
         return build_error_response(400, "BAD_REQUEST", "Missing authorization code")
-        
+
     project_name = os.environ.get("PROJECT_NAME", "npo-ai")
     env = os.environ.get("ENVIRONMENT", "dev")
     client_id_secret = f"{project_name}-{env}-{provider}-client-id"
@@ -404,7 +964,7 @@ def handle_admin_callback(event, request_ctx, provider):
     host = headers.get("host", "localhost")
     protocol = headers.get("x-forwarded-proto", "https")
     redirect_uri = f"{protocol}://{host}/v1/admin/auth/{provider}/callback"
-    
+
     data = {
         "grant_type": "authorization_code",
         "client_id": client_id,
@@ -413,28 +973,28 @@ def handle_admin_callback(event, request_ctx, provider):
         "redirect_uri": redirect_uri
     }
     encoded_data = urllib.parse.urlencode(data).encode("utf-8")
-    
+
     token_url = "https://auth.atlassian.com/oauth/token" if provider == "jira" else "https://slack.com/api/oauth.v2.access"
-    
+
     try:
         req = urllib.request.Request(token_url, data=encoded_data)
         req.add_header("Content-Type", "application/x-www-form-urlencoded")
 
         with urllib.request.urlopen(req, timeout=10) as response:
             resp_body = json.loads(response.read().decode("utf-8"))
-            
+
             # Extract access_token (and bot token for Slack)
             access_token = resp_body.get("access_token")
             if provider == "slack" and not access_token:
                 # Slack uses 'authed_user' access_token or just the bot 'access_token'
                 pass
-                
+
             if access_token:
                 _update_secret(f"{project_name}-{env}-{provider}-admin-access-token", access_token)
                 return build_response(200, {"status": "success", "message": f"Successfully authenticated {provider} for admin!"})
             else:
                 return build_error_response(500, "TOKEN_ERROR", f"Failed to extract access token: {json.dumps(resp_body)}")
-                
+
     except Exception as e:
         logger.error("oauth_exchange_failed", provider=provider, error=str(e))
         return build_error_response(500, "EXCHANGE_FAILED", str(e))

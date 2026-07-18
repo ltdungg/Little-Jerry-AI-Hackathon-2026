@@ -30,6 +30,7 @@ export interface Project {
   highRiskCount: number;
   progress: number;
   team: string;
+  teamId: string;
   updatedAt: string;
 }
 
@@ -130,16 +131,69 @@ export interface TeamMemberSubmission {
 
 export type TeamReportStatus = 'draft' | 'approved' | 'published';
 
+/** Một mục trong Bảng thông tin nhóm, gắn nhãn dự án để lọc theo tab "Xuất báo cáo" của từng dự án. Để trống `programId` nếu là ý chung của cả nhóm. */
+export interface TeamReportItem {
+  text: string;
+  programId?: string;
+}
+
 export interface TeamWeeklyReport {
   id: string;
   teamId: string;
   teamName: string;
   week: string;
   memberSubmissions: TeamMemberSubmission[];
-  highlights: string[];
-  issues: string[];
-  nextPriorities: string[];
+  highlights: TeamReportItem[];
+  issues: TeamReportItem[];
+  nextPriorities: TeamReportItem[];
   status: TeamReportStatus;
+}
+
+// ---------------------------------------------------------------------------
+// Daily updates (cập nhật tiến độ task hằng ngày, theo dự án)
+// ---------------------------------------------------------------------------
+
+export interface DailyTaskProgress {
+  taskId: string;
+  taskTitle: string;
+  statusBefore: TaskStatus;
+  statusAfter: TaskStatus;
+  note?: string;
+}
+
+export interface DailyUpdate {
+  id: string;
+  userId: string;
+  userName: string;
+  userInitials: string;
+  date: string;
+  programId: string;
+  taskUpdates: DailyTaskProgress[];
+  status: UpdateStatus;
+}
+
+// ---------------------------------------------------------------------------
+// Project reports (báo cáo ngày/tuần do AgentCore sinh, chỉnh sửa được, xuất PDF)
+// ---------------------------------------------------------------------------
+
+export type ProjectReportType = 'daily_update' | 'weekly_update';
+export type ProjectReportStatus = 'generating' | 'draft' | 'edited' | 'exported' | 'failed';
+export type ProjectReportTrigger = 'manual' | 'schedule';
+
+export interface ProjectReport {
+  id: string;
+  projectId: string;
+  reportType: ProjectReportType;
+  periodLabel: string;
+  status: ProjectReportStatus;
+  generatedBy: ProjectReportTrigger;
+  contentMarkdown: string;
+  contentAiOriginal: string;
+  isEdited: boolean;
+  editedBy: string | null;
+  editedAt: string | null;
+  pdfExportedAt: string | null;
+  createdAt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -247,6 +301,7 @@ export interface Meeting {
   durationMinutes: number;
   participants: string[];
   teamId: string;
+  programId: string;
   programName: string;
   summary: string;
   keyTopics: string[];
@@ -393,6 +448,7 @@ export interface Handoff {
   fromName: string;
   toName: string | null;
   teamName: string;
+  programId: string;
   programName: string;
   currentResponsibilities: string;
   inProgressWork: string;

@@ -100,44 +100,11 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Workflow',
     items: [
       {
-        label: 'Chương trình',
+        label: 'Công việc',
         path: '/projects',
         icon: 'FolderKanban',
-        blurb: 'Theo dõi sức khoẻ và tiến độ của mọi chương trình đang hoạt động.',
+        blurb: 'Danh sách dự án của bạn — bấm vào một dự án để xem nhiệm vụ, khó khăn, cập nhật hằng ngày, xuất báo cáo, bàn giao và cuộc họp của riêng dự án đó.',
         features: [],
-      },
-      {
-        label: 'Nhiệm vụ',
-        path: '/tasks',
-        icon: 'CheckSquare',
-        blurb: 'Toàn bộ nhiệm vụ của các chương trình và nhóm.',
-        features: [
-          'Nhiệm vụ quá hạn, chưa có người phụ trách, chưa có thời hạn',
-          'Công việc phụ thuộc giữa các nhiệm vụ',
-          'Bình luận và tài liệu đính kèm trên từng nhiệm vụ',
-        ],
-      },
-      {
-        label: 'Cập nhật hằng tuần',
-        path: '/weekly-updates',
-        icon: 'CalendarClock',
-        blurb: 'Quản lý và tổng hợp báo cáo tiến độ hằng tuần của các nhóm.',
-        features: [
-          'Hệ thống tự tổng hợp bản nháp báo cáo nhóm và toàn tổ chức',
-          'Hiển thị người chưa gửi báo cáo và gửi nhắc nhở',
-          'Phê duyệt, công bố và tải báo cáo dưới dạng tài liệu',
-        ],
-      },
-      {
-        label: 'Khó khăn',
-        path: '/issues',
-        icon: 'AlertTriangle',
-        blurb: 'Ghi nhận, theo dõi và giải quyết khó khăn của tổ chức.',
-        features: [
-          'Trí tuệ nhân tạo đề xuất khó khăn phát hiện từ hoạt động thực tế',
-          'Mức độ ảnh hưởng: Thấp, Trung bình, Cao, Nghiêm trọng',
-          'Cơ chế báo động và nâng cấp xử lý khi quá hạn',
-        ],
       },
       {
         label: 'Quyết định',
@@ -148,17 +115,6 @@ export const NAV_GROUPS: NavGroup[] = [
           'Trí tuệ nhân tạo đề xuất quyết định, con người xác nhận trước khi chính thức',
           'Lọc theo nhóm, chương trình, người phê duyệt, thời gian',
           'Theo dõi quyết định đã được thay thế bởi quyết định mới',
-        ],
-      },
-      {
-        label: 'Cuộc họp',
-        path: '/meetings',
-        icon: 'CalendarDays',
-        blurb: 'Nội dung, tóm tắt và việc cần làm sau mỗi cuộc họp.',
-        features: [
-          'Tự động tạo tóm tắt, quyết định đề xuất và danh sách công việc',
-          'Xác nhận hoặc từ chối nhiệm vụ được đề xuất sau họp',
-          'Gửi nội dung sau cuộc họp cho người tham gia',
         ],
       },
     ],
@@ -199,16 +155,6 @@ export const NAV_GROUPS: NavGroup[] = [
         ],
       },
       {
-        label: 'Bàn giao',
-        path: '/handoff',
-        icon: 'ArrowLeftRight',
-        blurb: 'Tạo nội dung bàn giao khi thành viên rời chương trình.',
-        features: [
-          'Hệ thống tạo bản nháp bàn giao từ công việc đang thực hiện',
-          'Người tiếp nhận xác nhận và chuyển nhiệm vụ, trách nhiệm',
-        ],
-      },
-      {
         label: 'Kết thúc tham gia',
         path: '/offboarding',
         icon: 'LogOut',
@@ -228,10 +174,11 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Bảng thông tin của nhóm',
         path: '/reports/team',
         icon: 'BarChart2',
-        blurb: 'Tổng hợp báo cáo, kết quả nổi bật và khó khăn của nhóm.',
+        blurb: 'Tổng hợp báo cáo, kết quả nổi bật và khó khăn của nhóm xuyên suốt mọi dự án nhóm phụ trách.',
         features: [
           'Tổng hợp báo cáo của tất cả thành viên trong nhóm',
           'Ưu tiên của tuần tiếp theo do trưởng nhóm chốt',
+          'Quản lý chi tiết theo từng dự án nằm trong tab "Xuất báo cáo" của dự án đó',
         ],
       },
       {
@@ -248,10 +195,10 @@ export const NAV_GROUPS: NavGroup[] = [
         label: 'Báo cáo hằng tuần',
         path: '/reports/weekly',
         icon: 'FileText',
-        blurb: 'Báo cáo tiến độ hằng tuần theo nhóm và toàn tổ chức.',
+        blurb: 'Xem nhanh trạng thái báo cáo tuần của tất cả dự án — bấm vào một dự án để mở đúng nơi tạo/sửa/xuất PDF.',
         features: [
-          'Tự động tổng hợp từ cập nhật của các thành viên',
-          'Người điều phối kiểm tra trước khi công bố',
+          'Tổng hợp trạng thái báo cáo tuần mới nhất của mọi dự án',
+          'Việc tạo, chỉnh sửa và xuất PDF thực hiện trong tab "Xuất báo cáo" của từng dự án',
         ],
       },
       {

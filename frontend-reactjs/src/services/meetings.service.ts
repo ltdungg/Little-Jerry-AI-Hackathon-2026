@@ -9,6 +9,7 @@ let meetings: Meeting[] = [
     durationMinutes: 45,
     participants: ['Sarah Johnson', 'Marcus Tran', 'Linh Phạm'],
     teamId: 'team-education',
+    programId: 'proj-rural-edu',
     programName: 'Rural Education',
     summary:
       'Nhóm rà soát tiến độ xây trường, thống nhất mở rộng phạm vi tuyển site manager sang tỉnh lân cận.',
@@ -27,6 +28,7 @@ let meetings: Meeting[] = [
     durationMinutes: 30,
     participants: ['Priya Nair', 'Sarah Johnson'],
     teamId: 'team-health',
+    programId: 'proj-clean-water',
     programName: 'Clean Water Access',
     summary: 'Thảo luận đề xuất ngân sách cho đợt khoan giếng thứ hai.',
     keyTopics: ['Ngân sách khoan giếng đợt 2', 'Kết quả khảo sát nguồn nước'],
@@ -43,6 +45,7 @@ let meetings: Meeting[] = [
     durationMinutes: 40,
     participants: ['Elena Lopez', 'David Kim'],
     teamId: 'team-tech',
+    programId: 'proj-community-digital',
     programName: 'Community Digital Infrastructure',
     summary: 'Xác định nguyên nhân trì hoãn lắp đặt mạng do phụ thuộc tiến độ xây dựng.',
     keyTopics: ['Trì hoãn lắp mạng', 'Phụ thuộc giữa các nhóm'],
@@ -54,8 +57,10 @@ let meetings: Meeting[] = [
   },
 ];
 
-export async function listMeetings(): Promise<Meeting[]> {
-  return delay([...meetings]);
+export async function listMeetings(params: { programId?: string } = {}): Promise<Meeting[]> {
+  let result = meetings;
+  if (params.programId) result = result.filter((m) => m.programId === params.programId);
+  return delay([...result]);
 }
 
 export async function getMeeting(id: string): Promise<Meeting | undefined> {
