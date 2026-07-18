@@ -14,14 +14,16 @@ Write-Host "Reading .env file..." -ForegroundColor Cyan
 
 # Parse .env file
 $envData = @{}
-Get-Content $EnvFile | Where-Object { $_ -match '^([^#=]+)=(.*)$' } | ForEach-Object {
-    $key = $Matches[1].Trim()
-    $value = $Matches[2].Trim()
-    # Remove quotes if present
-    if ($value -match '^"(.*)"$') { $value = $Matches[1] }
-    elseif ($value -match "^'(.*)'$") { $value = $Matches[1] }
-    
-    $envData[$key] = $value
+Get-Content $EnvFile | ForEach-Object {
+    if ($_ -match '^([^#=]+)=(.*)$') {
+        $key = $Matches[1].Trim()
+        $value = $Matches[2].Trim()
+        # Remove quotes if present
+        if ($value -match '^"(.*)"$') { $value = $Matches[1] }
+        elseif ($value -match "^'(.*)'$") { $value = $Matches[1] }
+
+        $envData[$key] = $value
+    }
 }
 
 $ProjectName = if ($envData.ContainsKey("PROJECT_NAME")) { $envData["PROJECT_NAME"] } else { "npo-ai" }
