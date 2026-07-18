@@ -3,15 +3,15 @@
 
 data "aws_ecr_image" "api_latest" {
   repository_name = "npo-ai/api"
-  most_recent     = true
+  image_tag       = "latest"
 }
 
 data "aws_ecr_image" "agents_latest" {
   repository_name = "npo-ai/agents"
-  most_recent     = true
+  image_tag       = "latest"
 }
 
 data "aws_ecr_image" "ingestion_latest" {
   repository_name = "npo-ai/ingestion"
-  most_recent     = true
+  image_tag       = "latest"
 }

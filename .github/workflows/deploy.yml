@@ -35,30 +35,36 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Login to ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build & push API image
         run: |
-          docker build -t $ECR_REGISTRY/npo-ai/api:${{ steps.meta.outputs.image_tag }} \
+          docker buildx build --platform linux/arm64 --provenance=false \
+                        -t $ECR_REGISTRY/npo-ai/api:${{ steps.meta.outputs.image_tag }} \
                         -t $ECR_REGISTRY/npo-ai/api:latest \
-                        -f lambdas/Dockerfile .
-          docker push $ECR_REGISTRY/npo-ai/api --all-tags
+                        -f lambdas/Dockerfile --push .
 
       - name: Build & push Agents image
         run: |
-          docker build -t $ECR_REGISTRY/npo-ai/agents:${{ steps.meta.outputs.image_tag }} \
+          docker buildx build --platform linux/arm64 --provenance=false \
+                        -t $ECR_REGISTRY/npo-ai/agents:${{ steps.meta.outputs.image_tag }} \
                         -t $ECR_REGISTRY/npo-ai/agents:latest \
-                        -f agents/Dockerfile .
-          docker push $ECR_REGISTRY/npo-ai/agents --all-tags
+                        -f agents/Dockerfile --push .
 
       - name: Build & push Ingestion image
         run: |
-          docker build -t $ECR_REGISTRY/npo-ai/ingestion:${{ steps.meta.outputs.image_tag }} \
+          docker buildx build --platform linux/arm64 --provenance=false \
+                        -t $ECR_REGISTRY/npo-ai/ingestion:${{ steps.meta.outputs.image_tag }} \
                         -t $ECR_REGISTRY/npo-ai/ingestion:latest \
-                        -f lambdas/Dockerfile .
-          docker push $ECR_REGISTRY/npo-ai/ingestion --all-tags
+                        -f lambdas/Dockerfile --push .
 
   deploy:
     name: Terraform Deploy

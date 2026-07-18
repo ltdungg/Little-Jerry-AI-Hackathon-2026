@@ -136,11 +136,13 @@ def start_oauth_flow(provider: str):
     if provider == "jira":
         params["code_challenge"] = code_challenge
         params["code_challenge_method"] = "S256"
+        params["prompt"] = "consent"
 
     # Remove empty params
     params = {k: v for k, v in params.items() if v}
 
-    auth_url = f"{config['authorize_url']}?{urlencode(params)}"
+    import urllib.parse
+    auth_url = f"{config['authorize_url']}?{urllib.parse.urlencode(params, quote_via=urllib.parse.quote)}"
 
     print(f"\n{'='*60}")
     print(f"OAuth Flow for {provider.upper()}")

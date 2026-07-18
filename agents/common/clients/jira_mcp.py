@@ -91,7 +91,8 @@ def _get_gateway_jwt_token() -> str:
             logger.warning("user_password_auth_failed", error=str(e))
 
     # Fallback: try client_credentials
-    token_url = f"https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/oauth2/token"
+    cognito_domain = os.environ.get("GATEWAY_COGNITO_DOMAIN", "my-domain-uq2ys3ho")
+    token_url = f"https://{cognito_domain}.auth.{region}.amazoncognito.com/oauth2/token"
     data = {
         "grant_type": "client_credentials",
         "client_id": client_id,
@@ -187,9 +188,9 @@ async def search_issues(jql: str, max_results: int = 50) -> list[dict]:
     return issues if isinstance(issues, list) else []
 
 
-async def get_all_boards() -> list[dict]:
+async def get_all_boards(max_results: int = 50) -> list[dict]:
     """Get all Jira boards."""
-    result = await call_jira_tool(f"{JIRA_PREFIX}GetAllBoards", {})
+    result = await call_jira_tool(f"{JIRA_PREFIX}GetAllBoards", {"maxResults": max_results})
     if "error" in result:
         return []
     boards = result.get("values", result.get("result", []))

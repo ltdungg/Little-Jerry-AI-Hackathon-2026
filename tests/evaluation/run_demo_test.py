@@ -7,6 +7,8 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 os.environ["ORCHESTRATOR_RUNTIME_ARN"] = "arn:aws:bedrock-agentcore:ap-southeast-2:314567759962:runtime/npo_ai_dev_orchestrator-B70uwa2qrl"
 os.environ["REGION"] = "ap-southeast-2"
+os.environ["BUSINESS_TABLE"] = "npo-ai-dev-business-data"
+os.environ["WORKFLOW_TABLE"] = "npo-ai-dev-workflow-state"
 
 sys.path.append("d:\\AI-Hackathon")
 
@@ -26,7 +28,7 @@ def ask_agent(question: str, project_id: str = None):
         "body": json.dumps({
             "message": question, 
             "project_id": project_id,
-            "session_id": "demo-session-123"
+            "session_id": "demo-session-123-demo-session-123-abc"
         })
     }
     
@@ -56,10 +58,10 @@ def main():
     ask_agent("Hãy liệt kê các dự án hiện có mà tôi quản lý.")
     
     # 2. Xem task quá hạn
-    ask_agent("Có task nào đang bị quá hạn trong dự án của tôi không?", project_id="proj-green-hope")
+    # ask_agent("Có task nào đang bị quá hạn trong dự án của tôi không?", project_id="proj-green-hope")
     
     # 3. Đề xuất tạo task mới
-    ask_agent("Hãy tạo một task mới: 'Viết báo cáo tài chính tháng 7' và giao cho user-minh.", project_id="proj-green-hope")
+    # ask_agent("Hãy tạo một task mới: 'Viết báo cáo tài chính tháng 7' và giao cho user-minh.", project_id="proj-green-hope")
 
 if __name__ == "__main__":
     main()

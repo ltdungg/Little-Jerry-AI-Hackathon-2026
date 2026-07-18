@@ -74,15 +74,16 @@ async def fetch_mcp_tools_for_target(target_name: str) -> List[PythonAgentTool]:
                 
                 target_lower = target_name.lower()
                 
+                # Hardcode workaround for Jira/Slack if they don't explicitly say the word
+                if target_lower == "jira":
+                    target_prefixes = ["jira", "target-quick-start-0r2gmc"]
+                else:
+                    target_prefixes = [target_lower]
+                
                 for tool in response.tools:
-                    # Filter: Only keep tools that mention Jira or Slack in name or description
-                    # Since Gateway prefixes them, sometimes name has it, sometimes description
                     name_desc = f"{tool.name} {tool.description}".lower()
                     
-                    # Hardcode workaround for Jira/Slack if they don't explicitly say the word
-                    # Gateway prefixes tool names like 'target-quick-start-0r2gmc___SearchIssues'
-                    # So we just allow them all if we can't filter correctly, but let's try strict first
-                    if target_lower in name_desc:
+                    if any(p in name_desc for p in target_prefixes):
                         spec = ToolSpec(
                             name=tool.name,
                             description=tool.description,

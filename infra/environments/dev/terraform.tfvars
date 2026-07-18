@@ -1,7 +1,7 @@
 project_name = "npo-ai"
 environment  = "dev"
 aws_region   = "ap-southeast-2"
-image_tag    = "82a2b2d"
+image_tag    = "08e6362"
 
 embedding_model_id = "amazon.titan-embed-text-v2:0"
 
@@ -36,3 +36,8 @@ resource_tags = {
   Environment = "dev"
   ManagedBy   = "terraform"
 }
+
+# Gateway Cognito Auth Variables
+gateway_client_id     = "2bl3opkk1kgn6rfbms96fqbnii"
+gateway_client_secret = ""
+gateway_user_pool_id  = "ap-southeast-2_cMA6hPF3F"
