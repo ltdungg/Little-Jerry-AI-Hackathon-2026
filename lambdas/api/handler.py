@@ -243,10 +243,56 @@ def handle_chat(event, request_ctx):
         )
         raw = resp["response"].read()
         result = json.loads(raw.decode("utf-8"))
-        return build_response(200, {"workflow_id": workflow_id, "result": result})
+        return build_response(200, _chat_response_view(workflow_id, result))
     except Exception as e:
         logger.error("orchestrator_invoke_failed", error=str(e), workflow_id=workflow_id)
         return build_error_response(502, "AGENT_ERROR", "Không kết nối được tới agent điều phối")
+
+
+# ---------- View mapper: AgentTaskResult (from orchestrator runtime) -> frontend ChatResponse shape ----------
+def _chat_response_view(workflow_id: str, result: dict) -> dict:
+    proposed = result.get("proposed_actions") or []
+    approval = None
+    if proposed:
+        pa = proposed[0]
+        approval = {
+            "approval_id": pa.get("action_id", ""),
+            "action_type": pa.get("action_type", ""),
+            "action_preview": pa.get("preview", {}),
+            "status": "pending",
+            "expires_at": "",
+        }
+    return {
+        "workflow_id": workflow_id,
+        "status": result.get("status", "completed"),
+        "answer": result.get("summary", ""),
+        "citations": [_citation_view(c) for c in result.get("citations", [])],
+        "artifacts": [_artifact_view(a) for a in result.get("artifacts", [])],
+        "approval": approval,
+    }
+
+
+def _citation_view(c: dict) -> dict:
+    return {
+        "citation_id": str(c.get("citation_id", "")),
+        "source_system": c.get("source_system", ""),
+        "document_id": c.get("document_id", ""),
+        "document_title": c.get("document_title", ""),
+        "source_uri": c.get("source_uri", ""),
+        "page_or_section": c.get("page_or_section"),
+        "excerpt": c.get("excerpt", ""),
+        "last_modified_at": c.get("last_modified_at"),
+    }
+
+
+def _artifact_view(a: dict) -> dict:
+    return {
+        "artifact_id": a.get("artifact_id", ""),
+        "artifact_type": a.get("artifact_type", ""),
+        "title": a.get("title", ""),
+        "s3_uri": a.get("s3_uri", ""),
+        "created_at": a.get("created_at", ""),
+    }
 
 def handle_create_workflow(event, request_ctx):
     # Implementation logic for async workflow
