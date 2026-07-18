@@ -18,6 +18,17 @@ import { TeamsPage } from './pages/TeamsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { TeamReportPage } from './pages/TeamReportPage';
 import { ActivityLogPage } from './pages/ActivityLogPage';
+import { ChatHistoryPage } from './pages/ChatHistoryPage';
+import { SavedAnswersPage } from './pages/SavedAnswersPage';
+import { KnowledgeSearchPage } from './pages/KnowledgeSearchPage';
+import { OnboardingPage } from './pages/OnboardingPage';
+import { HandoffPage } from './pages/HandoffPage';
+import { OffboardingPage } from './pages/OffboardingPage';
+import { MembersPage } from './pages/MembersPage';
+import { LeadershipDashboardPage } from './pages/LeadershipDashboardPage';
+import { DecisionArchivePage } from './pages/DecisionArchivePage';
+import { UsersAdminPage } from './pages/UsersAdminPage';
+import { RolesAdminPage } from './pages/RolesAdminPage';
 import { PlaceholderPage } from './pages/PlaceholderPage';
 import { ALL_NAV_LEAVES } from './lib/navConfig';
 
@@ -37,6 +48,17 @@ const BUILT_ROUTES = new Set([
   '/knowledge',
   '/reports/team',
   '/admin/activity-log',
+  '/assistant/history',
+  '/assistant/saved',
+  '/assistant/search',
+  '/onboarding',
+  '/handoff',
+  '/offboarding',
+  '/members',
+  '/reports/leadership',
+  '/knowledge/decisions',
+  '/admin/users',
+  '/admin/roles',
 ]);
 const placeholderPaths = ALL_NAV_LEAVES.map((leaf) => leaf.path).filter(
   (path) => !BUILT_ROUTES.has(path),
@@ -66,6 +88,17 @@ function App() {
             <Route path="/knowledge" element={<DocumentsPage />} />
             <Route path="/reports/team" element={<TeamReportPage />} />
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
+            <Route path="/assistant/history" element={<ChatHistoryPage />} />
+            <Route path="/assistant/saved" element={<SavedAnswersPage />} />
+            <Route path="/assistant/search" element={<KnowledgeSearchPage />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/handoff" element={<HandoffPage />} />
+            <Route path="/offboarding" element={<OffboardingPage />} />
+            <Route path="/members" element={<MembersPage />} />
+            <Route path="/reports/leadership" element={<LeadershipDashboardPage />} />
+            <Route path="/knowledge/decisions" element={<DecisionArchivePage />} />
+            <Route path="/admin/users" element={<UsersAdminPage />} />
+            <Route path="/admin/roles" element={<RolesAdminPage />} />
             {placeholderPaths.map((path) => (
               <Route key={path} path={path} element={<PlaceholderPage />} />
             ))}
