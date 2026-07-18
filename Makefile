@@ -35,6 +35,10 @@ test-evaluation:
 test-smoke:
 	uv run pytest tests/smoke -v -m smoke
 
+test-mcp:
+	@echo "Testing MCP Server..."
+	uv run python tests/test_mcp_server.py
+
 # ── Build Docker images ──
 build-images:
 	@echo "Building images with tag $(IMAGE_TAG)..."
@@ -111,3 +115,21 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	rm -rf .mypy_cache .ruff_cache .pytest_cache
+
+# ── MCP Server ──
+mcp-run:
+	@echo "Starting MCP Server..."
+	uv run python -m mcp_server_standalone
+
+mcp-rest-run:
+	@echo "Starting REST API Server..."
+	uv run uvicorn mcp_server:app --host 0.0.0.0 --port 8000
+
+mcp-setup:
+	@echo "Installing MCP dependencies..."
+	uv add slack-sdk jira
+	@echo "✅ Dependencies installed"
+	@echo "Next steps:"
+	@echo "1. Set environment variables (see docs/MCP-SETUP.md)"
+	@echo "2. Configure claude_desktop_config.json"
+	@echo "3. Run: make mcp-run"

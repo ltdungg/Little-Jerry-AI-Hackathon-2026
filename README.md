@@ -73,6 +73,30 @@ User → Next.js 14 Web App → Cognito Auth → API Gateway → API Lambda → 
 
 ## Bắt đầu nhanh
 
+### MCP Server (Claude Desktop Integration)
+
+Kết nối Claude Desktop với Slack, Jira, và NPO AI Platform:
+
+```bash
+# 1. Setup
+make mcp-setup
+
+# 2. Configure environment (copy từ .env.example)
+cp .env.example .env
+# Edit .env với Slack Bot Token, Jira credentials, Claude API key
+
+# 3. Setup Claude Desktop config
+# Xem: docs/MCP-SETUP.md (copy claude_desktop_config.json)
+
+# 4. Test MCP Server
+make test-mcp
+
+# 5. Run MCP Server
+make mcp-run
+```
+
+Xem [docs/MCP-SETUP.md](docs/MCP-SETUP.md) để chi tiết.
+
 ### Local Development (không cần AWS)
 ```bash
 # Cài dependencies

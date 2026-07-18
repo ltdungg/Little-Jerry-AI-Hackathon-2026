@@ -14,12 +14,18 @@ dependencies = [
     "uvicorn",
     "fastapi",
     "aiohttp",
+    "slack-sdk>=3.23.0",
+    "jira>=3.13.0",
 ]
 requires-python = ">=3.12"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+mcp-rest = "mcp_server:main"
+mcp-stdio = "mcp_server_standalone:main"
 
 [tool.setuptools.packages.find]
 include = ["shared*", "agents*", "lambdas*", "tests*"]

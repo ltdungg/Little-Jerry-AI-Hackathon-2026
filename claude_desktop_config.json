@@ -1,0 +1,18 @@
+{
+    "mcpServers": {
+        "npo-ai-platform": {
+            "command": "python",
+            "args": [
+                "-m",
+                "mcp_server_standalone"
+            ],
+            "env": {
+                "CLAUDE_API_KEY": "${CLAUDE_API_KEY}",
+                "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+                "JIRA_EMAIL": "${JIRA_EMAIL}",
+                "JIRA_API_TOKEN": "${JIRA_API_TOKEN}",
+                "JIRA_DOMAIN": "https://your-domain.atlassian.net"
+            }
+        }
+    }
+}
