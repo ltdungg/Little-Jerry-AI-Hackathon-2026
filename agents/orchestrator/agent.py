@@ -97,10 +97,10 @@ class OrchestratorAgent:
         project_id = project_ids[0] if project_ids else None
 
         # Create specialist agents
-        task_agent = await create_project_task_agent(tenant_id=tenant_id, project_id=project_id)
+        task_agent = create_project_task_agent(tenant_id=tenant_id, project_id=project_id)
         knowledge_agent = create_knowledge_agent()
         reporting_agent = create_reporting_agent(tenant_id=tenant_id)
-        communication_agent = await create_communication_agent()
+        communication_agent = create_communication_agent()
         memory_extraction_agent = create_memory_extraction_agent(session_id=session_id)
         risk_analysis_agent = create_risk_analysis_agent(tenant_id=tenant_id)
 
