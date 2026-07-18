@@ -9,7 +9,7 @@ import structlog
 logger = structlog.get_logger()
 
 # Default model when a caller passes a placeholder id ("mock"/"default"/empty).
-DEFAULT_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "apac.amazon.nova-lite-v1:0")
+DEFAULT_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "amazon.nova-lite-v1:0")
 _PLACEHOLDER_MODEL_IDS = {"", "mock", "default"}
 
 # Hệ thống là trợ lý cho tổ chức phi lợi nhuận tại Việt Nam -> luôn trả lời tiếng Việt.
@@ -107,9 +107,7 @@ def get_strands_model(model_id: str = "", temperature: float = 0.3, max_tokens: 
     region = os.getenv("AWS_REGION", "ap-southeast-2")
     return BedrockModel(
         region_name=region,
-        model_config={
-            "model_id": resolved,
-            "temperature": temperature,
-            "max_tokens": max_tokens,
-        },
+        model_id=resolved,
+        temperature=temperature,
+        max_tokens=max_tokens,
     )

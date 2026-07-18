@@ -62,11 +62,11 @@ variable "resource_tags" {
 variable "agent_configs" {
   type = map(object({ model_id = string }))
   default = {
-    orchestrator    = { model_id = "anthropic.claude-sonnet-4-20250514-v1:0" }
-    knowledge       = { model_id = "anthropic.claude-sonnet-4-20250514-v1:0" }
-    project_task    = { model_id = "anthropic.claude-sonnet-4-20250514-v1:0" }
-    reporting       = { model_id = "anthropic.claude-sonnet-4-20250514-v1:0" }
-    communication   = { model_id = "anthropic.claude-sonnet-4-20250514-v1:0" }
+    orchestrator    = { model_id = "amazon.nova-lite-v1:0" }
+    knowledge       = { model_id = "amazon.nova-lite-v1:0" }
+    project_task    = { model_id = "amazon.nova-lite-v1:0" }
+    reporting       = { model_id = "amazon.nova-lite-v1:0" }
+    communication   = { model_id = "amazon.nova-lite-v1:0" }
   }
   description = "Map of agent name to configuration including model_id"
 }

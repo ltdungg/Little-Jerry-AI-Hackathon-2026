@@ -12,6 +12,8 @@ logger = structlog.get_logger()
 REGION = os.environ.get("REGION", "ap-southeast-2")
 ORCHESTRATOR_RUNTIME_ARN = os.environ.get("ORCHESTRATOR_RUNTIME_ARN", "")
 _agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
+_cognito = boto3.client("cognito-idp", region_name=REGION)
+COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID", "")
 
 PROJECT_TASKS_RE = re.compile(r"^/v1/projects/([^/]+)/tasks/?$")
 PROJECT_RISKS_RE = re.compile(r"^/v1/projects/([^/]+)/risks/?$")
@@ -66,6 +68,8 @@ def lambda_handler(event, context):
             return handle_admin_login(event, request_ctx, "slack")
         elif path == "/v1/admin/auth/slack/callback" and method == "GET":
             return handle_admin_callback(event, request_ctx, "slack")
+        elif path == "/v1/admin/users" and method == "POST":
+            return handle_admin_create_user(event, request_ctx)
 
         return build_error_response(404, "NOT_FOUND", "Endpoint not found")
     except Exception as e:
@@ -218,6 +222,7 @@ def handle_chat(event, request_ctx):
         return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung tin nhắn (message)")
 
     project_id = body.get("project_id")
+    conversation_session_id = body.get("session_id") or str(uuid.uuid4())
     workflow_id = str(uuid.uuid4())
     role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
 
@@ -235,6 +240,7 @@ def handle_chat(event, request_ctx):
             "deadline_epoch_ms": 0,
             "user_id": request_ctx.user_id,
             "user_role": role,
+            "session_id": conversation_session_id,
         },
     }
 
@@ -403,3 +409,42 @@ def handle_admin_callback(event, request_ctx, provider):
         logger.error("oauth_exchange_failed", provider=provider, error=str(e))
         return build_error_response(500, "EXCHANGE_FAILED", str(e))
 
+def handle_admin_create_user(event, request_ctx):
+    role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    if role not in ["leader", "project_manager"]:
+        return build_error_response(403, "FORBIDDEN", "Only admin or manager can create users")
+
+    body = parse_body(event)
+    username = body.get("username")
+    email = body.get("email")
+    password = body.get("password")
+
+    if not username or not email or not password:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu username, email hoặc password")
+
+    if not COGNITO_USER_POOL_ID:
+        return build_error_response(500, "CONFIG_ERROR", "COGNITO_USER_POOL_ID is missing")
+
+    try:
+        _cognito.admin_create_user(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=username,
+            UserAttributes=[
+                {"Name": "email", "Value": email},
+                {"Name": "email_verified", "Value": "true"}
+            ],
+            TemporaryPassword=password,
+            MessageAction="SUPPRESS"
+        )
+
+        _cognito.admin_set_user_password(
+            UserPoolId=COGNITO_USER_POOL_ID,
+            Username=username,
+            Password=password,
+            Permanent=True
+        )
+
+        return build_response(200, {"status": "success", "username": username, "email": email})
+    except Exception as e:
+        logger.error("admin_create_user_failed", error=str(e))
+        return build_error_response(400, "CREATE_FAILED", str(e))

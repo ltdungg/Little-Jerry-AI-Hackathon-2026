@@ -16,6 +16,8 @@ AGENT_MODULE_MAP = {
     "project_task": "agents.project_task.agent",
     "reporting": "agents.reporting.agent",
     "communication": "agents.communication.agent",
+    "memory_extraction": "agents.memory_extraction.agent",
+    "risk_analysis": "agents.risk_analysis.agent",
 }
 
 # Cache the loaded agent handler
@@ -40,6 +42,8 @@ def _load_agent():
         "project_task": "ProjectTaskAgent",
         "reporting": "ReportingAgent",
         "communication": "CommunicationAgent",
+        "memory_extraction": "MemoryExtractionAgent",
+        "risk_analysis": "RiskAnalysisAgent",
     }[AGENT_NAME]
 
     agent_class = getattr(module, agent_class_name)

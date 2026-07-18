@@ -12,7 +12,19 @@ module "agentcore" {
   }
   tags                = var.resource_tags
   business_table_name = module.data.business_data_table_name
+  memory_id           = module.agentcore_memory.memory_id
   aws_region          = var.aws_region
+  knowledge_base_id   = module.bedrock_kb.knowledge_base_id
+  artifact_bucket_name = module.storage.artifact_bucket_name
+}
+
+# ---------- AgentCore Memory: persistent conversation memory ----------
+module "agentcore_memory" {
+  source       = "../../modules/agentcore-memory"
+  project_name = var.project_name
+  environment  = var.environment
+  event_expiry_days = 30
+  tags                = var.resource_tags
 }
 
 # ---------- Agent Execution Roles ----------
@@ -61,6 +73,18 @@ resource "aws_iam_role_policy" "agent_execution" {
         Effect   = "Allow"
         Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:Query"]
         Resource = [module.data.business_data_table_arn, "${module.data.business_data_table_arn}/index/*"]
+      },
+      {
+        # Memory operations for conversation persistence.
+        Sid      = "MemoryOperations"
+        Effect   = "Allow"
+        Action   = [
+          "bedrock-agentcore:BatchCreateMemoryRecords",
+          "bedrock-agentcore:RetrieveMemoryRecords",
+          "bedrock-agentcore:ListMemoryRecords",
+          "bedrock-agentcore:GetMemoryRecord",
+        ]
+        Resource = module.agentcore_memory.memory_arn
       },
       {
         Sid      = "KmsDecryptBusinessData"

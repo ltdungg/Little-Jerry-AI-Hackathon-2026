@@ -47,6 +47,7 @@ class TaskConstraints(BaseModel):
     deadline_epoch_ms: int = 0
     user_id: str
     user_role: str
+    session_id: str = ""
 
 class AgentTaskRequest(BaseModel):
     workflow_id: str

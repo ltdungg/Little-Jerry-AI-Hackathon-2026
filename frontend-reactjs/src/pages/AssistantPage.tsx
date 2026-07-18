@@ -1,0 +1,300 @@
+import { useId, useRef, useState } from 'react';
+import { Icon } from '../components/common/Icon';
+import { QA_BANK, SUGGESTED_QUESTIONS } from '../lib/mockData';
+import type { ChatMessage, SourceType } from '../types';
+
+const SOURCE_ICON: Record<SourceType, string> = {
+  SharePoint: 'Cloud',
+  Slack: 'Hash',
+  Meeting: 'Video',
+  Docs: 'FileText',
+};
+
+const SOURCE_FILTERS: { value: 'all' | SourceType; label: string }[] = [
+  { value: 'all', label: 'All sources' },
+  { value: 'SharePoint', label: 'SharePoint' },
+  { value: 'Slack', label: 'Slack' },
+];
+
+const INITIAL_QUESTION = SUGGESTED_QUESTIONS[0];
+
+function buildInitialMessages(): ChatMessage[] {
+  const seeded = QA_BANK[INITIAL_QUESTION];
+  return [
+    { id: 'm-1', role: 'user', content: INITIAL_QUESTION },
+    {
+      id: 'm-2',
+      role: 'assistant',
+      content: seeded.content,
+      synthesizedFrom: 4,
+      sources: ['SharePoint', 'Slack'],
+      citations: seeded.citations,
+    },
+  ];
+}
+
+export function AssistantPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>(buildInitialMessages);
+  const [draft, setDraft] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<'all' | SourceType>('all');
+  const [isThinking, setIsThinking] = useState(false);
+  const inputId = useId();
+  const listRef = useRef<HTMLDivElement>(null);
+  const nextMessageId = useRef(3);
+
+  const lastAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant');
+  const activeCitations = lastAssistantMessage?.citations ?? [];
+
+  function scrollToBottom() {
+    requestAnimationFrame(() => {
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
+  function sendQuestion(question: string) {
+    const trimmed = question.trim();
+    if (!trimmed || isThinking) return;
+
+    const userMessage: ChatMessage = {
+      id: `u-${nextMessageId.current++}`,
+      role: 'user',
+      content: trimmed,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setDraft('');
+    setIsThinking(true);
+    scrollToBottom();
+
+    window.setTimeout(() => {
+      const known = QA_BANK[trimmed];
+      const assistantMessage: ChatMessage = known
+        ? {
+            id: `a-${nextMessageId.current++}`,
+            role: 'assistant',
+            content: known.content,
+            synthesizedFrom: known.citations.length + 1,
+            sources: Array.from(new Set(known.citations.map((c) => c.source))),
+            citations: known.citations,
+          }
+        : {
+            id: `a-${nextMessageId.current++}`,
+            role: 'assistant',
+            content:
+              'Hệ thống chưa có đủ dữ liệu đã xác nhận để trả lời chính xác câu hỏi này. Bạn có thể thử diễn đạt lại, hoặc gửi yêu cầu tới người phụ trách chương trình liên quan.',
+            citations: [],
+          };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setIsThinking(false);
+      scrollToBottom();
+    }, 700);
+  }
+
+  return (
+    <div className="flex h-full min-h-0">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Icon name="FolderKanban" size={14} className="text-brand-500" />
+            Rural Education Project
+            <Icon name="ChevronDown" size={14} className="text-slate-400" />
+          </button>
+
+          <div className="ml-auto flex items-center gap-1 rounded-lg bg-slate-100 p-1">
+            {SOURCE_FILTERS.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                onClick={() => setSourceFilter(s.value)}
+                className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
+                  sourceFilter === s.value
+                    ? 'bg-white text-brand-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+          <div className="mx-auto flex max-w-2xl flex-col gap-5">
+            <div className="flex items-center justify-center">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-400">
+                Today
+              </span>
+            </div>
+
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+
+            {isThinking && (
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Icon name="Loader2" size={15} className="animate-spin text-brand-400" />
+                Đang tổng hợp câu trả lời...
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 bg-white px-4 py-3 sm:px-6">
+          <div className="mx-auto max-w-2xl">
+            {messages.length <= 2 && (
+              <div className="mb-3 flex flex-wrap gap-2">
+                {SUGGESTED_QUESTIONS.slice(1).map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => sendQuestion(q)}
+                    className="rounded-full border border-slate-200 px-3 py-1.5 text-xs text-slate-600 transition hover:border-brand-300 hover:text-brand-700"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendQuestion(draft);
+              }}
+              className="flex items-end gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm focus-within:border-brand-300 focus-within:ring-2 focus-within:ring-brand-100"
+            >
+              <label htmlFor={inputId} className="sr-only">
+                Đặt câu hỏi cho AIV
+              </label>
+              <textarea
+                id={inputId}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendQuestion(draft);
+                  }
+                }}
+                rows={1}
+                placeholder="Ask about risks, updates, or summarize documents..."
+                className="max-h-32 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Đính kèm tệp"
+              >
+                <Icon name="Paperclip" size={17} />
+              </button>
+              <button
+                type="button"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Nhập bằng giọng nói"
+              >
+                <Icon name="Mic" size={17} />
+              </button>
+              <button
+                type="submit"
+                disabled={!draft.trim() || isThinking}
+                className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-40"
+                aria-label="Gửi câu hỏi"
+              >
+                <Icon name="SendHorizontal" size={16} />
+              </button>
+            </form>
+
+            <p className="mt-2 text-center text-[11px] text-slate-400">
+              AI Assistant may produce inaccurate information about people, places, or facts.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <aside className="hidden w-80 shrink-0 flex-col border-l border-slate-200 bg-white xl:flex">
+        <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3">
+          <Icon name="Pin" size={15} className="text-slate-400" />
+          <h2 className="text-sm font-semibold text-slate-800">Citations</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          {activeCitations.length === 0 ? (
+            <p className="p-3 text-xs text-slate-400">
+              Chưa có nguồn tham khảo cho câu trả lời hiện tại.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {activeCitations.map((citation, index) => (
+                <div key={citation.id} className="rounded-lg border border-slate-200 p-3">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-brand-600">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-brand-100 text-[10px] text-brand-700">
+                      {index + 1}
+                    </span>
+                    <span className="truncate">{citation.title}</span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{citation.snippet}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                      <Icon name={SOURCE_ICON[citation.source]} size={12} />
+                      {citation.source}
+                    </span>
+                    <span className="text-[11px] text-slate-300">{citation.updatedAt}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function MessageBubble({ message }: { message: ChatMessage }) {
+  if (message.role === 'user') {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-brand-600 px-4 py-2.5 text-sm text-white">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[90%] rounded-2xl rounded-bl-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
+        {message.synthesizedFrom !== undefined && (
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-brand-600">
+            <Icon name="Sparkles" size={13} />
+            Synthesized from {message.synthesizedFrom} sources
+          </div>
+        )}
+        <p className="text-sm leading-relaxed text-slate-700">{message.content}</p>
+
+        {message.sources && message.sources.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2.5">
+            <span className="text-[11px] text-slate-400">Sources:</span>
+            {message.sources.map((source) => (
+              <span
+                key={source}
+                className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+              >
+                <Icon name={SOURCE_ICON[source]} size={11} />
+                {source}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {message.citations && message.citations.length === 0 && message.synthesizedFrom === undefined && (
+          <div className="mt-2 flex items-center gap-1.5 text-[11px] text-amber-600">
+            <Icon name="Info" size={12} />
+            Không có đủ dữ liệu đã xác nhận
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

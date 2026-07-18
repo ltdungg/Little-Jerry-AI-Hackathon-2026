@@ -194,7 +194,7 @@ KHÔNG log:
 {
   "Effect": "Allow",
   "Action": ["bedrock:InvokeModel", "bedrock:Converse"],
-  "Resource": "arn:aws:bedrock:*::foundation-model/anthropic.claude-*"
+  "Resource": "arn:aws:bedrock:*::foundation-model/amazon.*"
 }
 // Chỉ invoke được model được cấu hình, không phải mọi model
 ```
