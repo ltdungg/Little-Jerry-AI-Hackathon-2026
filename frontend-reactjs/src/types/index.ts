@@ -464,23 +464,6 @@ export interface OffboardingRecord {
 }
 
 // ---------------------------------------------------------------------------
-// Leadership dashboard
-// ---------------------------------------------------------------------------
-
-export interface LeadershipSummary {
-  totalPrograms: number;
-  onTrack: number;
-  atRisk: number;
-  overdue: number;
-  criticalIssues: number;
-  overdueIssues: number;
-  pendingDecisions: number;
-  teamsMissingReport: string[];
-  weeklyHighlights: string[];
-  attentionItems: string[];
-}
-
-// ---------------------------------------------------------------------------
 // Admin: users & roles
 // ---------------------------------------------------------------------------
 

@@ -88,33 +88,22 @@ export const NAV_GROUPS: NavGroup[] = [
           'Xác nhận hoàn thành bàn giao trước ngày kết thúc',
         ],
       },
+      {
+        label: 'Sơ đồ tổ chức',
+        path: '/org-chart',
+        icon: 'Network',
+        blurb: 'Cơ cấu tổ chức phân cấp từ lãnh đạo xuống từng nhóm và cá nhân.',
+        features: [
+          'Xem theo cây phân cấp từ cấp cao xuống thấp',
+          'Bấm vào một node để thu gọn/mở rộng nhánh dưới quyền',
+        ],
+      },
     ],
   },
   {
     label: 'Báo cáo',
     icon: 'BarChart3',
     items: [
-      {
-        label: 'Bảng thông tin của nhóm',
-        path: '/reports/team',
-        icon: 'BarChart2',
-        blurb: 'Tổng hợp báo cáo, kết quả nổi bật và khó khăn của nhóm xuyên suốt mọi dự án nhóm phụ trách.',
-        features: [
-          'Tổng hợp báo cáo của tất cả thành viên trong nhóm',
-          'Ưu tiên của tuần tiếp theo do trưởng nhóm chốt',
-          'Quản lý chi tiết theo từng dự án nằm trong tab "Xuất báo cáo" của dự án đó',
-        ],
-      },
-      {
-        label: 'Bảng thông tin lãnh đạo',
-        path: '/reports/leadership',
-        icon: 'TrendingUp',
-        blurb: 'Toàn cảnh tổ chức dành cho ban lãnh đạo.',
-        features: [
-          'Chương trình có nguy cơ chậm, khó khăn nghiêm trọng, quyết định chờ duyệt',
-          'Bản tóm tắt hằng tuần do trí tuệ nhân tạo tự động tạo',
-        ],
-      },
       {
         label: 'Báo cáo hằng tuần',
         path: '/reports/weekly',

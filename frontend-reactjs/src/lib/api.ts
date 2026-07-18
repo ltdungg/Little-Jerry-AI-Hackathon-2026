@@ -366,11 +366,6 @@ export async function deleteSavedAnswer(savedId: string) {
   return apiFetch<void>(`/v1/me/saved-answers/${savedId}`, { method: 'DELETE' });
 }
 
-// ── Leadership summary ──
-export async function getLeadershipSummary() {
-  return apiFetch<any>('/v1/reports/leadership-summary');
-}
-
 // ── Project reports (daily/weekly AI-generated, editable, PDF export) ──
 export async function getProjectReports(projectId: string, params?: { category?: string }) {
   const qs = new URLSearchParams();
