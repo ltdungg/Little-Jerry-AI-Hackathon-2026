@@ -25,18 +25,20 @@ def _create_mcp_tool_wrapper(target_name: str, tool_name: str, spec: ToolSpec) -
             return f"Lỗi: Không hỗ trợ target {target_name}"
         
         
-        # Lấy token Admin từ Secrets Manager
+        # Lấy token Admin (ưu tiên biến môi trường cho local test, fallback Secrets Manager)
         project_name = os.environ.get("PROJECT_NAME", "npo-ai")
         env = os.environ.get("ENVIRONMENT", "dev")
         region = os.environ.get("REGION", "ap-southeast-2")
-        secret_name = f"{project_name}-{env}-{target_name}-admin-access-token"
-        try:
-            sm = boto3.client("secretsmanager", region_name=region)
-            token = sm.get_secret_value(SecretId=secret_name).get("SecretString", "")
-        except Exception as e:
-            logger.error("mcp_token_fetch_failed", target=target_name, error=str(e))
-            token = ""
-            
+        token = os.environ.get(f"{target_name.upper()}_ADMIN_TOKEN", "")
+        if not token:
+            secret_name = f"{project_name}-{env}-{target_name}-admin-access-token"
+            try:
+                sm = boto3.client("secretsmanager", region_name=region)
+                token = sm.get_secret_value(SecretId=secret_name).get("SecretString", "")
+            except Exception as e:
+                logger.error("mcp_token_fetch_failed", target=target_name, error=str(e))
+                token = ""
+
         headers = {"Authorization": f"Bearer {token}"} if token else {}
         
         try:
