@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { Icon } from '../../components/common/Icon';
 import { useAuth } from '../../context/useAuth';
 import { useMockList } from '../../hooks/useMockList';
@@ -7,8 +6,7 @@ import { useMockResource } from '../../hooks/useMockResource';
 import { listDailyUpdates, submitDailyUpdate } from '../../services/dailyUpdates.service';
 import { listTasks, taskStatusLabel } from '../../services/tasks.service';
 import { listTeams } from '../../services/teams.service';
-import type { ProjectDetailContext } from '../ProjectDetailPage';
-import type { TaskStatus } from '../../types';
+import type { Project, TaskStatus } from '../../types';
 
 const STATUS_OPTIONS: TaskStatus[] = ['todo', 'in_progress', 'blocked', 'done'];
 
@@ -20,8 +18,7 @@ async function resolveTeamMembers(projectName: string) {
   return team?.members ?? [];
 }
 
-export function ProjectDailyUpdatesTab() {
-  const { project } = useOutletContext<ProjectDetailContext>();
+export function DailyUpdatesSection({ project }: { project: Project }) {
   const { user } = useAuth();
 
   const { items: tasks, loading: loadingTasks } = useMockList(() => listTasks({ programId: project.id }), [project.id]);

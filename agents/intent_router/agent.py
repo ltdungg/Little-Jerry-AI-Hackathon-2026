@@ -10,6 +10,7 @@ from langgraph.graph import StateGraph, END
 
 from agents.common.contracts.agent import (
     AgentTaskRequest, AgentTaskResult, AgentMetrics, TaskStatus,
+    TaskIntent, TaskConstraints,
 )
 from agents.common.model.provider import BedrockProvider
 

@@ -1,19 +1,8 @@
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Icon } from '../../components/common/Icon';
-import type { ProjectDetailContext } from '../ProjectDetailPage';
+import type { Project } from '../../types';
 
-const NAV_BLOCKS = [
-  { to: 'tasks', label: 'Nhiệm vụ', icon: 'CheckSquare', desc: 'Danh sách công việc và người phụ trách' },
-  { to: 'issues', label: 'Khó khăn', icon: 'AlertTriangle', desc: 'Rủi ro và vướng mắc đang gặp phải' },
-  { to: 'daily-updates', label: 'Cập nhật hằng ngày', icon: 'CalendarClock', desc: 'Tiến độ task theo từng ngày' },
-  { to: 'decisions', label: 'Quyết định', icon: 'Gavel', desc: 'Lý do, phương án và người phê duyệt' },
-  { to: 'handoff', label: 'Bàn giao', icon: 'ArrowLeftRight', desc: 'Nội dung bàn giao đang xử lý' },
-  { to: 'meetings', label: 'Cuộc họp', icon: 'CalendarDays', desc: 'Tóm tắt và việc cần thực hiện sau họp' },
-] as const;
-
-export function ProjectOverviewTab() {
-  const { project } = useOutletContext<ProjectDetailContext>();
-
+export function OverviewSection({ project }: { project: Project }) {
   const infoTiles = [
     { label: 'Người phụ trách', value: project.owner, icon: 'User' },
     { label: 'Nhóm', value: project.team, icon: 'Users' },
@@ -54,24 +43,11 @@ export function ProjectOverviewTab() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {NAV_BLOCKS.map((block) => (
-          <Link
-            key={block.to}
-            to={block.to}
-            className="rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm"
-          >
-            <div className="flex items-center gap-2">
-              <Icon name={block.icon} size={16} className="text-brand-500" />
-              <span className="text-sm font-semibold text-slate-800">{block.label}</span>
-            </div>
-            <p className="mt-1.5 text-xs text-slate-400">{block.desc}</p>
-          </Link>
-        ))}
-      </div>
-
-      <div className="mt-4 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center">
+      <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center">
         <Icon name="Sparkles" size={20} className="mx-auto text-brand-400" />
+        <p className="mt-2 text-sm font-medium text-slate-600">
+          Xem chi tiết nhiệm vụ, khó khăn, cập nhật, cuộc họp, bàn giao và báo cáo của dự án qua các mục phía trên.
+        </p>
         <Link
           to="/assistant"
           className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:underline"

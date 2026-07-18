@@ -50,17 +50,17 @@ output "gateway_scope" {
 ##
 
 output "gateway_id" {
-  value       = awscc_bedrockagentcore_gateway.main.gateway_identifier
+  value       = aws_cloudformation_stack.gateway.outputs["GatewayId"]
   description = "Gateway identifier"
 }
 
 output "gateway_arn" {
-  value       = awscc_bedrockagentcore_gateway.main.gateway_arn
+  value       = ""
   description = "Gateway ARN"
 }
 
 output "gateway_url" {
-  value       = awscc_bedrockagentcore_gateway.main.gateway_url
+  value       = aws_cloudformation_stack.gateway.outputs["GatewayUrl"]
   description = "Gateway URL endpoint"
 }
 

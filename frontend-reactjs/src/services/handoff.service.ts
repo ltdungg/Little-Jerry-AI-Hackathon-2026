@@ -1,5 +1,5 @@
 import * as api from '../lib/api';
-import type { Handoff, HandoffStatus, OffboardingRecord } from '../types';
+import type { Handoff, HandoffStatus, HandoffTask, HandoffDocument, OffboardingRecord } from '../types';
 
 function initialsOf(name: string): string {
   return name
@@ -27,6 +27,23 @@ function mapHandoff(h: any): Handoff {
     risks: h.risks || '',
     nextSteps: h.next_steps || '',
     status: h.status,
+    tasks: (h.tasks || []).map((t: any): HandoffTask => ({
+      id: t.task_id || t.id || '',
+      title: t.title || '',
+      description: t.description || '',
+      status: t.status || 'pending',
+      assigneeName: t.assignee_name ?? null,
+      dueDate: t.due_date ?? null,
+    })),
+    documents: (h.documents || []).map((d: any): HandoffDocument => ({
+      name: d.name || '',
+      url: d.url || '#',
+      type: d.type || 'doc',
+    })),
+    context: h.context || '',
+    reviewComments: h.review_comments ?? null,
+    reviewerName: h.reviewer_name ?? null,
+    reviewedAt: h.reviewed_at ?? null,
   };
 }
 

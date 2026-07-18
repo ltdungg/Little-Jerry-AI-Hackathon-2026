@@ -47,3 +47,27 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 *.swp
+
+# ---- Deployment artifacts ----
+*.zip
+**/tf_outputs.json
+**/gw.json
+
+# ---- Scratch / debug scripts ----
+check_cognito.py
+create_gateway_v5.py
+debug.py
+list_gateways.py
+test_gateway_direct.py
+test_jira_auth.py
+test_jira_boards_and_search.py
+test_jira_slack.py
+test_mcp_connection.py
+test_mcp_tools_detail.py
+cognito-update.json
+cred_provider_schema.json
+cred_schema.json
+payload.json
+terraform.tfstate
+npo_ai_platform.egg-info/
+AgentCore_AgenticSlackBot/

@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { Icon } from '../../components/common/Icon';
 import { Pill, type PillTone } from '../../components/common/Pill';
 import { Select } from '../../components/common/Select';
@@ -13,8 +12,7 @@ import {
   listIssues,
 } from '../../services/issues.service';
 import { useAuth } from '../../context/useAuth';
-import type { ProjectDetailContext } from '../ProjectDetailPage';
-import type { Issue, IssueImpact, IssueStatus } from '../../types';
+import type { Project, Issue, IssueImpact, IssueStatus } from '../../types';
 
 type Tab = 'list' | 'ai_suggested';
 
@@ -42,8 +40,7 @@ const IMPACT_OPTIONS: { value: IssueImpact | 'all'; label: string }[] = [
   { value: 'critical', label: 'Nghiêm trọng' },
 ];
 
-export function ProjectIssuesTab() {
-  const { project } = useOutletContext<ProjectDetailContext>();
+export function IssuesSection({ project }: { project: Project }) {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('list');
   const [status, setStatus] = useState<IssueStatus | 'all'>('all');

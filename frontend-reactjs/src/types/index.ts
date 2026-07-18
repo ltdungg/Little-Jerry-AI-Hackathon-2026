@@ -473,6 +473,21 @@ export interface OnboardingContent {
 
 export type HandoffStatus = 'draft' | 'team_lead_review' | 'receiver_confirm' | 'complete';
 
+export interface HandoffTask {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed';
+  assigneeName: string | null;
+  dueDate: string | null;
+}
+
+export interface HandoffDocument {
+  name: string;
+  url: string;
+  type: string;
+}
+
 export interface Handoff {
   id: string;
   fromName: string;
@@ -488,6 +503,12 @@ export interface Handoff {
   risks: string;
   nextSteps: string;
   status: HandoffStatus;
+  tasks: HandoffTask[];
+  documents: HandoffDocument[];
+  context: string;
+  reviewComments: string | null;
+  reviewerName: string | null;
+  reviewedAt: string | null;
 }
 
 export interface OffboardingRecord {

@@ -5,6 +5,10 @@
 # with package_type = "Image".
 FROM public.ecr.aws/lambda/python:3.12
 
+# System deps for WeasyPrint (PDF rendering): pango, cairo, gdk-pixbuf
+RUN dnf install -y pango cairo-gobject gdk-pixbuf2 || yum install -y pango cairo-gobject gdk-pixbuf2
+RUN dnf clean all 2>/dev/null || yum clean all 2>/dev/null
+
 # Pinned uv for locked dependency resolution
 COPY --from=ghcr.io/astral-sh/uv:0.5.11 /uv /usr/local/bin/uv
 

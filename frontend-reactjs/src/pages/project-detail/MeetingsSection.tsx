@@ -1,15 +1,12 @@
 import { useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { Icon } from '../../components/common/Icon';
 import { Pill } from '../../components/common/Pill';
 import { useMockList } from '../../hooks/useMockList';
 import { confirmActionItem, listMeetings, rejectActionItem } from '../../services/meetings.service';
 import { useAuth } from '../../context/useAuth';
-import type { ProjectDetailContext } from '../ProjectDetailPage';
-import type { Meeting, MeetingActionItem } from '../../types';
+import type { Project, Meeting, MeetingActionItem } from '../../types';
 
-export function ProjectMeetingsTab() {
-  const { project } = useOutletContext<ProjectDetailContext>();
+export function MeetingsSection({ project }: { project: Project }) {
   const { user } = useAuth();
   const { items, setItems, loading } = useMockList(() => listMeetings({ programName: project.name }), [project.name]);
   const [selectedId, setSelectedId] = useState<string | null>(null);

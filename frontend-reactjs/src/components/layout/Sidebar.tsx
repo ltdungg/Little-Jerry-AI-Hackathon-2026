@@ -7,8 +7,12 @@ import { NAV_GROUPS } from '../../lib/navConfig';
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
 
+  function isPathActive(path: string) {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  }
+
   const activeGroupIndex = NAV_GROUPS.findIndex((g) =>
-    g.items.some((item) => item.path === location.pathname),
+    g.items.some((item) => isPathActive(item.path)),
   );
 
   const [overrides, setOverrides] = useState<Record<number, boolean>>({});
@@ -48,7 +52,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         {NAV_GROUPS.map((group, index) => {
           if (group.items.length === 1) {
             const item = group.items[0];
-            const isActive = item.path === location.pathname;
+            const isActive = isPathActive(item.path);
             return (
               <div key={group.label} className="mb-1">
                 <Link
@@ -70,7 +74,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           }
 
           const isExpanded = isGroupExpanded(index);
-          const groupHasActive = group.items.some((i) => i.path === location.pathname);
+          const groupHasActive = group.items.some((i) => isPathActive(i.path));
           return (
             <div key={group.label} className="mb-1">
               <button
@@ -93,7 +97,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               {isExpanded && (
                 <div className="ml-2 flex flex-col gap-0.5 border-l border-slate-100 pl-3">
                   {group.items.map((item) => {
-                    const isActive = item.path === location.pathname;
+                    const isActive = isPathActive(item.path);
                     return (
                       <Link
                         key={item.path}

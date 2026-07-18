@@ -13,7 +13,7 @@ from agents.common.contracts.agent import (
 from agents.common.contracts.context import UserRole
 from agents.common.model.provider import BedrockProvider
 from agents.common.memory import BedrockAgentCoreMemoryStore
-from agents.intent_router.agent import IntentRouter, Intent, INTENT_TO_AGENT
+from agents.intent_router.agent import IntentRouterAgent, Intent, INTENT_TO_AGENT
 
 logger = structlog.get_logger()
 
@@ -47,24 +47,18 @@ class OrchestratorAgent:
     def __init__(self):
         self._memory_id = os.getenv("MEMORY_ID", "")
         self._provider = BedrockProvider()
-        self._intent_router = IntentRouter()
+        self._intent_router = IntentRouterAgent()
 
     async def intent_router_node(self, state: State) -> dict:
         """Classify intent and route to appropriate agent."""
         logger.info("intent_router_node", user_request=state["user_request"][:100])
 
-        # Create a mock request for the router
-        mock_request = AgentTaskRequest(
-            workflow_id="",
-            task_id="",
-            agent_name="orchestrator",
-            intent=None,
-            instructions=state["user_request"],
-            inputs=state.get("inputs", {}),
-            constraints=None,
-        )
-
-        intent, agent_name = await self._intent_router.route(mock_request)
+        # Call the intent router's classify logic directly (bypass pydantic validation)
+        from agents.intent_router.agent import keyword_classify
+        query = state["user_request"]
+        intent_str = keyword_classify(query)
+        intent = Intent(intent_str) if intent_str in [i.value for i in Intent] else Intent.UNKNOWN
+        agent_name = INTENT_TO_AGENT.get(intent, "orchestrator")
         logger.info("intent_classified", intent=intent.value, target_agent=agent_name)
 
         return {

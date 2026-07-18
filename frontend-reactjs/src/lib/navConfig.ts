@@ -35,28 +35,22 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Workflow',
     items: [
       {
-        label: 'Báo cáo',
-        path: '/reports/weekly',
-        icon: 'FileText',
-        blurb: 'Xem nhanh trạng thái báo cáo tuần của tất cả dự án — bấm vào một dự án để tạo/sửa/xuất PDF và quản lý bảng thông tin nhóm.',
-        features: [
-          'Tổng hợp trạng thái báo cáo tuần mới nhất của mọi dự án',
-          'Tạo, chỉnh sửa và xuất PDF ngay trên trang báo cáo của từng dự án',
-        ],
-      },
-      {
         label: 'Dự án',
         path: '/projects',
         icon: 'FolderKanban',
-        blurb: 'Danh sách dự án của bạn — bấm vào một dự án để xem nhiệm vụ, khó khăn, cập nhật hằng ngày, quyết định, bàn giao và cuộc họp của riêng dự án đó.',
+        blurb: 'Danh sách dự án — bấm vào một dự án để xem toàn bộ thông tin, nhiệm vụ, báo cáo và bàn giao.',
         features: [],
       },
       {
         label: 'Bàn giao',
-        path: '/handoff',
+        path: '/handoffs',
         icon: 'ArrowLeftRight',
-        blurb: 'Những gì bạn được bàn giao và những gì bạn đã bàn giao cho người khác, xuyên suốt mọi dự án.',
-        features: [],
+        blurb: 'Quản lý các bản bàn giao công việc — theo dõi tiến trình và phê duyệt.',
+        features: [
+          'Xem danh sách tất cả bàn giao theo trạng thái',
+          'Chi tiết từng bàn giao với đầu việc, tài liệu, bối cảnh',
+          'Phê duyệt và giao nhận bàn giao',
+        ],
       },
     ],
   },
@@ -72,6 +66,16 @@ export const NAV_GROUPS: NavGroup[] = [
         features: [
           'Thành viên, vai trò và chương trình của từng nhóm',
           'Tình trạng hoạt động và báo cáo gần nhất của nhóm',
+        ],
+      },
+      {
+        label: 'Danh sách thành viên',
+        path: '/members',
+        icon: 'Contact',
+        blurb: 'Toàn bộ nhân viên và tình nguyện viên trong tổ chức.',
+        features: [
+          'Vai trò, nhóm và chương trình được gán',
+          'Thời hạn tham gia đối với tình nguyện viên',
         ],
       },
       {

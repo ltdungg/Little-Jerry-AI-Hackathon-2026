@@ -21,7 +21,7 @@ resource "aws_cloudcontrolapi_resource" "jira_target" {
         CredentialProviderType = "API_KEY"
         CredentialProvider = {
           ApiKeyCredentialProvider = {
-            ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-vera"
+            ProviderArn        = "arn:aws:bedrock-agentcore:ap-southeast-2:314567759962:token-vault/default/apikeycredentialprovider/atlassian-jira"
             CredentialPrefix   = "Basic"
             CredentialLocation = "HEADER"
           }
@@ -54,7 +54,7 @@ resource "aws_cloudcontrolapi_resource" "confluence_target" {
         CredentialProviderType = "API_KEY"
         CredentialProvider = {
           ApiKeyCredentialProvider = {
-            ProviderArn        = "arn:aws:bedrock-agentcore:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:token-vault/default/apikeycredentialprovider/atlassian-vera"
+            ProviderArn        = "arn:aws:bedrock-agentcore:ap-southeast-2:314567759962:token-vault/default/apikeycredentialprovider/atlassian-jira"
             CredentialPrefix   = "Basic"
             CredentialLocation = "HEADER"
           }

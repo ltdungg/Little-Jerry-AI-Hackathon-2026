@@ -109,43 +109,42 @@ resource "aws_iam_role_policy" "gateway_workload_identity" {
   })
 }
 
-##
-# Unified AgentCore Gateway
-##
-resource "awscc_bedrockagentcore_gateway" "main" {
-  name        = var.gateway_name
-  description = "Unified MCP gateway for ${var.runtime_name} - all platform integrations"
-
-  # MCP protocol with semantic search
-  protocol_type = jsonencode("MCP")
-  protocol_configuration = {
-    mcp = {
-      supported_versions = ["2025-03-26", "2025-06-18", "2025-11-25"]
-      search_type        = "SEMANTIC"
+resource "aws_cloudformation_stack" "gateway" {
+  name = var.gateway_name
+  template_body = jsonencode({
+    AWSTemplateFormatVersion = "2010-09-09"
+    Resources = {
+      Gateway = {
+        Type = "AWS::BedrockAgentCore::Gateway"
+        Properties = {
+          Name = var.gateway_name
+          Description = "Unified MCP gateway for ${var.runtime_name} - all platform integrations"
+          ProtocolType = "MCP"
+          ProtocolConfiguration = {
+            Mcp = {
+              SupportedVersions = ["2025-03-26", "2025-06-18", "2025-11-25"]
+              SearchType = "SEMANTIC"
+            }
+          }
+          AuthorizerType = "CUSTOM_JWT"
+          AuthorizerConfiguration = {
+            CustomJWTAuthorizer = {
+              DiscoveryUrl = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${aws_cognito_user_pool.gateway.id}/.well-known/openid-configuration"
+              AllowedClients = [aws_cognito_user_pool_client.gateway.id]
+            }
+          }
+          RoleArn = aws_iam_role.gateway.arn
+          ExceptionLevel = "DEBUG"
+        }
+      }
     }
-  }
-
-  # JWT authentication via Cognito
-  authorizer_type = "CUSTOM_JWT"
-  authorizer_configuration = {
-    custom_jwt_authorizer = {
-      discovery_url   = "https://cognito-idp.${data.aws_region.current.name}.amazonaws.com/${aws_cognito_user_pool.gateway.id}/.well-known/openid-configuration"
-      allowed_clients = [aws_cognito_user_pool_client.gateway.id]
+    Outputs = {
+      GatewayUrl = {
+        Value = {"Fn::GetAtt": ["Gateway", "GatewayUrl"]}
+      }
+      GatewayId = {
+        Value = {"Fn::GetAtt": ["Gateway", "GatewayIdentifier"]}
+      }
     }
-  }
-
-  lifecycle {
-    ignore_changes = [protocol_type]
-  }
-
-  # IAM role for gateway execution
-  role_arn = aws_iam_role.gateway.arn
-
-  # Enable detailed logging
-  exception_level = "DEBUG"
-
-  tags = {
-    Name    = var.gateway_name
-    Purpose = "Unified MCP gateway for all platform integrations"
-  }
+  })
 }

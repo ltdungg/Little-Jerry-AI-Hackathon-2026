@@ -30,6 +30,11 @@ variable "artifact_bucket_name" {
   default = ""
 }
 
+variable "gateway_env_vars" {
+  type = map(string)
+  default = {}
+}
+
 # ── AgentCore Runtime per agent (AWS Cloud Control provider) ──
 # Serverless hosting for the agent containers. Billed per CPU/memory-second only
 # while a session is active; idle runtimes incur no compute charge.
@@ -51,7 +56,7 @@ resource "awscc_bedrockagentcore_runtime" "agent" {
     network_mode = "PUBLIC"
   }
 
-  environment_variables = {
+  environment_variables = merge({
     AGENT_NAME          = each.key
     BEDROCK_MODEL_ID    = each.value.model_id
     RUNTIME_NAME_PREFIX = replace("${var.project_name}_${var.environment}", "-", "_")
@@ -60,7 +65,7 @@ resource "awscc_bedrockagentcore_runtime" "agent" {
     AWS_REGION          = var.aws_region
     KNOWLEDGE_BASE_ID   = var.knowledge_base_id
     ARTIFACT_BUCKET     = var.artifact_bucket_name
-  }
+  }, var.gateway_env_vars)
 
   tags = var.tags
 }

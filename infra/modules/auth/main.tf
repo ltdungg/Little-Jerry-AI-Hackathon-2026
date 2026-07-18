@@ -36,8 +36,8 @@ locals {
   groups = ["leader", "project_manager", "team_member", "volunteer"]
 }
 
-resource "aws_cognito_user_group" "groups" {
-  for_each     = toset(local.groups)
-  name         = each.value
-  user_pool_id = aws_cognito_user_pool.pool.id
-}
+# resource "aws_cognito_user_group" "groups" {
+#   for_each     = toset(local.groups)
+#   name         = each.value
+#   user_pool_id = aws_cognito_user_pool.pool.id
+# }

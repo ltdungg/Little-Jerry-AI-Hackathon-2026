@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
 import { Pill, type PillTone } from '../../components/common/Pill';
 import { Table, type Column } from '../../components/common/Table';
 import { useMockList } from '../../hooks/useMockList';
 import { listTasks, taskPriorityLabel, taskStatusLabel } from '../../services/tasks.service';
-import type { ProjectDetailContext } from '../ProjectDetailPage';
-import type { Task, TaskPriority, TaskStatus } from '../../types';
+import type { Project, Task, TaskPriority, TaskStatus } from '../../types';
 
 type QuickFilter = 'all' | 'overdue' | 'unassigned' | 'no_due_date' | 'blocked';
 
@@ -30,8 +28,7 @@ function isOverdue(task: Task): boolean {
   return new Date(task.dueDate) < new Date('2026-07-18');
 }
 
-export function ProjectTasksTab() {
-  const { project } = useOutletContext<ProjectDetailContext>();
+export function TasksSection({ project }: { project: Project }) {
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const { items, loading } = useMockList(() => listTasks({ programId: project.id }), [project.id]);
 

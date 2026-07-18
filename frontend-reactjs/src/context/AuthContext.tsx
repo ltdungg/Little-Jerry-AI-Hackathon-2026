@@ -38,11 +38,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const token = await getIdToken();
-      if (token) {
-        setAuthenticated(true);
-        await loadProfile();
+      try {
+        const token = await getIdToken();
+        if (token) {
+          setAuthenticated(true);
+          await loadProfile();
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Cognito not configured or unreachable — fall through to dev bypass
       }
+      // Dev bypass: auto-login with mock user when Cognito is unavailable
+      setUser({
+        id: 'dev-user',
+        name: 'Le Hoang Anh',
+        email: 'anh@aiforvietnam.org',
+        role: 'coordinator',
+        roleLabel: 'Điều phối viên',
+        team: 'Điều phối',
+        initials: 'LA',
+      });
+      setAuthenticated(true);
       setLoading(false);
     })();
   }, []);
