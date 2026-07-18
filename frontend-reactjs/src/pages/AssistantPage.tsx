@@ -1,7 +1,10 @@
 import { useId, useRef, useState } from 'react';
 import { Icon } from '../components/common/Icon';
-import { sendChatMessage } from '../services/chat.service';
-import type { ChatMessage, SourceType } from '../types';
+import { Pill } from '../components/common/Pill';
+import { EmptyState } from '../components/common/EmptyState';
+import { useMockList } from '../hooks/useMockList';
+import { sendChatMessage, listChatSessions, listSavedAnswers, removeSavedAnswer } from '../services/chat.service';
+import type { ChatMessage, SourceType, SavedAnswer } from '../types';
 
 const SOURCE_ICON: Record<SourceType, string> = {
   SharePoint: 'Cloud',
@@ -27,6 +30,8 @@ export function AssistantPage() {
   const [draft, setDraft] = useState('');
   const [sourceFilter, setSourceFilter] = useState<'all' | SourceType>('all');
   const [isThinking, setIsThinking] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
   const inputId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const nextMessageId = useRef(1);
@@ -85,7 +90,7 @@ export function AssistantPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0">
+    <div className="flex h-full min-h-0 bg-slate-50/50 relative">
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
           <button
@@ -93,9 +98,28 @@ export function AssistantPage() {
             className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             <Icon name="FolderKanban" size={14} className="text-brand-500" />
-            Rural Education Project
+            NPO AI Platform
             <Icon name="ChevronDown" size={14} className="text-slate-400" />
           </button>
+          
+          <div className="ml-2 flex items-center gap-1">
+            <button 
+              type="button"
+              onClick={() => setShowHistory(true)}
+              className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600 transition"
+              title="Lịch sử trao đổi"
+            >
+              <Icon name="History" size={16} />
+            </button>
+            <button 
+              type="button"
+              onClick={() => setShowSaved(true)}
+              className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-brand-600 transition"
+              title="Câu trả lời đã lưu"
+            >
+              <Icon name="Bookmark" size={16} />
+            </button>
+          </div>
 
           <div className="ml-auto flex items-center gap-1 rounded-lg bg-slate-100 p-1">
             {SOURCE_FILTERS.map((s) => (
@@ -117,12 +141,6 @@ export function AssistantPage() {
 
         <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
           <div className="mx-auto flex max-w-2xl flex-col gap-5">
-            <div className="flex items-center justify-center">
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-400">
-                Today
-              </span>
-            </div>
-
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
@@ -184,20 +202,6 @@ export function AssistantPage() {
                 className="max-h-32 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
               />
               <button
-                type="button"
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Đính kèm tệp"
-              >
-                <Icon name="Paperclip" size={17} />
-              </button>
-              <button
-                type="button"
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Nhập bằng giọng nói"
-              >
-                <Icon name="Mic" size={17} />
-              </button>
-              <button
                 type="submit"
                 disabled={!draft.trim() || isThinking}
                 className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-40"
@@ -206,10 +210,6 @@ export function AssistantPage() {
                 <Icon name="SendHorizontal" size={16} />
               </button>
             </form>
-
-            <p className="mt-2 text-center text-[11px] text-slate-400">
-              AI Assistant may produce inaccurate information about people, places, or facts.
-            </p>
           </div>
         </div>
       </div>
@@ -248,9 +248,45 @@ export function AssistantPage() {
           )}
         </div>
       </aside>
+
+      {showHistory && (
+        <Modal title="Lịch sử trao đổi" onClose={() => setShowHistory(false)}>
+          <ChatHistorySection />
+        </Modal>
+      )}
+
+      {showSaved && (
+        <Modal title="Câu trả lời đã lưu" onClose={() => setShowSaved(false)}>
+          <SavedAnswersSection />
+        </Modal>
+      )}
     </div>
   );
 }
+
+function Modal({ title, onClose, children }: { title: string, onClose: () => void, children: React.ReactNode }) {
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 sm:p-6">
+      <div className="bg-slate-50 rounded-2xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 shrink-0">
+          <h2 className="text-lg font-semibold text-slate-800">{title}</h2>
+          <button 
+            type="button" 
+            onClick={onClose}
+            className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+          >
+            <Icon name="X" size={18} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   if (message.role === 'user') {
@@ -294,6 +330,98 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             <Icon name="Info" size={12} />
             Không có đủ dữ liệu đã xác nhận
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ChatHistorySection() {
+  const { items, loading } = useMockList(() => listChatSessions(), []);
+
+  return (
+    <div>
+      <div className="mt-6 flex flex-col gap-2">
+        {loading ? (
+          <p className="text-sm text-slate-400">Đang tải...</p>
+        ) : items.length === 0 ? (
+          <EmptyState icon="History" title="Chưa có cuộc trao đổi nào" />
+        ) : (
+          items.map((session) => (
+            <div
+              key={session.id}
+              className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition hover:border-brand-200 hover:shadow-sm"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                  <Icon name="MessageCircle" size={16} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-800">{session.title}</p>
+                  <p className="text-xs text-slate-400">{session.messageCount} tin nhắn</p>
+                </div>
+              </div>
+              <span className="text-xs text-slate-400">{session.lastMessageAt}</span>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SavedAnswersSection() {
+  const { items, setItems, loading } = useMockList(() => listSavedAnswers(), []);
+
+  async function handleRemove(answer: SavedAnswer) {
+    setItems((prev) => prev.filter((a) => a.id !== answer.id));
+    await removeSavedAnswer(answer.id);
+  }
+
+  return (
+    <div>
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {loading ? (
+          <p className="text-sm text-slate-400">Đang tải...</p>
+        ) : items.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState icon="Bookmark" title="Chưa lưu câu trả lời nào" />
+          </div>
+        ) : (
+          items.map((answer) => (
+            <div key={answer.id} className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-sm font-medium text-slate-800">{answer.question}</p>
+              <p className="mt-1.5 text-sm text-slate-600">{answer.answer}</p>
+              {answer.citations.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {answer.citations.map((c) => (
+                    <Pill key={c.id} tone="slate" icon={SOURCE_ICON[c.source]}>
+                      {c.title}
+                    </Pill>
+                  ))}
+                </div>
+              )}
+              <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400">
+                <span>
+                  Lưu bởi {answer.savedBy} · {answer.savedAt}
+                </span>
+                <div className="flex items-center gap-3">
+                  <button type="button" className="flex items-center gap-1 font-medium text-slate-500 hover:text-brand-600">
+                    <Icon name="Share2" size={12} />
+                    Chia sẻ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemove(answer)}
+                    className="flex items-center gap-1 font-medium text-slate-400 hover:text-rose-600"
+                  >
+                    <Icon name="Trash2" size={12} />
+                    Xoá
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

@@ -17,6 +17,7 @@ function mapMember(u: any): MemberRecord {
     name: u.name,
     initials: initialsOf(u.name || ''),
     email: u.email || '',
+    role: (u.role as Role) || 'staff',
     roleLabel: u.role_label || '',
     teamName: u.team_name || '',
     programNames: u.program_names || [],
@@ -24,6 +25,7 @@ function mapMember(u: any): MemberRecord {
     status: u.status === 'locked' ? 'inactive' : u.status,
     startDate: u.start_date || '',
     endDate: u.end_date ?? null,
+    managerId: u.manager_id,
   };
 }
 

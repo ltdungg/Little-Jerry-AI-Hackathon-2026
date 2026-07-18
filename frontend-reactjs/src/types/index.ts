@@ -284,6 +284,7 @@ export interface MemberRecord {
   name: string;
   initials: string;
   email: string;
+  role: Role;
   roleLabel: string;
   teamName: string;
   programNames: string[];
@@ -291,6 +292,7 @@ export interface MemberRecord {
   status: MemberStatus;
   startDate: string;
   endDate: string | null;
+  managerId?: string;
 }
 
 // ---------------------------------------------------------------------------

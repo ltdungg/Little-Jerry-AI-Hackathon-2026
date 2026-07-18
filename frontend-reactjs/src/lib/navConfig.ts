@@ -6,48 +6,13 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Home',
     items: [
       {
-        label: 'Bảng thông tin của tôi',
+        label: 'Trang chủ',
         path: '/',
         icon: 'LayoutDashboard',
-        blurb: 'Tổng quan cá nhân hoá theo vai trò của bạn trong AIV.',
+        blurb: 'Tổng quan công việc, cập nhật và thông báo.',
         features: [
           'Nhiệm vụ, cập nhật và thông báo quan trọng nhất trong ngày',
           'Tổng hợp nhanh tình hình các chương trình bạn tham gia',
-          'Lối tắt tới trợ lý AI và các trang hay dùng',
-        ],
-      },
-      {
-        label: 'Nhiệm vụ của tôi',
-        path: '/my-tasks',
-        icon: 'ListChecks',
-        blurb: 'Toàn bộ nhiệm vụ được giao cho bạn, theo mức ưu tiên.',
-        features: [
-          'Xem nhiệm vụ được giao và mức độ ưu tiên',
-          'Cập nhật tiến độ trực tiếp trên từng nhiệm vụ',
-          'Xem quyết định liên quan đến công việc của bạn',
-          'Theo dõi thời hạn hoàn thành',
-        ],
-      },
-      {
-        label: 'Cập nhật của tôi',
-        path: '/my-updates',
-        icon: 'RefreshCw',
-        blurb: 'Nhật ký cập nhật tiến độ hằng tuần của bạn.',
-        features: [
-          'Bản nháp báo cáo tuần được hệ thống tự tạo',
-          'Bổ sung thông tin thủ công và gửi cho trưởng nhóm',
-          'Xem lại báo cáo của các tuần trước',
-        ],
-      },
-      {
-        label: 'Thông báo',
-        path: '/notifications',
-        icon: 'Bell',
-        blurb: 'Toàn bộ thông báo liên quan đến công việc của bạn.',
-        features: [
-          'Nhiệm vụ mới, sắp đến hạn hoặc quá hạn',
-          'Khó khăn mới và quyết định cần xem xét',
-          'Tuỳ chỉnh loại thông báo và tần suất nhận',
         ],
       },
     ],
@@ -57,41 +22,11 @@ export const NAV_GROUPS: NavGroup[] = [
     icon: 'Sparkles',
     items: [
       {
-        label: 'Hỏi AIV',
+        label: 'Trợ lý trí tuệ nhân tạo',
         path: '/assistant',
         icon: 'MessageCircle',
-        blurb: 'Đặt câu hỏi bằng ngôn ngữ tự nhiên, nhận câu trả lời có dẫn nguồn.',
+        blurb: 'Hỏi, tra cứu lịch sử và các câu trả lời đã lưu.',
         features: [],
-      },
-      {
-        label: 'Lịch sử trao đổi',
-        path: '/assistant/history',
-        icon: 'History',
-        blurb: 'Toàn bộ các cuộc trao đổi trước đây với trợ lý AIV.',
-        features: [
-          'Tạo, đổi tên và xoá cuộc trao đổi (khi được phép)',
-          'Tìm lại nhanh những câu hỏi đã hỏi trước đó',
-        ],
-      },
-      {
-        label: 'Câu trả lời đã lưu',
-        path: '/assistant/saved',
-        icon: 'Bookmark',
-        blurb: 'Những câu trả lời quan trọng bạn đã lưu lại để tham khảo.',
-        features: [
-          'Lưu câu trả lời kèm nguồn tham khảo gốc',
-          'Chia sẻ câu trả lời đã lưu với nhóm',
-        ],
-      },
-      {
-        label: 'Tìm kiếm kiến thức',
-        path: '/assistant/search',
-        icon: 'Search',
-        blurb: 'Tìm kiếm nâng cao trong toàn bộ kho kiến thức của tổ chức.',
-        features: [
-          'Lọc theo nhóm, chương trình, khoảng thời gian, loại tài liệu',
-          'Chỉ hiển thị thông tin đã được xác nhận',
-        ],
       },
     ],
   },
@@ -164,7 +99,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Con người và bàn giao',
+    label: 'Con người',
     icon: 'Users',
     items: [
       {
@@ -185,27 +120,6 @@ export const NAV_GROUPS: NavGroup[] = [
         features: [
           'Vai trò, nhóm và chương trình được gán',
           'Thời hạn tham gia đối với tình nguyện viên',
-        ],
-      },
-      {
-        label: 'Hướng dẫn người mới',
-        path: '/onboarding',
-        icon: 'Compass',
-        blurb: 'Giúp tình nguyện viên và nhân viên mới nhanh chóng hiểu công việc.',
-        features: [
-          'Giới thiệu nhóm, chương trình, người liên hệ, tài liệu bắt buộc',
-          'Trợ lý hướng dẫn trả lời câu hỏi dựa trên quyền truy cập',
-          'Theo dõi tiến độ hoàn thành quá trình làm quen',
-        ],
-      },
-      {
-        label: 'Bàn giao',
-        path: '/handoff',
-        icon: 'ArrowLeftRight',
-        blurb: 'Tạo nội dung bàn giao khi thành viên rời chương trình.',
-        features: [
-          'Hệ thống tạo bản nháp bàn giao từ công việc đang thực hiện',
-          'Người tiếp nhận xác nhận và chuyển nhiệm vụ, trách nhiệm',
         ],
       },
       {

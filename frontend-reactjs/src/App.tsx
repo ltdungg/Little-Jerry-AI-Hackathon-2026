@@ -6,9 +6,6 @@ import { ProjectsOverviewPage } from './pages/ProjectsOverviewPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { AssistantPage } from './pages/AssistantPage';
 import { HomeDashboardPage } from './pages/HomeDashboardPage';
-import { MyTasksPage } from './pages/MyTasksPage';
-import { MyUpdatesPage } from './pages/MyUpdatesPage';
-import { NotificationsPage } from './pages/NotificationsPage';
 import { TasksPage } from './pages/TasksPage';
 import { WeeklyUpdatesPage } from './pages/WeeklyUpdatesPage';
 import { IssuesPage } from './pages/IssuesPage';
@@ -18,11 +15,6 @@ import { TeamsPage } from './pages/TeamsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { TeamReportPage } from './pages/TeamReportPage';
 import { ActivityLogPage } from './pages/ActivityLogPage';
-import { ChatHistoryPage } from './pages/ChatHistoryPage';
-import { SavedAnswersPage } from './pages/SavedAnswersPage';
-import { KnowledgeSearchPage } from './pages/KnowledgeSearchPage';
-import { OnboardingPage } from './pages/OnboardingPage';
-import { HandoffPage } from './pages/HandoffPage';
 import { OffboardingPage } from './pages/OffboardingPage';
 import { MembersPage } from './pages/MembersPage';
 import { LeadershipDashboardPage } from './pages/LeadershipDashboardPage';
@@ -36,9 +28,6 @@ const BUILT_ROUTES = new Set([
   '/',
   '/projects',
   '/assistant',
-  '/my-tasks',
-  '/my-updates',
-  '/notifications',
   '/tasks',
   '/weekly-updates',
   '/issues',
@@ -48,11 +37,6 @@ const BUILT_ROUTES = new Set([
   '/knowledge',
   '/reports/team',
   '/admin/activity-log',
-  '/assistant/history',
-  '/assistant/saved',
-  '/assistant/search',
-  '/onboarding',
-  '/handoff',
   '/offboarding',
   '/members',
   '/reports/leadership',
@@ -76,9 +60,6 @@ function App() {
             <Route path="/projects" element={<ProjectsOverviewPage />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
             <Route path="/assistant" element={<AssistantPage />} />
-            <Route path="/my-tasks" element={<MyTasksPage />} />
-            <Route path="/my-updates" element={<MyUpdatesPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/weekly-updates" element={<WeeklyUpdatesPage />} />
             <Route path="/issues" element={<IssuesPage />} />
@@ -88,11 +69,6 @@ function App() {
             <Route path="/knowledge" element={<DocumentsPage />} />
             <Route path="/reports/team" element={<TeamReportPage />} />
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
-            <Route path="/assistant/history" element={<ChatHistoryPage />} />
-            <Route path="/assistant/saved" element={<SavedAnswersPage />} />
-            <Route path="/assistant/search" element={<KnowledgeSearchPage />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/handoff" element={<HandoffPage />} />
             <Route path="/offboarding" element={<OffboardingPage />} />
             <Route path="/members" element={<MembersPage />} />
             <Route path="/reports/leadership" element={<LeadershipDashboardPage />} />

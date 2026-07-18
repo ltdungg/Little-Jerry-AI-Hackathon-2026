@@ -46,6 +46,29 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
         {NAV_GROUPS.map((group, index) => {
+          if (group.items.length === 1) {
+            const item = group.items[0];
+            const isActive = item.path === location.pathname;
+            return (
+              <div key={group.label} className="mb-1">
+                <Link
+                  to={item.path}
+                  onClick={onNavigate}
+                  className={clsx(
+                    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs font-semibold uppercase tracking-wide transition',
+                    isActive ? 'text-brand-700 bg-brand-50' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600',
+                  )}
+                >
+                  <Icon name={group.icon} size={15} className={isActive ? 'text-brand-700' : 'text-slate-400'} />
+                  <span className="flex-1">{group.label}</span>
+                  {item.badge === 'progress' && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  )}
+                </Link>
+              </div>
+            );
+          }
+
           const isExpanded = isGroupExpanded(index);
           const groupHasActive = group.items.some((i) => i.path === location.pathname);
           return (
