@@ -24,6 +24,7 @@ resource "aws_apigatewayv2_authorizer" "auth" {
 locals {
   routes = [
     "GET /health",
+    "POST /v1/chat",
     "GET /v1/admin/auth/jira/login",
     "GET /v1/admin/auth/jira/callback",
     "GET /v1/admin/auth/slack/login",
@@ -48,8 +49,8 @@ resource "aws_apigatewayv2_route" "routes" {
   api_id             = aws_apigatewayv2_api.api.id
   route_key          = each.value
   target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-  authorizer_id      = length(regexall(".*\\{proxy\\+\\}.*", each.value)) > 0 ? aws_apigatewayv2_authorizer.auth.id : null
-  authorization_type = length(regexall(".*\\{proxy\\+\\}.*", each.value)) > 0 ? "JWT" : "NONE"
+  authorizer_id      = length(regexall(".*\\{proxy\\+\\}.*", each.value)) > 0 && each.value != "POST /v1/chat" ? aws_apigatewayv2_authorizer.auth.id : null
+  authorization_type = length(regexall(".*\\{proxy\\+\\}.*", each.value)) > 0 && each.value != "POST /v1/chat" ? "JWT" : "NONE"
 }
 
 resource "aws_lambda_permission" "apigw" {

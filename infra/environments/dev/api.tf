@@ -35,12 +35,12 @@ resource "aws_lambda_function" "api_lambda" {
       # Web authentication (frontend login via Cognito)
       COGNITO_USER_POOL_ID     = module.auth.user_pool_id
       COGNITO_CLIENT_ID        = module.auth.client_id
-      # Gateway MCP authentication (for Jira/Slack via AgentCore Gateway)
-      GATEWAY_MCP_URL            = module.gateway.gateway_url
-      GATEWAY_COGNITO_CLIENT_ID     = module.gateway.cognito_client_id
-      GATEWAY_COGNITO_CLIENT_SECRET = module.gateway.cognito_client_secret
-      GATEWAY_COGNITO_USER_POOL_ID  = module.gateway.cognito_user_pool_id
-      GATEWAY_COGNITO_SCOPE         = module.gateway.gateway_scope
+      # Gateway MCP authentication (uses same Cognito pool as web auth)
+      GATEWAY_MCP_URL               = module.gateway.gateway_url
+      GATEWAY_COGNITO_CLIENT_ID     = module.auth.gateway_client_id
+      GATEWAY_COGNITO_CLIENT_SECRET = module.auth.gateway_client_secret
+      GATEWAY_COGNITO_USER_POOL_ID  = module.auth.user_pool_id
+      GATEWAY_COGNITO_SCOPE         = module.auth.gateway_scope
     }
   }
   depends_on = [module.observability]

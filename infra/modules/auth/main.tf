@@ -19,6 +19,7 @@ resource "aws_cognito_user_pool" "pool" {
   }
 }
 
+# Web app client (code flow for frontend login)
 resource "aws_cognito_user_pool_client" "client" {
   name                                 = "${var.project_name}-${var.environment}-client"
   user_pool_id                         = aws_cognito_user_pool.pool.id
@@ -29,6 +30,36 @@ resource "aws_cognito_user_pool_client" "client" {
   allowed_oauth_scopes                 = ["email", "openid", "profile"]
   explicit_auth_flows                  = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH", "ALLOW_USER_PASSWORD_AUTH"]
   prevent_user_existence_errors        = "ENABLED"
+}
+
+# Resource server for Gateway MCP scopes
+resource "aws_cognito_resource_server" "gateway" {
+  identifier   = "${var.project_name}-${var.environment}-gateway"
+  name         = "${var.project_name}-${var.environment}-gateway"
+  user_pool_id = aws_cognito_user_pool.pool.id
+
+  scope {
+    scope_name        = "invoke"
+    scope_description = "Invoke AgentCore Gateway MCP tools"
+  }
+}
+
+# Client credentials app client for Gateway MCP (machine-to-machine)
+resource "aws_cognito_user_pool_client" "gateway_client" {
+  name         = "${var.project_name}-${var.environment}-gateway-client"
+  user_pool_id = aws_cognito_user_pool.pool.id
+
+  generate_secret                      = true
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows                  = ["client_credentials"]
+  allowed_oauth_scopes = [
+    "${aws_cognito_resource_server.gateway.identifier}/invoke"
+  ]
+
+  refresh_token_validity        = 30
+  enable_token_revocation       = true
+  prevent_user_existence_errors = "ENABLED"
+  supported_identity_providers  = ["COGNITO"]
 }
 
 # Roles within the single organization (AIV).
