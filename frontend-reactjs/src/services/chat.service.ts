@@ -26,8 +26,8 @@ export interface ChatAnswer {
 }
 
 /** Sends a message to the real Orchestrator via POST /v1/chat. */
-export async function sendChatMessage(message: string, projectId?: string, sessionId?: string): Promise<ChatAnswer> {
-  const res = await api.sendMessage(message, projectId, sessionId);
+export async function sendChatMessage(message: string, projectId?: string, sessionId?: string, agent?: string): Promise<ChatAnswer> {
+  const res = await api.sendMessage(message, projectId, sessionId, undefined, agent);
   const citations = (res.citations || []).map(mapCitation);
   return {
     content: res.answer || '',

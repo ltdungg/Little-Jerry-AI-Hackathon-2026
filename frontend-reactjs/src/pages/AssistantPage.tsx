@@ -27,6 +27,7 @@ export function AssistantPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [loadingSession, setLoadingSession] = useState(false);
+  const [agentMode, setAgentMode] = useState<'orchestrator' | 'backup'>('orchestrator');
   const inputId = useId();
   const listRef = useRef<HTMLDivElement>(null);
   const nextMessageId = useRef(1);
@@ -56,7 +57,7 @@ export function AssistantPage() {
     scrollToBottom();
 
     try {
-      const answer = await sendChatMessage(trimmed, undefined, sessionId.current);
+      const answer = await sendChatMessage(trimmed, undefined, sessionId.current, agentMode);
       const assistantMessage: ChatMessage = {
         id: `a-${nextMessageId.current++}`,
         role: 'assistant',
@@ -118,6 +119,26 @@ export function AssistantPage() {
             >
               <Icon name="Bookmark" size={16} />
             </button>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="text-xs text-slate-400">Agent:</span>
+            <button
+              type="button"
+              onClick={() => setAgentMode(agentMode === 'orchestrator' ? 'backup' : 'orchestrator')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                agentMode === 'backup' ? 'bg-brand-600' : 'bg-slate-300'
+              }`}
+              title={agentMode === 'orchestrator' ? 'Multi-Agent (Orchestrator)' : 'All-in-One (Backup)'}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  agentMode === 'backup' ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className="text-xs font-medium text-slate-600">
+              {agentMode === 'orchestrator' ? 'Multi-Agent' : 'All-in-One'}
+            </span>
           </div>
         </div>
 

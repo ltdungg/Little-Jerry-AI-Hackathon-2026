@@ -81,7 +81,7 @@ export async function getMilestones(projectId: string) {
 }
 
 // ── Chat ──
-export async function sendMessage(message: string, projectId?: string, sessionId?: string, idempotencyKey?: string) {
+export async function sendMessage(message: string, projectId?: string, sessionId?: string, idempotencyKey?: string, agent?: string) {
   return apiFetch<any>('/v1/chat', {
     method: 'POST',
     body: JSON.stringify({
@@ -90,6 +90,7 @@ export async function sendMessage(message: string, projectId?: string, sessionId
       session_id: sessionId,
       mode: 'sync',
       idempotency_key: idempotencyKey,
+      agent: agent || 'orchestrator',
     }),
   });
 }
