@@ -318,6 +318,17 @@ export async function decideMeetingActionItem(meetingId: string, actionItemId: s
   });
 }
 
+// ── Knowledge Base Query ──
+export async function queryKnowledgeBase(query: string, topK: number = 5) {
+  return apiFetch<{ query: string; count: number; documents: { content: string; source: string; score: number }[] }>(
+    '/v1/kb/query',
+    {
+      method: 'POST',
+      body: JSON.stringify({ query, top_k: topK }),
+    },
+  );
+}
+
 // ── Knowledge documents ──
 export async function getDocuments(params?: { status?: string; kind?: string; team_name?: string }) {
   const qs = new URLSearchParams();

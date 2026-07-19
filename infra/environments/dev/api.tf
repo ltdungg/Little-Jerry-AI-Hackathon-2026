@@ -32,6 +32,7 @@ resource "aws_lambda_function" "api_lambda" {
       ENVIRONMENT              = var.environment
       ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
       BACKUP_RUNTIME_ARN       = module.agentcore.runtime_arns["backup"]
+      KNOWLEDGE_BASE_ID        = module.bedrock_kb.knowledge_base_id
       # Web authentication (frontend login via Cognito)
       COGNITO_USER_POOL_ID     = module.auth.user_pool_id
       COGNITO_CLIENT_ID        = module.auth.client_id
@@ -83,6 +84,11 @@ resource "aws_iam_role_policy" "api_lambda" {
         Effect   = "Allow"
         Action   = ["s3:GetObject", "s3:PutObject"]
         Resource = ["${module.storage.curated_bucket_arn}/*", "${module.storage.artifact_bucket_arn}/*"]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["bedrock:Retrieve"]
+        Resource = "*"
       },
       {
         Effect   = "Allow"

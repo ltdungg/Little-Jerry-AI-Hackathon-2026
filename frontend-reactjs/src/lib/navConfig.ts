@@ -123,6 +123,16 @@ export const NAV_GROUPS: NavGroup[] = [
         features: ['Tra cứu nhanh lý do và bối cảnh của từng quyết định trong quá khứ'],
       },
       {
+        label: 'Tìm kiếm tri thức',
+        path: '/knowledge/search',
+        icon: 'Search',
+        blurb: 'Tìm kiếm tài liệu từ Knowledge Base của tổ chức.',
+        features: [
+          'Tìm kiếm chính xác trong kho tài liệu nội bộ',
+          'Hiển thị điểm liên quan và nguồn tài liệu',
+        ],
+      },
+      {
         label: 'Kiểm tra kiến thức',
         path: '/knowledge/check',
         icon: 'BadgeCheck',

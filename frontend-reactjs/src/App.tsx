@@ -10,6 +10,7 @@ import { AssistantPage } from './pages/AssistantPage';
 import { HomeDashboardPage } from './pages/HomeDashboardPage';
 import { TeamsPage } from './pages/TeamsPage';
 import { DocumentsPage } from './pages/DocumentsPage';
+import { KnowledgeSearchPage } from './pages/KnowledgeSearchPage';
 import { ActivityLogPage } from './pages/ActivityLogPage';
 import { OffboardingPage } from './pages/OffboardingPage';
 import { MembersPage } from './pages/MembersPage';
@@ -27,6 +28,7 @@ const BUILT_ROUTES = new Set([
   '/assistant',
   '/teams',
   '/knowledge',
+  '/knowledge/search',
   '/admin/activity-log',
   '/offboarding',
   '/members',
@@ -55,6 +57,7 @@ function App() {
             <Route path="/assistant" element={<AssistantPage />} />
             <Route path="/teams" element={<TeamsPage />} />
             <Route path="/knowledge" element={<DocumentsPage />} />
+            <Route path="/knowledge/search" element={<KnowledgeSearchPage />} />
             <Route path="/admin/activity-log" element={<ActivityLogPage />} />
             <Route path="/offboarding" element={<OffboardingPage />} />
             <Route path="/members" element={<MembersPage />} />

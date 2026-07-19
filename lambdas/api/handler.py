@@ -86,6 +86,9 @@ ME_CHAT_SESSION_MESSAGES_RE = re.compile(r"^/v1/me/chat-sessions/([^/]+)/message
 
 ONBOARDING_CHECKLIST_TOGGLE_RE = re.compile(r"^/v1/onboarding/checklist/([^/]+)/toggle/?$")
 
+# Knowledge Base query
+KB_QUERY_RE = re.compile(r"^/v1/kb/query/?$")
+
 
 def lambda_handler(event, context):
     path = event.get("requestContext", {}).get("http", {}).get("path", "")
@@ -262,6 +265,8 @@ def lambda_handler(event, context):
             return handle_admin_callback(event, request_ctx, "slack")
         elif path == "/v1/admin/users" and method == "POST":
             return handle_admin_create_user(event, request_ctx)
+        elif path == "/v1/kb/query" and method == "POST":
+            return handle_kb_query(event, request_ctx)
 
         return build_error_response(404, "NOT_FOUND", "Endpoint not found")
     except Exception as e:
@@ -1637,7 +1642,8 @@ def handle_chat(event, request_ctx):
     }
 
     # runtimeSessionId must be >= 33 chars.
-    session_id = f"sess{conversation_session_id.replace('-', '')}"
+    raw_id = conversation_session_id.replace('-', '')
+    session_id = f"sess{raw_id}".ljust(33, '0')
 
     try:
         resp = _agentcore.invoke_agent_runtime(
@@ -2150,3 +2156,56 @@ def handle_admin_create_user(event, request_ctx):
     except Exception as e:
         logger.error("admin_create_user_failed", error=str(e))
         return build_error_response(400, "CREATE_FAILED", str(e))
+
+
+# ---------- Knowledge Base Query ----------
+def handle_kb_query(event, request_ctx):
+    """Query the managed Knowledge Base directly."""
+    body = parse_body(event)
+    query = (body.get("query") or "").strip()
+    if not query:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu query")
+
+    top_k = body.get("top_k", 5)
+
+    try:
+        import boto3
+        kb_region = os.environ.get("REGION", "ap-southeast-2")
+        kb_id = os.environ.get("KNOWLEDGE_BASE_ID", "")
+        if not kb_id:
+            return build_error_response(500, "CONFIG_ERROR", "KNOWLEDGE_BASE_ID chưa được cấu hình")
+
+        runtime = boto3.client("bedrock-agent-runtime", region_name=kb_region)
+        response = runtime.retrieve(
+            knowledgeBaseId=kb_id,
+            retrievalQuery={"text": query},
+            retrievalConfiguration={
+                "managedSearchConfiguration": {
+                    "numberOfResults": min(top_k, 10),
+                }
+            },
+        )
+
+        results = response.get("retrievalResults", [])
+        documents = []
+        for r in results:
+            content = r.get("content", {}).get("text", "")
+            location = r.get("location", {})
+            s3_loc = location.get("s3Location", {})
+            doc_uri = s3_loc.get("uri", "")
+            score = r.get("score", 0)
+            documents.append({
+                "content": content,
+                "source": doc_uri,
+                "score": round(score, 3),
+            })
+
+        _record_activity(request_ctx, "viewed", f"KB query: {query[:50]}")
+        return build_response(200, {
+            "query": query,
+            "count": len(documents),
+            "documents": documents,
+        })
+    except Exception as e:
+        logger.error("kb_query_failed", error=str(e))
+        return build_error_response(500, "KB_ERROR", f"Lỗi truy vấn Knowledge Base: {str(e)}")
