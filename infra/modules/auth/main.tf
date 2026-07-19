@@ -19,6 +19,12 @@ resource "aws_cognito_user_pool" "pool" {
   }
 }
 
+# Cognito domain for OAuth endpoints (needed for client_credentials token exchange)
+resource "aws_cognito_user_pool_domain" "pool" {
+  domain       = "${var.project_name}-${var.environment}-auth"
+  user_pool_id = aws_cognito_user_pool.pool.id
+}
+
 # Web app client (code flow for frontend login)
 resource "aws_cognito_user_pool_client" "client" {
   name                                 = "${var.project_name}-${var.environment}-client"

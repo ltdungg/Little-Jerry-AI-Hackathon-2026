@@ -2,6 +2,7 @@ output "user_pool_id" { value = aws_cognito_user_pool.pool.id }
 output "user_pool_arn" { value = aws_cognito_user_pool.pool.arn }
 output "client_id" { value = aws_cognito_user_pool_client.client.id }
 output "user_pool_endpoint" { value = aws_cognito_user_pool.pool.endpoint }
+output "cognito_domain" { value = aws_cognito_user_pool_domain.pool.domain }
 
 # Gateway MCP credentials (client_credentials flow)
 output "gateway_client_id" { value = aws_cognito_user_pool_client.gateway_client.id }

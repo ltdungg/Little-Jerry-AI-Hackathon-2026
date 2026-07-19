@@ -73,12 +73,10 @@ async def fetch_mcp_tools_for_target(target_name: str) -> List[PythonAgentTool]:
                 response = await session.list_tools()
                 
                 target_lower = target_name.lower()
-                
-                # Hardcode workaround for Jira/Slack if they don't explicitly say the word
-                if target_lower == "jira":
-                    target_prefixes = ["jira", "target-quick-start-0r2gmc"]
-                else:
-                    target_prefixes = [target_lower]
+
+                # Gateway tool naming: "targetname___operationId"
+                # e.g. jira___searchIssues, slack___postMessage
+                target_prefixes = [target_lower]
                 
                 for tool in response.tools:
                     name_desc = f"{tool.name} {tool.description}".lower()

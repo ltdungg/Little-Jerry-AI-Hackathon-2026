@@ -172,7 +172,7 @@ async def call_jira_tool(tool_name: str, arguments: dict) -> dict:
 # ---------- High-level Jira operations ----------
 
 # Jira MCP tool name prefix (from gateway target config)
-JIRA_PREFIX = "target-quick-start-0r2gmc___"
+JIRA_PREFIX = "jira___"
 
 
 async def search_issues(jql: str, max_results: int = 50) -> list[dict]:
