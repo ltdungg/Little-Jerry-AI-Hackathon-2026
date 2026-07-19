@@ -38,36 +38,33 @@ def search_organizational_knowledge(query: str) -> str:
 
     try:
         runtime = _get_bedrock_agent_runtime()
-        response = runtime.retrieve_and_generate(
-            input={"text": query},
-            retrieveAndGenerateConfiguration={
-                "type": "KNOWLEDGE_BASE",
-                "knowledgeBaseConfiguration": {
-                    "knowledgeBaseId": KNOWLEDGE_BASE_ID,
-                    "modelArn": f"arn:aws:bedrock:{BEDROCK_REGION}::foundation-model/{os.getenv('BEDROCK_MODEL_ID', 'anthropic.claude-3-haiku-20240307-v1:0')}",
-                },
+        # Use retrieve with managedSearchConfiguration for managed knowledge bases
+        response = runtime.retrieve(
+            knowledgeBaseId=KNOWLEDGE_BASE_ID,
+            retrievalQuery={"text": query},
+            retrievalConfiguration={
+                "managedSearchConfiguration": {
+                    "numberOfResults": 5,
+                }
             },
         )
 
-        answer = response.get("output", {}).get("text", "")
-        citations = response.get("citations", [])
-
-        if not answer:
+        results = response.get("retrievalResults", [])
+        if not results:
             return "Không tìm thấy thông tin phù hợp trong cơ sở tri thức tổ chức."
 
-        result_parts = [answer]
-        if citations:
-            result_parts.append("\n---\nNguồn tham khảo:")
-            for i, citation in enumerate(citations[:5], 1):
-                ref = citation.get("retrievedReferences", [])
-                for r in ref:
-                    location = r.get("location", {})
-                    s3_loc = location.get("s3Location", {})
-                    doc_uri = s3_loc.get("uri", "")
-                    excerpt = r.get("content", {}).get("text", "")[:200]
-                    result_parts.append(
-                        f"{i}. [{doc_uri}] — \"{excerpt}...\""
-                    )
+        result_parts = [f"Tìm thấy {len(results)} tài liệu liên quan:\n"]
+        for i, result in enumerate(results, 1):
+            content = result.get("content", {}).get("text", "")
+            location = result.get("location", {})
+            s3_loc = location.get("s3Location", {})
+            doc_uri = s3_loc.get("uri", "unknown")
+            score = result.get("score", 0)
+            result_parts.append(
+                f"**Tài liệu {i}** (độ liên quan: {score:.2f})\n"
+                f"Nguồn: {doc_uri}\n"
+                f"Nội dung: {content[:500]}\n"
+            )
 
         return "\n".join(result_parts)
 
