@@ -94,21 +94,7 @@ variable "github_access_token" {
   description = "GitHub PAT (repo scope) for Amplify to connect the repository. Pass via TF_VAR_github_access_token or -var."
 }
 
-# ---------- OAuth Credentials for Jira & Slack MCP ----------
-variable "jira_client_id" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Jira OAuth App Client ID"
-}
-
-variable "jira_client_secret" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Jira OAuth App Client Secret"
-}
-
+# ---------- OAuth Credentials for Slack MCP ----------
 variable "slack_client_id" {
   type        = string
   default     = ""
@@ -121,13 +107,6 @@ variable "slack_client_secret" {
   default     = ""
   sensitive   = true
   description = "Slack OAuth App Client Secret"
-}
-
-variable "jira_admin_access_token" {
-  type        = string
-  default     = ""
-  sensitive   = true
-  description = "Jira Admin Access Token (obtained after OAuth flow)"
 }
 
 variable "slack_admin_access_token" {
