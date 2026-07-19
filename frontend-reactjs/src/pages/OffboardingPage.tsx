@@ -2,15 +2,20 @@ import { useState, useEffect } from 'react';
 import { Icon } from '../components/common/Icon';
 import { PageHeader } from '../components/common/PageHeader';
 import { Pill } from '../components/common/Pill';
+import { useAuth } from '../context/useAuth';
 import { useMockList } from '../hooks/useMockList';
-import { confirmHandoffComplete, listOffboardingRecords } from '../services/handoff.service';
+import { confirmHandoffComplete, createOffboarding, listOffboardingRecords } from '../services/handoff.service';
+import { listMembers } from '../services/people.service';
 import { assignTask, listTasksForUser } from '../services/tasks.service';
 import { AssignModal } from '../components/common/AssignModal';
-import type { OffboardingRecord, Task } from '../types';
+import type { MemberRecord, OffboardingRecord, Task } from '../types';
 
 export function OffboardingPage() {
+  const { user } = useAuth();
+  const isPm = (user?.role as string) === 'leader' || (user?.role as string) === 'project_manager';
   const { items, setItems, loading } = useMockList(() => listOffboardingRecords(), []);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showStartModal, setShowStartModal] = useState(false);
 
   async function handleConfirm(record: OffboardingRecord) {
     setItems((prev) => prev.map((r) => (r.id === record.id ? { ...r, handoffComplete: true } : r)));
@@ -23,7 +28,32 @@ export function OffboardingPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
-      <PageHeader title="Kết thúc tham gia" subtitle="Quản lý người sắp kết thúc thời gian tham gia và thu hồi quyền truy cập đúng hạn." />
+      <PageHeader
+        title="Kết thúc tham gia"
+        subtitle="Quản lý người sắp kết thúc thời gian tham gia và thu hồi quyền truy cập đúng hạn."
+        action={
+          isPm ? (
+            <button
+              type="button"
+              onClick={() => setShowStartModal(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            >
+              <Icon name="UserMinus" size={15} />
+              Bắt đầu bàn giao
+            </button>
+          ) : undefined
+        }
+      />
+
+      {showStartModal && (
+        <StartOffboardingModal
+          onClose={() => setShowStartModal(false)}
+          onCreated={(record) => {
+            setItems((prev) => [record, ...prev]);
+            setShowStartModal(false);
+          }}
+        />
+      )}
 
       <div className="mt-6 flex flex-col gap-3">
         {loading ? (
@@ -75,12 +105,103 @@ export function OffboardingPage() {
 
               {expandedId === record.id && (
                 <div className="mt-4 border-t border-slate-100 pt-4">
-                  <OffboardingUserTasks userId={record.id} />
+                  <OffboardingUserTasks userId={record.userId} />
                 </div>
               )}
             </div>
           ))
         )}
+      </div>
+    </div>
+  );
+}
+
+function StartOffboardingModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: (record: OffboardingRecord) => void;
+}) {
+  const { items: members, loading: loadingMembers } = useMockList(() => listMembers({ kind: 'all' }), []);
+  const [userId, setUserId] = useState('');
+  const [accessEndsAt, setAccessEndsAt] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!userId || !accessEndsAt) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const { offboarding } = await createOffboarding(userId, accessEndsAt);
+      onCreated(offboarding);
+    } catch (err: any) {
+      setError(err.message || 'Có lỗi xảy ra khi tạo bàn giao');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900">Bắt đầu bàn giao nghỉ việc</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+            <Icon name="X" size={20} />
+          </button>
+        </div>
+        {error && <div className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-600">{error}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Người nghỉ việc</label>
+            <select
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              required
+              disabled={loadingMembers}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="">Chọn người dùng...</option>
+              {members.map((m: MemberRecord) => (
+                <option key={m.id} value={m.id}>
+                  {m.name} — {m.roleLabel}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Ngày hết quyền truy cập</label>
+            <input
+              type="date"
+              value={accessEndsAt}
+              onChange={(e) => setAccessEndsAt(e.target.value)}
+              required
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+          <p className="text-xs text-slate-400">
+            Hệ thống sẽ tự tạo bàn giao cho từng dự án người này tham gia, kèm nội dung do AI tổng hợp sẵn.
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={submitting}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              {submitting ? 'Đang tạo...' : 'Bắt đầu bàn giao'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

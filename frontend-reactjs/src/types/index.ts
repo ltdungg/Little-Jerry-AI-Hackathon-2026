@@ -14,6 +14,7 @@ export interface AppUser {
   roleLabel: string;
   team: string;
   initials: string;
+  status?: 'active' | 'locked';
 }
 
 export type ProjectStatus = 'healthy' | 'at_risk' | 'overdue';
@@ -490,10 +491,14 @@ export interface HandoffDocument {
 
 export interface Handoff {
   id: string;
+  fromUserId: string;
   fromName: string;
+  toUserId: string | null;
   toName: string | null;
   teamName: string;
+  projectId: string;
   programName: string;
+  deadline: string | null;
   currentResponsibilities: string;
   inProgressWork: string;
   pendingDecisions: string;
@@ -513,6 +518,7 @@ export interface Handoff {
 
 export interface OffboardingRecord {
   id: string;
+  userId: string;
   name: string;
   initials: string;
   teamName: string;

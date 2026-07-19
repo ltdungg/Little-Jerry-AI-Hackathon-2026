@@ -146,11 +146,11 @@ DOCUMENTS = [
 ]
 
 HANDOFFS = [
-    {"handoff_id": "handoff-001", "from_name": "Lina Le", "to_name": None, "team_name": "Operations", "program_name": "Green Hope Environmental Initiative", "current_responsibilities": "Hỗ trợ khảo sát địa điểm và điều phối tình nguyện viên.", "in_progress_work": "Đang tổng hợp danh sách địa điểm trồng cây đợt tới.", "pending_decisions": "", "unresolved_issues": "Chưa có người thay thế phụ trách khảo sát.", "key_contacts": "Minh Nguyen — trưởng nhóm Operations.", "related_docs": "Grant_Application_Q3.docx", "risks": "Có thể gián đoạn tiến độ khảo sát nếu không bàn giao kịp.", "next_steps": "Bàn giao trực tiếp cho người tiếp nhận trước 31/7.", "status": "team_lead_review"},
+    {"handoff_id": "handoff-001", "from_user_id": "user-lina", "from_name": "Lina Le", "to_user_id": "user-minh", "to_name": "Minh Nguyen", "team_name": "Operations", "project_id": "proj-green-hope", "program_name": "Green Hope Environmental Initiative", "deadline": None, "current_responsibilities": "Hỗ trợ khảo sát địa điểm và điều phối tình nguyện viên.", "in_progress_work": "Đang tổng hợp danh sách địa điểm trồng cây đợt tới.", "pending_decisions": "", "unresolved_issues": "Chưa có người thay thế phụ trách khảo sát.", "key_contacts": "Minh Nguyen — trưởng nhóm Operations.", "related_docs": "Grant_Application_Q3.docx", "risks": "Có thể gián đoạn tiến độ khảo sát nếu không bàn giao kịp.", "next_steps": "Bàn giao trực tiếp cho người tiếp nhận trước 31/7.", "status": "team_lead_review", "tasks": [], "documents": [], "context": "", "review_comments": None, "reviewer_name": None, "reviewed_at": None},
 ]
 
 OFFBOARDING_RECORDS = [
-    {"offboarding_id": "off-001", "name": "Lina Le", "team_name": "Operations", "access_ends_at": "2026-07-31", "access_to_revoke": ["Kho tài liệu Operations", "Slack #proj-green-hope"], "owned_documents": [], "handoff_complete": False},
+    {"offboarding_id": "off-001", "user_id": "user-lina", "name": "Lina Le", "team_name": "Operations", "access_ends_at": "2026-07-31", "access_to_revoke": ["Kho tài liệu Operations", "Slack #proj-green-hope"], "owned_documents": [], "handoff_complete": False},
 ]
 
 ROLE_PERMISSIONS = [

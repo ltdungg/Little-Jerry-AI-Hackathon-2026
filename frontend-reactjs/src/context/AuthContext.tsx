@@ -15,6 +15,7 @@ function mapUserProfile(profile: any): AppUser {
     roleLabel: profile.roles?.[0] || 'Volunteer',
     team: '',
     initials,
+    status: profile.status === 'locked' ? 'locked' : 'active',
   };
 }
 

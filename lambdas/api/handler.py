@@ -19,6 +19,7 @@ from lambdas.common.utils import parse_body, build_response, build_error_respons
 from lambdas.common.pdf_renderer import render_report_pdf
 from agents.common.clients.s3_client import store_report_pdf, presign_s3_uri
 from shared.report_generators import REPORT_GENERATORS, REPORT_TITLES
+from shared.handoff_context import gather_handoff_snapshot, generate_handoff_context
 
 logger = structlog.get_logger()
 
@@ -75,6 +76,7 @@ MEETING_ACTION_ITEM_RE = re.compile(r"^/v1/meetings/([^/]+)/action-items/([^/]+)
 DOCUMENT_DETAIL_RE = re.compile(r"^/v1/documents/([^/]+)/?$")
 
 HANDOFF_DETAIL_RE = re.compile(r"^/v1/handoffs/([^/]+)/?$")
+HANDOFF_REGENERATE_RE = re.compile(r"^/v1/handoffs/([^/]+)/regenerate-context/?$")
 OFFBOARDING_CONFIRM_RE = re.compile(r"^/v1/offboarding/([^/]+)/confirm-handoff-complete/?$")
 
 ME_SAVED_ANSWER_DETAIL_RE = re.compile(r"^/v1/me/saved-answers/([^/]+)/?$")
@@ -94,6 +96,15 @@ def lambda_handler(event, context):
     logger.info("processing_request", path=path, method=method, user_id=request_ctx.user_id)
 
     try:
+        # Soft-lock gate: a user whose handoff is complete has their DynamoDB
+        # profile status flipped to "locked" (see _revoke_access) — block every
+        # route except /health and /v1/me (the frontend needs /v1/me to succeed
+        # so it can show the "account locked" screen instead of a bare error).
+        if path != "/health" and not (path == "/v1/me" and method == "GET"):
+            profile = _client(request_ctx).get_user_profile(request_ctx.user_id)
+            if profile and profile.get("status") == "locked":
+                return build_error_response(403, "ACCOUNT_LOCKED", "Tài khoản đã bị khoá do đã hoàn tất bàn giao")
+
         if path == "/health" and method == "GET":
             return build_response(200, {"status": "ok"})
         elif path == "/v1/me" and method == "GET":
@@ -186,10 +197,14 @@ def lambda_handler(event, context):
             return handle_update_document(event, request_ctx, m.group(1))
         elif path == "/v1/handoffs" and method == "GET":
             return handle_list_handoffs(event, request_ctx)
+        elif (m := HANDOFF_REGENERATE_RE.match(path)) and method == "POST":
+            return handle_regenerate_handoff_context(event, request_ctx, m.group(1))
         elif (m := HANDOFF_DETAIL_RE.match(path)) and method == "PATCH":
             return handle_update_handoff(event, request_ctx, m.group(1))
         elif path == "/v1/offboarding" and method == "GET":
             return handle_list_offboarding(event, request_ctx)
+        elif path == "/v1/offboarding" and method == "POST":
+            return handle_create_offboarding(event, request_ctx)
         elif (m := OFFBOARDING_CONFIRM_RE.match(path)) and method == "POST":
             return handle_confirm_offboarding_handoff(event, request_ctx, m.group(1))
         elif path == "/v1/roles/permissions" and method == "GET":
@@ -278,12 +293,14 @@ def _record_activity(request_ctx, action: str, target: str, ai_source_used: str 
 
 def handle_me(event, request_ctx):
     role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    profile = _client(request_ctx).get_user_profile(request_ctx.user_id)
     return build_response(200, {
         "user_id": request_ctx.user_id,
         "display_name": request_ctx.user_id,
         "email": "",
         "roles": [role],
         "capabilities": [],
+        "status": (profile or {}).get("status", "active"),
     })
 
 
@@ -1095,17 +1112,67 @@ def handle_list_handoffs(event, request_ctx):
     return build_response(200, [_handoff_view(h) for h in items])
 
 
+_HANDOFF_CONTENT_FIELDS = {
+    "current_responsibilities", "in_progress_work", "pending_decisions",
+    "unresolved_issues", "key_contacts", "related_docs", "risks", "next_steps",
+    "context", "tasks", "documents", "deadline", "status",
+}
+
+
 def handle_update_handoff(event, request_ctx, handoff_id):
     body = parse_body(event)
-    status = body.get("status")
-    if not status:
-        return build_error_response(400, "BAD_REQUEST", "Thiếu status")
     client = _client(request_ctx)
-    if not any(h.get("handoff_id") == handoff_id for h in client.list_handoffs()):
+    handoff = client.get_handoff(handoff_id)
+    if not handoff:
         return build_error_response(404, "NOT_FOUND", "Không tìm thấy bàn giao")
-    client.update_handoff(handoff_id, {"status": status})
+
+    role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    is_pm = role in ("leader", "project_manager")
+    is_owner = handoff.get("from_user_id") == request_ctx.user_id
+    if not is_pm and not is_owner:
+        return build_error_response(403, "FORBIDDEN", "Không có quyền chỉnh sửa bàn giao này")
+
+    allowed = set(_HANDOFF_CONTENT_FIELDS)
+    # Người nghỉ chỉ được chọn người nhận khi còn ở bản nháp; sau đó chỉ
+    # PM/lãnh đạo được đổi lại người nhận.
+    if is_pm or handoff.get("status") == "draft":
+        allowed |= {"to_name", "to_user_id"}
+    updates = {k: v for k, v in body.items() if k in allowed}
+    if not updates:
+        return build_error_response(400, "BAD_REQUEST", "Không có trường hợp lệ để cập nhật")
+
+    client.update_handoff(handoff_id, updates)
     _record_activity(request_ctx, "edited", f"Bàn giao {handoff_id}")
-    updated = next(h for h in client.list_handoffs() if h.get("handoff_id") == handoff_id)
+
+    if updates.get("status") == "complete":
+        from_user_id = handoff.get("from_user_id")
+        if from_user_id and _all_handoffs_complete_for_user(client, from_user_id, handoff_id):
+            _revoke_access(client, request_ctx, from_user_id)
+
+    updated = client.get_handoff(handoff_id)
+    return build_response(200, _handoff_view(updated))
+
+
+def handle_regenerate_handoff_context(event, request_ctx, handoff_id):
+    client = _client(request_ctx)
+    handoff = client.get_handoff(handoff_id)
+    if not handoff:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy bàn giao")
+
+    role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    is_pm = role in ("leader", "project_manager")
+    if handoff.get("from_user_id") != request_ctx.user_id and not is_pm:
+        return build_error_response(403, "FORBIDDEN", "Không có quyền tạo lại nội dung bàn giao này")
+    if handoff.get("status") == "complete":
+        return build_error_response(400, "BAD_REQUEST", "Bàn giao đã hoàn tất, không thể tạo lại nội dung")
+
+    snapshot = gather_handoff_snapshot(
+        handoff.get("project_id", ""), handoff.get("from_user_id", ""), handoff.get("from_name", ""), client,
+    )
+    context = generate_handoff_context(snapshot)
+    client.update_handoff(handoff_id, {"context": context})
+    _record_activity(request_ctx, "edited", f"Tạo lại nội dung bàn giao {handoff_id} bằng AI")
+    updated = client.get_handoff(handoff_id)
     return build_response(200, _handoff_view(updated))
 
 
@@ -1114,11 +1181,119 @@ def handle_list_offboarding(event, request_ctx):
     return build_response(200, [_offboarding_view(o) for o in items])
 
 
+def handle_create_offboarding(event, request_ctx):
+    role = request_ctx.user_role.value if hasattr(request_ctx.user_role, "value") else str(request_ctx.user_role)
+    if role not in ("leader", "project_manager"):
+        return build_error_response(403, "FORBIDDEN", "Chỉ lãnh đạo hoặc quản lý dự án mới được tạo bàn giao nghỉ việc")
+
+    body = parse_body(event)
+    user_id = body.get("user_id")
+    access_ends_at = body.get("access_ends_at")
+    if not user_id or not access_ends_at:
+        return build_error_response(400, "BAD_REQUEST", "Thiếu user_id hoặc access_ends_at")
+
+    client = _client(request_ctx)
+    profile = client.get_user_profile(user_id)
+    if not profile:
+        return build_error_response(404, "NOT_FOUND", "Không tìm thấy người dùng")
+
+    user_name = profile.get("name", user_id)
+    my_projects = [
+        p for p in client.list_projects()
+        if any(m.get("user_id") == user_id for m in p.get("members", []))
+    ]
+
+    created_handoffs = []
+    for project in my_projects:
+        project_id = project.get("project_id", "")
+        try:
+            snapshot = gather_handoff_snapshot(project_id, user_id, user_name, client)
+            context = generate_handoff_context(snapshot)
+        except Exception as e:
+            logger.error("handoff_context_generation_failed", error=str(e), project_id=project_id)
+            context = ""
+        handoff = {
+            "handoff_id": str(uuid.uuid4()),
+            "from_user_id": user_id,
+            "from_name": user_name,
+            "to_user_id": None,
+            "to_name": None,
+            "team_name": profile.get("team_name", ""),
+            "project_id": project_id,
+            "program_name": project.get("name", ""),
+            "deadline": project.get("end_date"),
+            "current_responsibilities": "",
+            "in_progress_work": "",
+            "pending_decisions": "",
+            "unresolved_issues": "",
+            "key_contacts": "",
+            "related_docs": "",
+            "risks": "",
+            "next_steps": "",
+            "status": "draft",
+            "tasks": [],
+            "documents": [],
+            "context": context,
+            "review_comments": None,
+            "reviewer_name": None,
+            "reviewed_at": None,
+        }
+        client.put_handoff(handoff)
+        created_handoffs.append(handoff)
+
+    record = {
+        "offboarding_id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "name": user_name,
+        "team_name": profile.get("team_name", ""),
+        "access_ends_at": access_ends_at,
+        "access_to_revoke": body.get("access_to_revoke", []),
+        "owned_documents": [
+            d.get("title", "") for d in client.list_knowledge_documents() if d.get("owner") == user_name
+        ],
+        "handoff_complete": False,
+    }
+    client.put_offboarding_record(record)
+    _record_activity(request_ctx, "created", f"Bắt đầu bàn giao nghỉ việc — {user_name}")
+    return build_response(201, {
+        "offboarding": _offboarding_view(record),
+        "handoffs": [_handoff_view(h) for h in created_handoffs],
+    })
+
+
+def _all_handoffs_complete_for_user(client, from_user_id: str, handoff_id: str) -> bool:
+    """handoff_id has just been persisted with status=complete — list_handoffs()
+    may or may not reflect that yet (eventual consistency), so treat it as
+    complete directly rather than re-reading it."""
+    mine = [h for h in client.list_handoffs() if h.get("from_user_id") == from_user_id]
+    if not mine:
+        return False
+    return all(
+        h.get("handoff_id") == handoff_id or h.get("status") == "complete"
+        for h in mine
+    )
+
+
+def _revoke_access(client, request_ctx, user_id: str) -> None:
+    """Khoá mềm: chỉ đổi cờ status trong DynamoDB, được chặn thật ở gate
+    ACCOUNT_LOCKED trong lambda_handler — không đụng tài khoản Cognito thật."""
+    if not client.get_user_profile(user_id):
+        return
+    client.update_user_profile(user_id, {"status": "locked"})
+    for o in client.list_offboarding_records():
+        if o.get("user_id") == user_id and not o.get("handoff_complete"):
+            client.update_offboarding_record(o["offboarding_id"], {"handoff_complete": True})
+    _record_activity(request_ctx, "permission_changed", f"Thu hồi quyền truy cập — {user_id}")
+
+
 def handle_confirm_offboarding_handoff(event, request_ctx, offboarding_id):
     client = _client(request_ctx)
-    if not any(o.get("offboarding_id") == offboarding_id for o in client.list_offboarding_records()):
+    record = next((o for o in client.list_offboarding_records() if o.get("offboarding_id") == offboarding_id), None)
+    if not record:
         return build_error_response(404, "NOT_FOUND", "Không tìm thấy bản ghi")
     client.update_offboarding_record(offboarding_id, {"handoff_complete": True})
+    if record.get("user_id"):
+        _revoke_access(client, request_ctx, record["user_id"])
     _record_activity(request_ctx, "approved", f"Hoàn tất bàn giao — {offboarding_id}")
     updated = next(o for o in client.list_offboarding_records() if o.get("offboarding_id") == offboarding_id)
     return build_response(200, _offboarding_view(updated))
@@ -1127,10 +1302,14 @@ def handle_confirm_offboarding_handoff(event, request_ctx, offboarding_id):
 def _handoff_view(h: dict) -> dict:
     return {
         "handoff_id": h.get("handoff_id"),
+        "from_user_id": h.get("from_user_id", ""),
         "from_name": h.get("from_name", ""),
+        "to_user_id": h.get("to_user_id"),
         "to_name": h.get("to_name"),
         "team_name": h.get("team_name", ""),
+        "project_id": h.get("project_id", ""),
         "program_name": h.get("program_name", ""),
+        "deadline": h.get("deadline"),
         "current_responsibilities": h.get("current_responsibilities", ""),
         "in_progress_work": h.get("in_progress_work", ""),
         "pending_decisions": h.get("pending_decisions", ""),
@@ -1140,12 +1319,19 @@ def _handoff_view(h: dict) -> dict:
         "risks": h.get("risks", ""),
         "next_steps": h.get("next_steps", ""),
         "status": h.get("status", "draft"),
+        "tasks": h.get("tasks", []),
+        "documents": h.get("documents", []),
+        "context": h.get("context", ""),
+        "review_comments": h.get("review_comments"),
+        "reviewer_name": h.get("reviewer_name"),
+        "reviewed_at": h.get("reviewed_at"),
     }
 
 
 def _offboarding_view(o: dict) -> dict:
     return {
         "offboarding_id": o.get("offboarding_id"),
+        "user_id": o.get("user_id", ""),
         "name": o.get("name", ""),
         "team_name": o.get("team_name", ""),
         "access_ends_at": o.get("access_ends_at", ""),
