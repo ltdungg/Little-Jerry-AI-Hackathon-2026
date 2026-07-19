@@ -84,13 +84,12 @@ def search_documents(query: str, top_k: int = 5) -> str:
 
     try:
         runtime = _get_bedrock_agent_runtime()
+        # Use retrieve with managedSearchConfiguration for managed knowledge bases
         response = runtime.retrieve(
             knowledgeBaseId=KNOWLEDGE_BASE_ID,
             retrievalQuery={"text": query},
             retrievalConfiguration={
-                "vectorSearchConfiguration": {
-                    "numberOfResults": min(top_k, 10),
-                }
+                "numberOfResults": min(top_k, 10),
             },
         )
 
