@@ -1145,6 +1145,15 @@ def handle_update_handoff(event, request_ctx, handoff_id):
     client.update_handoff(handoff_id, updates)
     _record_activity(request_ctx, "edited", f"Bàn giao {handoff_id}")
 
+    # Gán người tiếp nhận không chỉ ghi tên lên bàn giao — phải chuyển thật
+    # các task của người nghỉ trong đúng dự án này sang người nhận (hoặc bỏ
+    # trống nếu chọn "không ai cả", chờ PM gán sau).
+    if "to_user_id" in updates or "to_name" in updates:
+        _reassign_project_tasks(
+            client, request_ctx, handoff,
+            updates.get("to_user_id"), updates.get("to_name"),
+        )
+
     if updates.get("status") == "complete":
         from_user_id = handoff.get("from_user_id")
         if from_user_id and _all_handoffs_complete_for_user(client, from_user_id, handoff_id):
@@ -1152,6 +1161,21 @@ def handle_update_handoff(event, request_ctx, handoff_id):
 
     updated = client.get_handoff(handoff_id)
     return build_response(200, _handoff_view(updated))
+
+
+def _reassign_project_tasks(client, request_ctx, handoff: dict, to_user_id, to_name) -> None:
+    project_id = handoff.get("project_id", "")
+    from_user_id = handoff.get("from_user_id", "")
+    if not project_id or not from_user_id:
+        return
+    my_tasks = [t for t in client.list_tasks_by_assignee(from_user_id) if t.get("project_id") == project_id]
+    for t in my_tasks:
+        client.update_task(project_id, t.get("task_id"), {
+            "assignee": {"user_id": to_user_id or "", "display_name": to_name or ""},
+        })
+    if my_tasks:
+        target = to_name or "không ai cả"
+        _record_activity(request_ctx, "edited", f"Chuyển {len(my_tasks)} nhiệm vụ sang {target} (bàn giao {handoff.get('handoff_id')})")
 
 
 def handle_regenerate_handoff_context(event, request_ctx, handoff_id):

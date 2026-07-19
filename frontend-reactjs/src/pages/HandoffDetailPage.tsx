@@ -44,6 +44,8 @@ export function HandoffDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Handoff>>({});
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignQuery, setAssignQuery] = useState('');
+  const [assignTeamFilter, setAssignTeamFilter] = useState('all');
   const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
 
@@ -115,13 +117,27 @@ export function HandoffDetailPage() {
     await updateHandoffStatus(handoff!.id, 'draft');
   }
 
-  async function handleAssignReceiver(memberId: string) {
-    const member = members.find((m: MemberRecord) => m.id === memberId);
+  function closeAssignModal() {
     setShowAssignModal(false);
-    if (!member) return;
-    const updated = await reassignReceiver(handoff!.id, member.id, member.name);
+    setAssignQuery('');
+    setAssignTeamFilter('all');
+  }
+
+  async function handleAssignReceiver(memberId: string | null) {
+    const member = memberId ? members.find((m: MemberRecord) => m.id === memberId) : null;
+    closeAssignModal();
+    const updated = await reassignReceiver(handoff!.id, member?.id ?? null, member?.name ?? null);
     setHandoffs((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
   }
+
+  const assignableMembers = members.filter((m: MemberRecord) => m.id !== handoff.fromUserId);
+  const assignTeams = Array.from(new Set(assignableMembers.map((m) => m.teamName).filter(Boolean)));
+  const filteredAssignMembers = assignableMembers.filter((m: MemberRecord) => {
+    if (assignTeamFilter !== 'all' && m.teamName !== assignTeamFilter) return false;
+    if (!assignQuery) return true;
+    const q = assignQuery.toLowerCase();
+    return m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
+  });
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
@@ -370,27 +386,75 @@ export function HandoffDetailPage() {
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-slate-900">Chọn người tiếp nhận</h3>
-              <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={closeAssignModal} className="text-slate-400 hover:text-slate-600">
                 <Icon name="X" size={20} />
               </button>
             </div>
+
+            <p className="mb-3 text-xs text-slate-400">
+              Gán người tiếp nhận sẽ chuyển toàn bộ nhiệm vụ của {handoff.fromName} trong dự án này sang người đó
+              (hoặc bỏ trống nếu chọn "không ai cả").
+            </p>
+
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+              <div className="relative flex-1">
+                <Icon
+                  name="Search"
+                  size={14}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  value={assignQuery}
+                  onChange={(e) => setAssignQuery(e.target.value)}
+                  type="text"
+                  placeholder="Tìm theo tên hoặc email..."
+                  className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-8 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                />
+              </div>
+              <select
+                value={assignTeamFilter}
+                onChange={(e) => setAssignTeamFilter(e.target.value)}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+              >
+                <option value="all">Tất cả nhóm</option>
+                {assignTeams.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleAssignReceiver(null)}
+              className="mb-2 flex w-full items-center gap-2 rounded-lg border border-dashed border-slate-300 p-3 text-left text-sm text-slate-500 transition hover:border-slate-400 hover:bg-slate-50"
+            >
+              <Icon name="UserX" size={16} />
+              Không gán ai cả (để PM gán sau)
+            </button>
+
             <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
-              {members.map((member: MemberRecord) => (
-                <button
-                  key={member.id}
-                  type="button"
-                  onClick={() => handleAssignReceiver(member.id)}
-                  className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 text-left transition hover:border-brand-300 hover:bg-brand-50"
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
-                    {member.initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-800">{member.name}</p>
-                    <p className="text-xs text-slate-400">{member.roleLabel} · {member.teamName}</p>
-                  </div>
-                </button>
-              ))}
+              {filteredAssignMembers.length === 0 ? (
+                <p className="py-4 text-center text-sm text-slate-400">Không tìm thấy người phù hợp.</p>
+              ) : (
+                filteredAssignMembers.map((member: MemberRecord) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => handleAssignReceiver(member.id)}
+                    className="flex items-center gap-3 rounded-lg border border-slate-200 p-3 text-left transition hover:border-brand-300 hover:bg-brand-50"
+                  >
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                      {member.initials}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{member.name}</p>
+                      <p className="text-xs text-slate-400">{member.roleLabel} · {member.teamName}</p>
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
