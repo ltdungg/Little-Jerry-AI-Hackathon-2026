@@ -15,3 +15,8 @@ data "aws_ecr_image" "ingestion_latest" {
   repository_name = "npo-ai/ingestion"
   image_tag       = "latest"
 }
+
+data "aws_ecr_image" "agent_backup_latest" {
+  repository_name = "npo-ai/agent-backup"
+  image_tag       = "latest"
+}

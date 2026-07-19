@@ -25,6 +25,7 @@ logger = structlog.get_logger()
 
 REGION = os.environ.get("REGION", "ap-southeast-2")
 ORCHESTRATOR_RUNTIME_ARN = os.environ.get("ORCHESTRATOR_RUNTIME_ARN", "")
+BACKUP_RUNTIME_ARN = os.environ.get("BACKUP_RUNTIME_ARN", "")
 _agentcore = boto3.client("bedrock-agentcore", region_name=REGION)
 _cognito = boto3.client("cognito-idp", region_name=REGION)
 COGNITO_USER_POOL_ID = os.environ.get("COGNITO_USER_POOL_ID", "")
@@ -1570,15 +1571,23 @@ def handle_leadership_summary(event, request_ctx):
 
 
 def handle_chat(event, request_ctx):
-    """Synchronous chat: forward the user's message to the Orchestrator AgentCore
-    runtime and return its result."""
-    if not ORCHESTRATOR_RUNTIME_ARN:
-        return build_error_response(503, "AGENT_UNAVAILABLE", "Chưa cấu hình orchestrator runtime")
-
+    """Synchronous chat: forward the user's message to an AgentCore runtime
+    and return its result. Supports agent switching via `agent` param."""
     body = parse_body(event)
     message = (body.get("message") or "").strip()
     if not message:
         return build_error_response(400, "BAD_REQUEST", "Thiếu nội dung tin nhắn (message)")
+
+    # Agent selection: "orchestrator" (default) or "backup"
+    agent = body.get("agent", "orchestrator")
+    if agent == "backup" and BACKUP_RUNTIME_ARN:
+        runtime_arn = BACKUP_RUNTIME_ARN
+        agent_name = "backup"
+    elif ORCHESTRATOR_RUNTIME_ARN:
+        runtime_arn = ORCHESTRATOR_RUNTIME_ARN
+        agent_name = "orchestrator"
+    else:
+        return build_error_response(503, "AGENT_UNAVAILABLE", "Chưa cấu hình agent runtime")
 
     project_id = body.get("project_id")
     conversation_session_id = body.get("session_id") or str(uuid.uuid4())
@@ -1588,7 +1597,7 @@ def handle_chat(event, request_ctx):
     task_request = {
         "workflow_id": workflow_id,
         "task_id": str(uuid.uuid4()),
-        "agent_name": "orchestrator",
+        "agent_name": agent_name,
         "intent": "workflow_orchestration",
         "instructions": message,
         "inputs": {"message": message},
@@ -1608,7 +1617,7 @@ def handle_chat(event, request_ctx):
 
     try:
         resp = _agentcore.invoke_agent_runtime(
-            agentRuntimeArn=ORCHESTRATOR_RUNTIME_ARN,
+            agentRuntimeArn=runtime_arn,
             runtimeSessionId=session_id,
             payload=json.dumps(task_request).encode("utf-8"),
             contentType="application/json",
@@ -1626,8 +1635,8 @@ def handle_chat(event, request_ctx):
             logger.error("chat_session_upsert_failed", error=str(e))
         return build_response(200, response_view)
     except Exception as e:
-        logger.error("orchestrator_invoke_failed", error=str(e), workflow_id=workflow_id)
-        return build_error_response(502, "AGENT_ERROR", "Không kết nối được tới agent điều phối")
+        logger.error("agent_invoke_failed", error=str(e), workflow_id=workflow_id, agent=agent_name)
+        return build_error_response(502, "AGENT_ERROR", f"Không kết nối được tới agent {agent_name}")
 
 
 # ---------- View mapper: AgentTaskResult (from orchestrator runtime) -> frontend ChatResponse shape ----------

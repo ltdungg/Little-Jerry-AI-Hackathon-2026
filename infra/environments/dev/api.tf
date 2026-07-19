@@ -31,6 +31,7 @@ resource "aws_lambda_function" "api_lambda" {
       PROJECT_NAME             = var.project_name
       ENVIRONMENT              = var.environment
       ORCHESTRATOR_RUNTIME_ARN = module.agentcore.runtime_arns["orchestrator"]
+      BACKUP_RUNTIME_ARN       = module.agentcore.runtime_arns["backup"]
       # Web authentication (frontend login via Cognito)
       COGNITO_USER_POOL_ID     = module.auth.user_pool_id
       COGNITO_CLIENT_ID        = module.auth.client_id

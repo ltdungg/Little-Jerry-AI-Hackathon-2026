@@ -33,6 +33,7 @@ agent_configs = {
   alert_manager   = { model_id = "amazon.nova-pro-v1:0" }
   decision_tracker = { model_id = "amazon.nova-pro-v1:0" }
   memory_extraction = { model_id = "amazon.nova-pro-v1:0" }
+  backup            = { model_id = "amazon.nova-pro-v1:0" }
 }
 
 resource_tags = {

@@ -6,7 +6,7 @@ variable "image_tag_mutability" {
 }
 
 locals {
-  repo_names = ["agents", "api", "tools", "ingestion"]
+  repo_names = ["agents", "api", "tools", "ingestion", "agent-backup"]
 }
 
 resource "aws_ecr_repository" "repos" {
