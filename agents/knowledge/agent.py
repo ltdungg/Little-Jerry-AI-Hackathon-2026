@@ -89,7 +89,9 @@ def search_documents(query: str, top_k: int = 5) -> str:
             knowledgeBaseId=KNOWLEDGE_BASE_ID,
             retrievalQuery={"text": query},
             retrievalConfiguration={
-                "numberOfResults": min(top_k, 10),
+                "managedSearchConfiguration": {
+                    "numberOfResults": min(top_k, 10),
+                }
             },
         )
 
