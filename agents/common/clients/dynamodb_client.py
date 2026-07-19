@@ -483,6 +483,10 @@ class BusinessDataClient:
         )
         return resp.get("Items", [])
 
+    def get_handoff(self, handoff_id: str) -> dict[str, Any] | None:
+        resp = self.table.get_item(Key={"PK": f"TENANT#{self.tenant_id}", "SK": f"HANDOFF#{handoff_id}"})
+        return resp.get("Item")
+
     def put_handoff(self, handoff: dict[str, Any]) -> None:
         item = {**handoff, "PK": f"TENANT#{self.tenant_id}", "SK": f"HANDOFF#{handoff['handoff_id']}"}
         self.table.put_item(Item=item)

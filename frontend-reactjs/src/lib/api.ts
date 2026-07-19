@@ -23,7 +23,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 // ── User ──
 export async function getMe() {
-  return apiFetch<{ user_id: string; display_name: string; email: string; roles: string[]; capabilities: string[]; projects: { project_id: string; name: string; role: string }[] }>('/v1/me');
+  return apiFetch<{ user_id: string; display_name: string; email: string; roles: string[]; capabilities: string[]; status?: string; projects: { project_id: string; name: string; role: string }[] }>('/v1/me');
 }
 
 // ── Projects ──
@@ -336,12 +336,20 @@ export async function getHandoffs() {
   return apiFetch<any[]>('/v1/handoffs');
 }
 
-export async function updateHandoff(handoffId: string, status: string) {
-  return apiFetch<any>(`/v1/handoffs/${handoffId}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+export async function updateHandoff(handoffId: string, updates: Record<string, unknown>) {
+  return apiFetch<any>(`/v1/handoffs/${handoffId}`, { method: 'PATCH', body: JSON.stringify(updates) });
+}
+
+export async function regenerateHandoffContext(handoffId: string) {
+  return apiFetch<any>(`/v1/handoffs/${handoffId}/regenerate-context`, { method: 'POST' });
 }
 
 export async function getOffboardingRecords() {
   return apiFetch<any[]>('/v1/offboarding');
+}
+
+export async function createOffboarding(data: { user_id: string; access_ends_at: string; access_to_revoke?: string[] }) {
+  return apiFetch<any>('/v1/offboarding', { method: 'POST', body: JSON.stringify(data) });
 }
 
 export async function confirmOffboardingHandoff(offboardingId: string) {

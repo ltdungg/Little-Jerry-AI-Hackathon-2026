@@ -349,7 +349,9 @@ function ChatHistorySection({
                   <Icon name="MessageCircle" size={16} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{session.title}</p>
+                  <p className="text-sm font-medium text-slate-800" style={{ fontFamily: 'Arial, sans-serif' }}>
+                    {session.title}
+                  </p>
                   <p className="text-xs text-slate-400">{session.messageCount} tin nhắn</p>
                 </div>
               </div>

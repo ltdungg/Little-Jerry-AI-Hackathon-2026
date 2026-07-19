@@ -2,8 +2,16 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Icon } from '../components/common/Icon';
 import { Pill } from '../components/common/Pill';
+import { useAuth } from '../context/useAuth';
 import { useMockList } from '../hooks/useMockList';
-import { handoffStatusLabel, listHandoffs, updateHandoffStatus } from '../services/handoff.service';
+import {
+  handoffStatusLabel,
+  listHandoffs,
+  reassignReceiver,
+  regenerateHandoffContext,
+  updateHandoffContent,
+  updateHandoffStatus,
+} from '../services/handoff.service';
 import { listMembers } from '../services/people.service';
 import type { Handoff, HandoffStatus, HandoffTask, MemberRecord } from '../types';
 
@@ -29,11 +37,15 @@ const NEXT_ACTION_LABEL: Record<HandoffStatus, string> = {
 
 export function HandoffDetailPage() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const isPm = (user?.role as string) === 'leader' || (user?.role as string) === 'project_manager';
   const { items: handoffs, setItems: setHandoffs, loading } = useMockList(() => listHandoffs(), []);
   const { items: members } = useMockList(() => listMembers({ kind: 'all' }), []);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Handoff>>({});
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const handoff = handoffs.find((h) => h.id === id) ?? null;
   const current = isEditing ? { ...handoff, ...editData } as Handoff : handoff;
@@ -69,10 +81,26 @@ export function HandoffDetailPage() {
     }));
   }
 
-  function handleSave() {
-    setHandoffs((prev) => prev.map((h) => (h.id === handoff!.id ? { ...h, ...editData } as Handoff : h)));
-    setIsEditing(false);
-    setEditData({});
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const updated = await updateHandoffContent(handoff!.id, editData);
+      setHandoffs((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
+      setIsEditing(false);
+      setEditData({});
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRegenerate() {
+    setRegenerating(true);
+    try {
+      const updated = await regenerateHandoffContext(handoff!.id);
+      setHandoffs((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
+    } finally {
+      setRegenerating(false);
+    }
   }
 
   async function handleAdvance() {
@@ -87,12 +115,12 @@ export function HandoffDetailPage() {
     await updateHandoffStatus(handoff!.id, 'draft');
   }
 
-  function handleAssignReceiver(memberId: string) {
+  async function handleAssignReceiver(memberId: string) {
     const member = members.find((m: MemberRecord) => m.id === memberId);
-    if (member) {
-      setHandoffs((prev) => prev.map((h) => (h.id === handoff!.id ? { ...h, toName: member.name } : h)));
-    }
     setShowAssignModal(false);
+    if (!member) return;
+    const updated = await reassignReceiver(handoff!.id, member.id, member.name);
+    setHandoffs((prev) => prev.map((h) => (h.id === updated.id ? updated : h)));
   }
 
   return (
@@ -125,9 +153,10 @@ export function HandoffDetailPage() {
                   <button
                     type="button"
                     onClick={handleSave}
-                    className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+                    disabled={saving}
+                    className="flex items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
                   >
-                    <Icon name="Save" size={14} />
+                    {saving ? <Icon name="Loader2" size={14} className="animate-spin" /> : <Icon name="Save" size={14} />}
                     Lưu
                   </button>
                   <button
@@ -172,9 +201,20 @@ export function HandoffDetailPage() {
       </div>
 
       {/* Context */}
-      {current.context && (
+      {handoff.status !== 'complete' && (
         <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Bối cảnh bàn giao</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Bối cảnh bàn giao (AI tổng hợp)</p>
+            <button
+              type="button"
+              onClick={handleRegenerate}
+              disabled={regenerating}
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {regenerating ? <Icon name="Loader2" size={12} className="animate-spin" /> : <Icon name="Sparkles" size={12} />}
+              Tạo lại bằng AI
+            </button>
+          </div>
           {isEditing ? (
             <textarea
               value={current.context}
@@ -183,7 +223,24 @@ export function HandoffDetailPage() {
               className="mt-2 w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 focus:border-brand-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-100"
             />
           ) : (
-            <p className="mt-2 text-sm text-slate-700">{current.context}</p>
+            <p className="mt-2 text-sm text-slate-700">{current.context || 'Chưa có nội dung.'}</p>
+          )}
+        </div>
+      )}
+
+      {/* Deadline dự án (chỉ PM/lãnh đạo sửa được, chỉ lưu trong hồ sơ bàn giao) */}
+      {(isPm || current.deadline) && (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Deadline dự án (đề xuất)</p>
+          {isPm && isEditing ? (
+            <input
+              type="date"
+              value={current.deadline ?? ''}
+              onChange={(e) => handleFieldChange('deadline', e.target.value)}
+              className="mt-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            />
+          ) : (
+            <p className="mt-2 text-sm text-slate-700">{current.deadline || 'Chưa có'}</p>
           )}
         </div>
       )}
@@ -294,14 +351,14 @@ export function HandoffDetailPage() {
               </button>
             </>
           )}
-          {!handoff.toName && handoff.status === 'draft' && (
+          {((!handoff.toName && handoff.status === 'draft') || isPm) && (
             <button
               type="button"
               onClick={() => setShowAssignModal(true)}
               className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
               <Icon name="UserPlus" size={14} />
-              Assign người tiếp nhận
+              {handoff.toName ? 'Đổi người tiếp nhận' : 'Chọn người tiếp nhận'}
             </button>
           )}
         </div>

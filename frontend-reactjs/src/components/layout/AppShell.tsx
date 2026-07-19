@@ -6,7 +6,7 @@ import { useAuth } from '../../context/useAuth';
 import { Icon } from '../common/Icon';
 
 export function AppShell() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, loading, user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   if (loading) {
@@ -19,6 +19,27 @@ export function AppShell() {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user?.status === 'locked') {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-sm rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <Icon name="Lock" size={28} className="mx-auto text-slate-400" />
+          <p className="mt-3 text-base font-semibold text-slate-900">Tài khoản đã bị khoá</p>
+          <p className="mt-1.5 text-sm text-slate-500">
+            Tài khoản này đã hoàn tất bàn giao khi kết thúc tham gia nên không còn quyền truy cập hệ thống.
+          </p>
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="mt-5 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
