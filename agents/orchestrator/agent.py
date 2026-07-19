@@ -82,32 +82,21 @@ Tenant ID: {state['tenant_id']}
 [THÔNG TIN THIẾU TỪ LẦN TRƯỚC]
 {state.get('missing_info', '')}
 
-[CÁC TOOL CÓ SẴN (WORKERS)]
+[CÁC TOOL CÓ SẴN]
 
-1. source="jira" (qua MCP Gateway - dữ liệu thực từ Jira):
-   - action="list_project_tasks": params={{"project_key": "Mã dự án Jira (VD: PROJ, WD)", "status_filter": "todo/in_progress/done"}} - Lấy danh sách task từ Jira.
-   - action="list_overdue_tasks": params={{"project_key": "Mã dự án Jira"}} - Lấy task trễ hạn từ Jira.
-   - action="search_issues": params={{"jql": "JQL query"}} - Tìm kiếm issues bằng JQL.
-   - action="get_all_boards": params={{{{}}}} - Lấy danh sách tất cả boards.
-   - action="any_jira_action": params={{"tool_name": "Tên MCP tool", ...params}} - Gọi bất kỳ Jira MCP tool nào.
-
-2. source="slack" (qua Slack API - dữ liệu thực từ Slack):
-   - action="read_slack_chat": params={{"channel_id": "ID kênh", "limit": 30}} - Đọc tin nhắn Slack.
-   - action="send_slack_message": params={{"channel_id": "ID kênh", "text": "Nội dung"}} - Gửi tin nhắn Slack.
-
-3. source="knowledge" (qua Bedrock Knowledge Base - tài liệu thực):
+1. source="knowledge" (Bedrock Knowledge Base - tài liệu nội bộ tổ chức):
    - action="search_organizational_knowledge": params={{"query": "Câu hỏi tìm kiếm"}} - Tìm tri thức tổ chức.
    - action="search_documents": params={{"query": "Từ khóa", "top_k": 5}} - Tìm tài liệu chi tiết.
 
-4. source="dynamodb" (dữ liệu nội bộ từ DynamoDB):
+2. source="dynamodb" (dữ liệu nội bộ từ DynamoDB):
    - action="list_projects": params={{{{}}}} - Liệt kê tất cả projects.
    - action="list_tasks": params={{"project_id": "ID dự án"}} - Liệt kê tasks.
 
 [HƯỚNG DẪN QUAN TRỌNG]
-- Khi người dùng hỏi về Jira/task/project: BẮT BUỘC phải dùng source="jira" để lấy dữ liệu thật.
-- Khi người dùng hỏi về tài liệu/quy trình: Dùng source="knowledge".
-- Khi người dùng hỏi về Slack: Dùng source="slack".
-- KHÔNG BAO GIỜ trả về tasks rỗng [] khi người dùng hỏi về dữ liệu. Luôn tạo ít nhất 1 task để lấy dữ liệu thực.
+- LUÔN gọi source="knowledge" để tìm tài liệu liên quan đến câu hỏi.
+- Gọi source="dynamodb" nếu cần dữ liệu projects/tasks nội bộ.
+- KHÔNG gọi source="jira" hoặc source="slack" (đang tạm ngưng).
+- Nếu tất cả nguồn đều trả về dữ liệu rỗng, thông báo rõ ràng cho người dùng.
 
 Hãy trả về DUY NHẤT một chuỗi JSON hợp lệ:
 {{
