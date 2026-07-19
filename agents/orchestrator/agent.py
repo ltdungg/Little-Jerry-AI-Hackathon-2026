@@ -160,43 +160,13 @@ Nếu là chào hỏi đơn giản, trả về tasks rỗng [].
             try:
                 res = None
 
-                # ── Jira via MCP Gateway ──
+                # ── Jira via MCP Gateway (DISABLED) ──
                 if source == "jira":
-                    from agents.common.clients.jira_mcp import (
-                        search_issues, get_project_tasks, get_overdue_tasks,
-                        parse_jira_issue, JIRA_PREFIX,
-                    )
+                    return "[TẠM NGỪNG]: Jira/Slack đang được bảo trì. Vui lòng sử dụng Knowledge Base để tìm kiếm tài liệu."
 
-                    if action == "list_project_tasks":
-                        raw = await get_project_tasks(**params)
-                        parsed = [parse_jira_issue(i) for i in raw]
-                        res = json.dumps(parsed, ensure_ascii=False, indent=2)
-                    elif action == "list_overdue_tasks":
-                        raw = await get_overdue_tasks(**params)
-                        parsed = [parse_jira_issue(i) for i in raw]
-                        res = json.dumps(parsed, ensure_ascii=False, indent=2)
-                    elif action == "search_issues":
-                        jql = params.get("jql", "ORDER BY updated DESC")
-                        raw = await search_issues(jql)
-                        parsed = [parse_jira_issue(i) for i in raw]
-                        res = json.dumps(parsed, ensure_ascii=False, indent=2)
-                    elif action == "get_all_boards":
-                        from agents.common.clients.jira_mcp import get_all_boards
-                        raw = await get_all_boards()
-                        res = json.dumps(raw, ensure_ascii=False, indent=2)
-                    else:
-                        # Generic MCP tool call
-                        from agents.common.clients.jira_mcp import call_jira_tool
-                        result = await call_jira_tool(f"{JIRA_PREFIX}{action}", params)
-                        res = json.dumps(result, ensure_ascii=False, indent=2)
-
-                # ── Slack ──
+                # ── Slack (DISABLED) ──
                 elif source == "slack":
-                    from agents.communication.agent import read_slack_chat, send_slack_message
-                    if action == "read_slack_chat":
-                        res = await asyncio.to_thread(read_slack_chat, **params)
-                    elif action == "send_slack_message":
-                        res = await asyncio.to_thread(send_slack_message, **params)
+                    return "[TẠM NGỪNG]: Jira/Slack đang được bảo trì. Vui lòng sử dụng Knowledge Base để tìm kiếm tài liệu."
 
                 # ── Knowledge Base ──
                 elif source == "knowledge":
